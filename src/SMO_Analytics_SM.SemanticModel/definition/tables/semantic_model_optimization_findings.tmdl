@@ -1,5 +1,5 @@
-table 'Semantic Model Optimization Findings'
-	lineageTag: d31e1daa-5025-5b88-aca1-ac8ac3d65ecc
+table semantic_model_optimization_findings
+	lineageTag: 73fac337-7fa9-552b-ae52-59a1dc289dac
 	sourceLineageTag: [semantic_model_optimization].[semantic_model_optimization_findings]
 
 	column finding_id

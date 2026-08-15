@@ -20,13 +20,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Optimization Recommendations"
+                      "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
                   "Property": "change_risk"
                 }
               },
-              "queryRef": "Semantic Model Optimization Recommendations.change_risk",
+              "queryRef": "semantic_model_optimization_recommendations.change_risk",
               "nativeQueryRef": "Change risk",
               "displayName": "Change risk"
             }

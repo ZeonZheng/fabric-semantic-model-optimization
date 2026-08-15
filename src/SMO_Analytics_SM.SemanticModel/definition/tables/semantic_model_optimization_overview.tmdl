@@ -1,5 +1,5 @@
-table 'Semantic Model Optimization Overview'
-	lineageTag: 0668e827-f3ba-5e18-8bd0-14a8422ec31a
+table semantic_model_optimization_overview
+	lineageTag: 5bf307f0-8972-509e-ab8e-f49aa225c948
 	sourceLineageTag: [semantic_model_optimization].[semantic_model_optimization_overview]
 
 	column analysis_id

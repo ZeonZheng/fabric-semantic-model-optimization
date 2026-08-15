@@ -20,13 +20,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Column Storage"
+                      "Entity": "semantic_model_column_storage"
                     }
                   },
                   "Property": "semantic_model_name"
                 }
               },
-              "queryRef": "Semantic Model Column Storage.semantic_model_name",
+              "queryRef": "semantic_model_column_storage.semantic_model_name",
               "nativeQueryRef": "Semantic model",
               "displayName": "Semantic model"
             }

@@ -20,13 +20,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Optimization Recommendations"
+                      "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
                   "Property": "optimization_domain"
                 }
               },
-              "queryRef": "Semantic Model Optimization Recommendations.optimization_domain",
+              "queryRef": "semantic_model_optimization_recommendations.optimization_domain",
               "nativeQueryRef": "Optimization domain",
               "displayName": "Optimization domain"
             }

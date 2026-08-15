@@ -17,7 +17,7 @@ PAGES = REPORT / "pages"
 
 
 TABLE_DEFINITIONS = {
-    "Semantic Model Optimization Overview": {
+    "semantic_model_optimization_overview": {
         "schema": "semantic_model_optimization",
         "entity": "semantic_model_optimization_overview",
         "key": "semantic_model_id",
@@ -35,7 +35,7 @@ TABLE_DEFINITIONS = {
             ("item_access_record_count", "int64"), ("data_availability_explanation", "string"),
         ],
     },
-    "Semantic Model Optimization Opportunities": {
+    "semantic_model_optimization_opportunities": {
         "schema": "semantic_model_optimization", "entity": "semantic_model_optimization_opportunities", "key": "opportunity_id",
         "columns": [
             ("opportunity_id", "string"), ("analysis_id", "string"), ("workspace_name", "string"),
@@ -47,7 +47,7 @@ TABLE_DEFINITIONS = {
             ("detected_at", "dateTime"),
         ],
     },
-    "Semantic Model Optimization Recommendations": {
+    "semantic_model_optimization_recommendations": {
         "schema": "semantic_model_optimization", "entity": "semantic_model_optimization_recommendations", "key": "recommendation_id",
         "columns": [
             ("recommendation_id", "string"), ("analysis_id", "string"), ("workspace_name", "string"),
@@ -58,7 +58,7 @@ TABLE_DEFINITIONS = {
             ("affected_finding_count", "int64"), ("detected_at", "dateTime"),
         ],
     },
-    "Semantic Model Optimization Findings": {
+    "semantic_model_optimization_findings": {
         "schema": "semantic_model_optimization", "entity": "semantic_model_optimization_findings", "key": "finding_id",
         "columns": [
             ("finding_id", "string"), ("analysis_id", "string"), ("workspace_name", "string"),
@@ -72,7 +72,7 @@ TABLE_DEFINITIONS = {
             ("validation_required", "boolean"), ("detected_at", "dateTime"),
         ],
     },
-    "Semantic Model Column Storage": {
+    "semantic_model_column_storage": {
         "schema": "semantic_model_vertipaq", "entity": "semantic_model_column_storage", "key": "column_storage_record_id",
         "columns": [
             ("column_storage_record_id", "string"), ("analysis_id", "string"), ("workspace_name", "string"),
@@ -83,11 +83,11 @@ TABLE_DEFINITIONS = {
             ("percentage_of_semantic_model_size", "double"), ("detected_at", "dateTime"),
         ],
     },
-    "Opportunity Recommendation Links": {
+    "semantic_model_optimization_opportunity_recommendation_links": {
         "schema": "semantic_model_optimization", "entity": "semantic_model_optimization_opportunity_recommendation_links", "key": None,
         "columns": [("analysis_id", "string"), ("semantic_model_id", "string"), ("opportunity_id", "string"), ("related_entity_id", "string")],
     },
-    "Opportunity Finding Links": {
+    "semantic_model_optimization_opportunity_finding_links": {
         "schema": "semantic_model_optimization", "entity": "semantic_model_optimization_opportunity_finding_links", "key": None,
         "columns": [("analysis_id", "string"), ("semantic_model_id", "string"), ("opportunity_id", "string"), ("related_entity_id", "string")],
     },
@@ -100,7 +100,7 @@ def lineage(*parts: str) -> str:
 
 def tmdl_table(table_name: str, definition: dict) -> str:
     lines = [
-        f"table '{table_name}'",
+        f"table {table_name}",
         f"\tlineageTag: {lineage('table', table_name)}",
         f"\tsourceLineageTag: [{definition['schema']}].[{definition['entity']}]",
         "",
@@ -134,19 +134,19 @@ def tmdl_table(table_name: str, definition: dict) -> str:
 METRICS = """table Metrics
 \tlineageTag: 0cf621e7-94ae-437e-827a-e2c35635a284
 
-\tmeasure 'Models scanned' = COALESCE(DISTINCTCOUNT('Semantic Model Optimization Overview'[semantic_model_id]), 0)
+\tmeasure 'Models scanned' = COALESCE(DISTINCTCOUNT(semantic_model_optimization_overview[semantic_model_id]), 0)
 \t\tformatString: #,0
 \t\tdisplayFolder: Overview
 
-\tmeasure 'Total opportunities' = COALESCE(COUNTROWS('Semantic Model Optimization Opportunities'), 0)
+\tmeasure 'Total opportunities' = COALESCE(COUNTROWS(semantic_model_optimization_opportunities), 0)
 \t\tformatString: #,0
 \t\tdisplayFolder: Opportunities
 
-\tmeasure 'Total recommendations' = COALESCE(COUNTROWS('Semantic Model Optimization Recommendations'), 0)
+\tmeasure 'Total recommendations' = COALESCE(COUNTROWS(semantic_model_optimization_recommendations), 0)
 \t\tformatString: #,0
 \t\tdisplayFolder: Recommendations
 
-\tmeasure 'Total findings' = COALESCE(COUNTROWS('Semantic Model Optimization Findings'), 0)
+\tmeasure 'Total findings' = COALESCE(COUNTROWS(semantic_model_optimization_findings), 0)
 \t\tformatString: #,0
 \t\tdisplayFolder: Findings
 
@@ -154,30 +154,30 @@ METRICS = """table Metrics
 \t\t\tCOALESCE(
 \t\t\t\tCALCULATE(
 \t\t\t\t\t[Total findings],
-\t\t\t\t\t'Semantic Model Optimization Findings'[severity] IN { "HIGH", "CRITICAL", "ERROR" }
+\t\t\t\t\tsemantic_model_optimization_findings[severity] IN { "HIGH", "CRITICAL", "ERROR" }
 \t\t\t\t),
 \t\t\t\t0
 \t\t\t)
 \t\tformatString: #,0
 \t\tdisplayFolder: Findings
 
-\tmeasure 'Columns analyzed' = COALESCE(COUNTROWS('Semantic Model Column Storage'), 0)
+\tmeasure 'Columns analyzed' = COALESCE(COUNTROWS(semantic_model_column_storage), 0)
 \t\tformatString: #,0
 \t\tdisplayFolder: Storage
 
-\tmeasure 'Total column storage MB' = COALESCE(DIVIDE(SUM('Semantic Model Column Storage'[total_size_bytes]), 1048576), 0)
+\tmeasure 'Total column storage MB' = COALESCE(DIVIDE(SUM(semantic_model_column_storage[total_size_bytes]), 1048576), 0)
 \t\tformatString: #,0.00
 \t\tdisplayFolder: Storage
 
-\tmeasure 'Estimated saving MB low' = COALESCE(DIVIDE(SUM('Semantic Model Optimization Findings'[estimated_saving_bytes_low]), 1048576), 0)
+\tmeasure 'Estimated saving MB low' = COALESCE(DIVIDE(SUM(semantic_model_optimization_findings[estimated_saving_bytes_low]), 1048576), 0)
 \t\tformatString: #,0.00
 \t\tdisplayFolder: Benefits
 
-\tmeasure 'Estimated saving MB high' = COALESCE(DIVIDE(SUM('Semantic Model Optimization Findings'[estimated_saving_bytes_high]), 1048576), 0)
+\tmeasure 'Estimated saving MB high' = COALESCE(DIVIDE(SUM(semantic_model_optimization_findings[estimated_saving_bytes_high]), 1048576), 0)
 \t\tformatString: #,0.00
 \t\tdisplayFolder: Benefits
 
-\tmeasure 'Latest analysis at' = MAX('Semantic Model Optimization Overview'[analysis_completed_at])
+\tmeasure 'Latest analysis at' = MAX(semantic_model_optimization_overview[analysis_completed_at])
 \t\tformatString: General Date
 \t\tdisplayFolder: Overview
 """
@@ -190,21 +190,21 @@ def write_model() -> None:
         (TABLES / f"{table_name}.tmdl").write_text(tmdl_table(table_name, definition), encoding="utf-8")
     (TABLES / "Metrics.tmdl").write_text(METRICS, encoding="utf-8")
 
-    refs = [f"ref table '{name}'" for name in TABLE_DEFINITIONS] + ["ref table Metrics"]
+    refs = [f"ref table {name}" for name in TABLE_DEFINITIONS] + ["ref table Metrics"]
     relationships = [
-        ("overview_opportunities", "Semantic Model Optimization Opportunities", "semantic_model_id", "Semantic Model Optimization Overview", "semantic_model_id"),
-        ("overview_recommendations", "Semantic Model Optimization Recommendations", "semantic_model_id", "Semantic Model Optimization Overview", "semantic_model_id"),
-        ("overview_findings", "Semantic Model Optimization Findings", "semantic_model_id", "Semantic Model Optimization Overview", "semantic_model_id"),
-        ("overview_column_storage", "Semantic Model Column Storage", "semantic_model_id", "Semantic Model Optimization Overview", "semantic_model_id"),
-        ("opportunity_recommendation_bridge", "Opportunity Recommendation Links", "opportunity_id", "Semantic Model Optimization Opportunities", "opportunity_id"),
-        ("opportunity_finding_bridge", "Opportunity Finding Links", "opportunity_id", "Semantic Model Optimization Opportunities", "opportunity_id"),
+        ("overview_opportunities", "semantic_model_optimization_opportunities", "semantic_model_id", "semantic_model_optimization_overview", "semantic_model_id"),
+        ("overview_recommendations", "semantic_model_optimization_recommendations", "semantic_model_id", "semantic_model_optimization_overview", "semantic_model_id"),
+        ("overview_findings", "semantic_model_optimization_findings", "semantic_model_id", "semantic_model_optimization_overview", "semantic_model_id"),
+        ("overview_column_storage", "semantic_model_column_storage", "semantic_model_id", "semantic_model_optimization_overview", "semantic_model_id"),
+        ("opportunity_recommendation_bridge", "semantic_model_optimization_opportunity_recommendation_links", "opportunity_id", "semantic_model_optimization_opportunities", "opportunity_id"),
+        ("opportunity_finding_bridge", "semantic_model_optimization_opportunity_finding_links", "opportunity_id", "semantic_model_optimization_opportunities", "opportunity_id"),
     ]
     relation_text = []
     for name, from_table, from_column, to_table, to_column in relationships:
         relation_text.extend([
             f"relationship {name}",
-            f"\tfromColumn: '{from_table}'[{from_column}]",
-            f"\ttoColumn: '{to_table}'[{to_column}]",
+            f"\tfromColumn: {from_table}[{from_column}]",
+            f"\ttoColumn: {to_table}[{to_column}]",
             "",
         ])
     model = "\n".join([
@@ -278,11 +278,11 @@ def write_page(page_name: str, display_name: str, visuals: list[dict]) -> None:
 def write_report() -> None:
     shutil.rmtree(PAGES)
     PAGES.mkdir(parents=True)
-    overview = "Semantic Model Optimization Overview"
-    opportunities = "Semantic Model Optimization Opportunities"
-    recommendations = "Semantic Model Optimization Recommendations"
-    findings = "Semantic Model Optimization Findings"
-    storage = "Semantic Model Column Storage"
+    overview = "semantic_model_optimization_overview"
+    opportunities = "semantic_model_optimization_opportunities"
+    recommendations = "semantic_model_optimization_recommendations"
+    findings = "semantic_model_optimization_findings"
+    storage = "semantic_model_column_storage"
 
     write_page("overview", "Optimization overview", [
         visual("optimization_kpis", "cardVisual", 30, 30, 1200, 130, {"Data": [

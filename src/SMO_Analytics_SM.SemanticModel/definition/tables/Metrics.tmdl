@@ -1,19 +1,19 @@
 table Metrics
 	lineageTag: 0cf621e7-94ae-437e-827a-e2c35635a284
 
-	measure 'Models scanned' = COALESCE(DISTINCTCOUNT('Semantic Model Optimization Overview'[semantic_model_id]), 0)
+	measure 'Models scanned' = COALESCE(DISTINCTCOUNT(semantic_model_optimization_overview[semantic_model_id]), 0)
 		formatString: #,0
 		displayFolder: Overview
 
-	measure 'Total opportunities' = COALESCE(COUNTROWS('Semantic Model Optimization Opportunities'), 0)
+	measure 'Total opportunities' = COALESCE(COUNTROWS(semantic_model_optimization_opportunities), 0)
 		formatString: #,0
 		displayFolder: Opportunities
 
-	measure 'Total recommendations' = COALESCE(COUNTROWS('Semantic Model Optimization Recommendations'), 0)
+	measure 'Total recommendations' = COALESCE(COUNTROWS(semantic_model_optimization_recommendations), 0)
 		formatString: #,0
 		displayFolder: Recommendations
 
-	measure 'Total findings' = COALESCE(COUNTROWS('Semantic Model Optimization Findings'), 0)
+	measure 'Total findings' = COALESCE(COUNTROWS(semantic_model_optimization_findings), 0)
 		formatString: #,0
 		displayFolder: Findings
 
@@ -21,29 +21,29 @@ table Metrics
 			COALESCE(
 				CALCULATE(
 					[Total findings],
-					'Semantic Model Optimization Findings'[severity] IN { "HIGH", "CRITICAL", "ERROR" }
+					semantic_model_optimization_findings[severity] IN { "HIGH", "CRITICAL", "ERROR" }
 				),
 				0
 			)
 		formatString: #,0
 		displayFolder: Findings
 
-	measure 'Columns analyzed' = COALESCE(COUNTROWS('Semantic Model Column Storage'), 0)
+	measure 'Columns analyzed' = COALESCE(COUNTROWS(semantic_model_column_storage), 0)
 		formatString: #,0
 		displayFolder: Storage
 
-	measure 'Total column storage MB' = COALESCE(DIVIDE(SUM('Semantic Model Column Storage'[total_size_bytes]), 1048576), 0)
+	measure 'Total column storage MB' = COALESCE(DIVIDE(SUM(semantic_model_column_storage[total_size_bytes]), 1048576), 0)
 		formatString: #,0.00
 		displayFolder: Storage
 
-	measure 'Estimated saving MB low' = COALESCE(DIVIDE(SUM('Semantic Model Optimization Findings'[estimated_saving_bytes_low]), 1048576), 0)
+	measure 'Estimated saving MB low' = COALESCE(DIVIDE(SUM(semantic_model_optimization_findings[estimated_saving_bytes_low]), 1048576), 0)
 		formatString: #,0.00
 		displayFolder: Benefits
 
-	measure 'Estimated saving MB high' = COALESCE(DIVIDE(SUM('Semantic Model Optimization Findings'[estimated_saving_bytes_high]), 1048576), 0)
+	measure 'Estimated saving MB high' = COALESCE(DIVIDE(SUM(semantic_model_optimization_findings[estimated_saving_bytes_high]), 1048576), 0)
 		formatString: #,0.00
 		displayFolder: Benefits
 
-	measure 'Latest analysis at' = MAX('Semantic Model Optimization Overview'[analysis_completed_at])
+	measure 'Latest analysis at' = MAX(semantic_model_optimization_overview[analysis_completed_at])
 		formatString: General Date
 		displayFolder: Overview

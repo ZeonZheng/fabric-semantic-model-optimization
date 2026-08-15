@@ -1,5 +1,5 @@
-table 'Semantic Model Optimization Recommendations'
-	lineageTag: f74fabde-b92a-5009-a90f-5a6d6309fbf5
+table semantic_model_optimization_recommendations
+	lineageTag: 64798275-4c3c-5225-a54b-0b60dd3fa5ff
 	sourceLineageTag: [semantic_model_optimization].[semantic_model_optimization_recommendations]
 
 	column recommendation_id

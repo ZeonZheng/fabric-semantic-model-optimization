@@ -1,6 +1,6 @@
-table 'Opportunity Recommendation Links'
-	lineageTag: 8f33d7fe-f0fb-5086-beac-a2169928022a
-	sourceLineageTag: [semantic_model_optimization].[semantic_model_optimization_opportunity_recommendation_links]
+table semantic_model_optimization_opportunity_finding_links
+	lineageTag: 519c5560-e0bc-5180-9bcc-88739f9d503b
+	sourceLineageTag: [semantic_model_optimization].[semantic_model_optimization_opportunity_finding_links]
 
 	column analysis_id
 		dataType: string
@@ -26,9 +26,9 @@ table 'Opportunity Recommendation Links'
 		sourceLineageTag: related_entity_id
 		summarizeBy: none
 
-	partition 'semantic_model_optimization_opportunity_recommendation_links' = entity
+	partition 'semantic_model_optimization_opportunity_finding_links' = entity
 		mode: directLake
 		source
-			entityName: semantic_model_optimization_opportunity_recommendation_links
+			entityName: semantic_model_optimization_opportunity_finding_links
 			schemaName: semantic_model_optimization
 			expressionSource: DatabaseQuery

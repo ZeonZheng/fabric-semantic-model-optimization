@@ -20,13 +20,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Optimization Recommendations"
+                      "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
                   "Property": "semantic_model_name"
                 }
               },
-              "queryRef": "Semantic Model Optimization Recommendations.semantic_model_name",
+              "queryRef": "semantic_model_optimization_recommendations.semantic_model_name",
               "nativeQueryRef": "Semantic model",
               "displayName": "Semantic model"
             },
@@ -35,13 +35,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Optimization Recommendations"
+                      "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
                   "Property": "recommendation_title"
                 }
               },
-              "queryRef": "Semantic Model Optimization Recommendations.recommendation_title",
+              "queryRef": "semantic_model_optimization_recommendations.recommendation_title",
               "nativeQueryRef": "Recommendation",
               "displayName": "Recommendation"
             },
@@ -50,13 +50,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Optimization Recommendations"
+                      "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
                   "Property": "recommended_action"
                 }
               },
-              "queryRef": "Semantic Model Optimization Recommendations.recommended_action",
+              "queryRef": "semantic_model_optimization_recommendations.recommended_action",
               "nativeQueryRef": "Recommended action",
               "displayName": "Recommended action"
             },
@@ -65,13 +65,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Optimization Recommendations"
+                      "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
                   "Property": "change_risk"
                 }
               },
-              "queryRef": "Semantic Model Optimization Recommendations.change_risk",
+              "queryRef": "semantic_model_optimization_recommendations.change_risk",
               "nativeQueryRef": "Change risk",
               "displayName": "Change risk"
             },
@@ -80,13 +80,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Optimization Recommendations"
+                      "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
                   "Property": "affected_finding_count"
                 }
               },
-              "queryRef": "Semantic Model Optimization Recommendations.affected_finding_count",
+              "queryRef": "semantic_model_optimization_recommendations.affected_finding_count",
               "nativeQueryRef": "Affected findings",
               "displayName": "Affected findings"
             }

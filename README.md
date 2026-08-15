@@ -67,4 +67,4 @@ python tests/validate_repo.py
 
 ## Current stage
 
-Version `0.2.1` restores the approved V2 business contract: five meaningful schemas, seven AI-friendly Direct Lake tables, per-model latest-state replacement, explicit empty-data explanations, and the five-page/15-visual report.
+Version `0.2.2` restores the approved V2 business contract: five meaningful schemas, seven AI-friendly Direct Lake tables, per-model latest-state replacement, explicit empty-data explanations, and the five-page/15-visual report.

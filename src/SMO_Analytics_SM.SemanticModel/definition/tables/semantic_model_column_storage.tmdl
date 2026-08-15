@@ -1,5 +1,5 @@
-table 'Semantic Model Column Storage'
-	lineageTag: 0eadbeb9-3977-503a-9081-0815d30d3c74
+table semantic_model_column_storage
+	lineageTag: 56663557-41f6-5295-bf4f-7ad9ee2263aa
 	sourceLineageTag: [semantic_model_vertipaq].[semantic_model_column_storage]
 
 	column column_storage_record_id

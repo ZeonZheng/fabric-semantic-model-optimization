@@ -20,13 +20,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Column Storage"
+                      "Entity": "semantic_model_column_storage"
                     }
                   },
                   "Property": "semantic_model_name"
                 }
               },
-              "queryRef": "Semantic Model Column Storage.semantic_model_name",
+              "queryRef": "semantic_model_column_storage.semantic_model_name",
               "nativeQueryRef": "Semantic model",
               "displayName": "Semantic model"
             },
@@ -35,13 +35,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Column Storage"
+                      "Entity": "semantic_model_column_storage"
                     }
                   },
                   "Property": "table_name"
                 }
               },
-              "queryRef": "Semantic Model Column Storage.table_name",
+              "queryRef": "semantic_model_column_storage.table_name",
               "nativeQueryRef": "Table",
               "displayName": "Table"
             },
@@ -50,13 +50,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Column Storage"
+                      "Entity": "semantic_model_column_storage"
                     }
                   },
                   "Property": "column_name"
                 }
               },
-              "queryRef": "Semantic Model Column Storage.column_name",
+              "queryRef": "semantic_model_column_storage.column_name",
               "nativeQueryRef": "Column",
               "displayName": "Column"
             },
@@ -65,13 +65,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Column Storage"
+                      "Entity": "semantic_model_column_storage"
                     }
                   },
                   "Property": "data_type"
                 }
               },
-              "queryRef": "Semantic Model Column Storage.data_type",
+              "queryRef": "semantic_model_column_storage.data_type",
               "nativeQueryRef": "Data type",
               "displayName": "Data type"
             },
@@ -80,13 +80,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Column Storage"
+                      "Entity": "semantic_model_column_storage"
                     }
                   },
                   "Property": "cardinality"
                 }
               },
-              "queryRef": "Semantic Model Column Storage.cardinality",
+              "queryRef": "semantic_model_column_storage.cardinality",
               "nativeQueryRef": "Cardinality",
               "displayName": "Cardinality"
             },
@@ -95,13 +95,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Column Storage"
+                      "Entity": "semantic_model_column_storage"
                     }
                   },
                   "Property": "total_size_bytes"
                 }
               },
-              "queryRef": "Semantic Model Column Storage.total_size_bytes",
+              "queryRef": "semantic_model_column_storage.total_size_bytes",
               "nativeQueryRef": "Total bytes",
               "displayName": "Total bytes"
             },
@@ -110,13 +110,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Column Storage"
+                      "Entity": "semantic_model_column_storage"
                     }
                   },
                   "Property": "percentage_of_semantic_model_size"
                 }
               },
-              "queryRef": "Semantic Model Column Storage.percentage_of_semantic_model_size",
+              "queryRef": "semantic_model_column_storage.percentage_of_semantic_model_size",
               "nativeQueryRef": "% of model",
               "displayName": "% of model"
             }

@@ -20,13 +20,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Semantic Model Optimization Findings"
+                      "Entity": "semantic_model_optimization_findings"
                     }
                   },
                   "Property": "rule_name"
                 }
               },
-              "queryRef": "Semantic Model Optimization Findings.rule_name",
+              "queryRef": "semantic_model_optimization_findings.rule_name",
               "nativeQueryRef": "Rule",
               "displayName": "Rule"
             }

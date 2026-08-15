@@ -1,5 +1,5 @@
-table 'Semantic Model Optimization Opportunities'
-	lineageTag: 6e0125e0-aad0-579b-b20b-33e534b55ef4
+table semantic_model_optimization_opportunities
+	lineageTag: 58d6a99c-738b-54d5-86b2-e222ba8a717a
 	sourceLineageTag: [semantic_model_optimization].[semantic_model_optimization_opportunities]
 
 	column opportunity_id
