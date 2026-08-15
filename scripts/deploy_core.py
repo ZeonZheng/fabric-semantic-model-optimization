@@ -166,8 +166,8 @@ def _initialize_tables(
     parameters = json.dumps(
         {
             "parameters": {
-                "initialize_only": {"type": "Bool", "value": "True"},
-                "_inlineInstallationEnabled": {"type": "Bool", "value": "True"},
+                "initialize_only": {"type": "bool", "value": True},
+                "_inlineInstallationEnabled": {"type": "bool", "value": True},
             }
         }
     )
