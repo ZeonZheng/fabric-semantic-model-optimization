@@ -157,7 +157,12 @@ def _refresh_sql_endpoint(workspace_id: str, endpoint_id: str) -> None:
     )
 
 
-def _initialize_tables(workspace_name: str, notebook_name: str) -> None:
+def _initialize_tables(
+    workspace_id: str,
+    workspace_name: str,
+    notebook_name: str,
+    notebook_id: str,
+) -> None:
     parameters = json.dumps(
         {
             "parameters": {
@@ -166,10 +171,47 @@ def _initialize_tables(workspace_name: str, notebook_name: str) -> None:
             }
         }
     )
-    run_fab(
-        f"job run /{workspace_name}.Workspace/{notebook_name} -i '{parameters}' "
-        "--timeout 3600 --polling_interval 20",
-        timeout=3600,
+    start_output = run_fab(
+        f"job start /{workspace_name}.Workspace/{notebook_name} -i '{parameters}'"
+    )
+    instance_match = re.search(
+        r"Job instance '([0-9a-fA-F-]{36})' created", start_output
+    )
+    if not instance_match:
+        raise RuntimeError(
+            f"Unable to resolve scanner initialization job ID:\n{start_output}"
+        )
+
+    instance_id = instance_match.group(1)
+    print(f"Scanner initialization job: {instance_id}")
+    deadline = time.monotonic() + 3600
+    last_status = None
+    while time.monotonic() < deadline:
+        try:
+            job = _api_json(
+                "api -A fabric -X get "
+                f"workspaces/{workspace_id}/items/{notebook_id}/jobs/instances/{instance_id}"
+            )
+        except RuntimeError as exc:
+            print(f"Job status check retry: {exc}")
+            time.sleep(20)
+            continue
+
+        status = job.get("status")
+        if status != last_status:
+            print(f"Scanner initialization status: {status}")
+            last_status = status
+        if status in {"Completed", "Deduped"}:
+            return
+        if status in {"Failed", "Cancelled"}:
+            raise RuntimeError(
+                "Scanner initialization failed: "
+                + json.dumps(job, default=str, ensure_ascii=False)
+            )
+        time.sleep(20)
+
+    raise TimeoutError(
+        f"Scanner initialization job {instance_id} did not finish within 3600 seconds."
     )
 
 
@@ -283,7 +325,12 @@ def deploy_solution(repo_root: str | Path) -> dict:
         deployed.append({"name": qualified_name, "id": target_id})
 
         if qualified_name == scanner_qualified and not initialized:
-            _initialize_tables(workspace_name, scanner_qualified)
+            _initialize_tables(
+                workspace_id,
+                workspace_name,
+                scanner_qualified,
+                target_id,
+            )
             _refresh_sql_endpoint(workspace_id, endpoint_id)
             initialized = True
 
