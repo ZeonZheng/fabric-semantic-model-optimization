@@ -203,8 +203,8 @@ def write_model() -> None:
     for name, from_table, from_column, to_table, to_column in relationships:
         relation_text.extend([
             f"relationship {name}",
-            f"\tfromColumn: {from_table}[{from_column}]",
-            f"\ttoColumn: {to_table}[{to_column}]",
+            f"\tfromColumn: {from_table}.{from_column}",
+            f"\ttoColumn: {to_table}.{to_column}",
             "",
         ])
     model = "\n".join([
