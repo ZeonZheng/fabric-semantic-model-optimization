@@ -41,6 +41,9 @@ def validate_manifest() -> None:
             continue
         if not (ROOT / "src" / item).is_dir():
             fail(f"Missing source directory for {item}")
+    deploy_core = (ROOT / "scripts/deploy_core.py").read_text(encoding="utf-8")
+    if "curated_contract_cell" not in deploy_core or "ensure_curated_tables()" not in deploy_core:
+        fail("The deployment initializer must create the V2 curated tables before importing Direct Lake.")
 
 
 def validate_scanner() -> None:

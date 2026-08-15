@@ -103,6 +103,17 @@ def _make_initialization_notebook(root: Path, output_schema: str) -> None:
         )
         if contract_cell is None:
             continue
+        curated_contract_cell = next(
+            (
+                cell
+                for cell in notebook.get("cells", [])
+                if "V2 AI-friendly current-state consumption contract"
+                in "".join(cell.get("source", []))
+            ),
+            None,
+        )
+        if curated_contract_cell is None:
+            raise ValueError("V2 curated consumption contract cell not found in scanner notebook.")
         notebook["cells"] = [
             {
                 "cell_type": "code",
@@ -117,6 +128,7 @@ def _make_initialization_notebook(root: Path, output_schema: str) -> None:
                 ],
             },
             contract_cell,
+            curated_contract_cell,
             {
                 "cell_type": "code",
                 "execution_count": None,
@@ -124,8 +136,10 @@ def _make_initialization_notebook(root: Path, output_schema: str) -> None:
                 "outputs": [],
                 "source": [
                     "ensure_tables()\n",
+                    "ensure_curated_tables()\n",
                     "print(json.dumps({\"status\": \"INITIALIZED\", "
-                    "\"schema\": output_schema, \"table_count\": len(TABLES)}, "
+                    "\"raw_table_count\": len(TABLES), "
+                    "\"curated_table_count\": len(CURATED_TABLES)}, "
                     "indent=2))\n",
                 ],
             },
