@@ -1,0 +1,135 @@
+table smopt_finding
+	lineageTag: 99df8720-71a8-4804-85f7-29f229285d13
+	sourceLineageTag: [smopt].[smopt_finding]
+
+	column finding_id
+		dataType: string
+		isKey
+		sourceColumn: finding_id
+		sourceLineageTag: finding_id
+		summarizeBy: none
+
+	column scan_id
+		dataType: string
+		sourceColumn: scan_id
+		sourceLineageTag: scan_id
+		summarizeBy: none
+
+	column workspace_name
+		dataType: string
+		sourceColumn: workspace_name
+		sourceLineageTag: workspace_name
+		summarizeBy: none
+
+	column model_id
+		dataType: string
+		sourceColumn: model_id
+		sourceLineageTag: model_id
+		summarizeBy: none
+
+	column model_name
+		dataType: string
+		sourceColumn: model_name
+		sourceLineageTag: model_name
+		summarizeBy: none
+
+	column source
+		dataType: string
+		sourceColumn: source
+		sourceLineageTag: source
+		summarizeBy: none
+
+	column category
+		dataType: string
+		sourceColumn: category
+		sourceLineageTag: category
+		summarizeBy: none
+
+	column rule_name
+		dataType: string
+		sourceColumn: rule_name
+		sourceLineageTag: rule_name
+		summarizeBy: none
+
+	column severity
+		dataType: string
+		sourceColumn: severity
+		sourceLineageTag: severity
+		summarizeBy: none
+
+	column confidence
+		dataType: string
+		sourceColumn: confidence
+		sourceLineageTag: confidence
+		summarizeBy: none
+
+	column impact_area
+		dataType: string
+		sourceColumn: impact_area
+		sourceLineageTag: impact_area
+		summarizeBy: none
+
+	column table_name
+		dataType: string
+		sourceColumn: table_name
+		sourceLineageTag: table_name
+		summarizeBy: none
+
+	column object_name
+		dataType: string
+		sourceColumn: object_name
+		sourceLineageTag: object_name
+		summarizeBy: none
+
+	column finding_text
+		dataType: string
+		sourceColumn: finding_text
+		sourceLineageTag: finding_text
+		summarizeBy: none
+
+	column recommended_action
+		dataType: string
+		sourceColumn: recommended_action
+		sourceLineageTag: recommended_action
+		summarizeBy: none
+
+	column estimated_saving_bytes_low
+		dataType: int64
+		formatString: #,0
+		sourceColumn: estimated_saving_bytes_low
+		sourceLineageTag: estimated_saving_bytes_low
+		summarizeBy: sum
+
+	column estimated_saving_bytes_high
+		dataType: int64
+		formatString: #,0
+		sourceColumn: estimated_saving_bytes_high
+		sourceLineageTag: estimated_saving_bytes_high
+		summarizeBy: sum
+
+	column change_risk
+		dataType: string
+		sourceColumn: change_risk
+		sourceLineageTag: change_risk
+		summarizeBy: none
+
+	column validation_required
+		dataType: boolean
+		sourceColumn: validation_required
+		sourceLineageTag: validation_required
+		summarizeBy: none
+
+	column detected_at
+		dataType: dateTime
+		formatString: General Date
+		sourceColumn: detected_at
+		sourceLineageTag: detected_at
+		summarizeBy: none
+
+	partition smopt_finding = entity
+		mode: directLake
+		source
+			entityName: smopt_finding
+			schemaName: smopt
+			expressionSource: DatabaseQuery
+

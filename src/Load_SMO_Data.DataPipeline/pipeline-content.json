@@ -1,0 +1,53 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "Run semantic model optimization scanner",
+        "type": "TridentNotebook",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebookId": "22222222-2222-2222-2222-222222222222",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "parameters": {
+            "workspace_ids": {
+              "value": {
+                "value": "@pipeline().parameters.workspace_ids",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "model_ids_optional": {
+              "value": {
+                "value": "@pipeline().parameters.model_ids_optional",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "_inlineInstallationEnabled": {
+              "value": true,
+              "type": "bool"
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "workspace_ids": {
+        "type": "string",
+        "defaultValue": ""
+      },
+      "model_ids_optional": {
+        "type": "string",
+        "defaultValue": ""
+      }
+    }
+  }
+}
+

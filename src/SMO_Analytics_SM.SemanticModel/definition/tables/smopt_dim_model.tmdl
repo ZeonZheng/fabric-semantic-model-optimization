@@ -1,0 +1,49 @@
+table smopt_dim_model
+	lineageTag: 9ad1052f-568a-4b7d-991f-f671204198d6
+	sourceLineageTag: [smopt].[smopt_dim_model]
+
+	column model_id
+		dataType: string
+		isKey
+		sourceColumn: model_id
+		sourceLineageTag: model_id
+		summarizeBy: none
+
+	column workspace_name
+		dataType: string
+		sourceColumn: workspace_name
+		sourceLineageTag: workspace_name
+		summarizeBy: none
+
+	column model_name
+		dataType: string
+		sourceColumn: model_name
+		sourceLineageTag: model_name
+		summarizeBy: none
+
+	column storage_mode
+		dataType: string
+		sourceColumn: storage_mode
+		sourceLineageTag: storage_mode
+		summarizeBy: none
+
+	column last_scan_status
+		dataType: string
+		sourceColumn: last_scan_status
+		sourceLineageTag: last_scan_status
+		summarizeBy: none
+
+	column last_scanned_at
+		dataType: dateTime
+		formatString: General Date
+		sourceColumn: last_scanned_at
+		sourceLineageTag: last_scanned_at
+		summarizeBy: none
+
+	partition smopt_dim_model = entity
+		mode: directLake
+		source
+			entityName: smopt_dim_model
+			schemaName: smopt
+			expressionSource: DatabaseQuery
+

@@ -1,0 +1,139 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "findings_table",
+  "position": {
+    "x": 40,
+    "y": 220,
+    "z": 4000,
+    "height": 450,
+    "width": 1200,
+    "tabOrder": 3000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "smopt_finding"
+                    }
+                  },
+                  "Property": "workspace_name"
+                }
+              },
+              "queryRef": "smopt_finding.workspace_name",
+              "nativeQueryRef": "Workspace",
+              "displayName": "Workspace"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "smopt_finding"
+                    }
+                  },
+                  "Property": "model_name"
+                }
+              },
+              "queryRef": "smopt_finding.model_name",
+              "nativeQueryRef": "Semantic model",
+              "displayName": "Semantic model"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "smopt_finding"
+                    }
+                  },
+                  "Property": "severity"
+                }
+              },
+              "queryRef": "smopt_finding.severity",
+              "nativeQueryRef": "Severity",
+              "displayName": "Severity"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "smopt_finding"
+                    }
+                  },
+                  "Property": "rule_name"
+                }
+              },
+              "queryRef": "smopt_finding.rule_name",
+              "nativeQueryRef": "Rule",
+              "displayName": "Rule"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "smopt_finding"
+                    }
+                  },
+                  "Property": "recommended_action"
+                }
+              },
+              "queryRef": "smopt_finding.recommended_action",
+              "nativeQueryRef": "Recommended action",
+              "displayName": "Recommended action"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "smopt_finding"
+                  }
+                },
+                "Property": "severity"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Detailed optimization findings'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}
+

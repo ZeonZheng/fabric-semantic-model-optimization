@@ -1,0 +1,31 @@
+solution:
+  name: Semantic Model Optimization Analytics
+  version: 0.1.0
+
+source:
+  repository_owner: ZeonZheng
+  repository_name: fabric-semantic-model-optimization
+  branch: main
+  solution_root: ""
+
+items:
+  lakehouse: SMO_Analytics_Lakehouse.Lakehouse
+  scanner_notebook: SMO_Optimization_Scanner.Notebook
+  ingestion_pipeline: Load_SMO_Data.DataPipeline
+  semantic_model: SMO_Analytics_SM.SemanticModel
+  report: SMO_Analytics_Report.Report
+
+lakehouse:
+  enable_schemas: true
+  output_schema: smopt
+
+folders:
+  - name: Data Collection
+    items:
+      - SMO_Optimization_Scanner.Notebook
+      - Load_SMO_Data.DataPipeline
+  - name: Analytics
+    items:
+      - SMO_Analytics_SM.SemanticModel
+      - SMO_Analytics_Report.Report
+

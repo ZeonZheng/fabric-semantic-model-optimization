@@ -1,0 +1,13 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "SMO_Optimization_Scanner",
+    "description": "Read-only semantic-model metadata and performance scanner."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "22222222-2222-2222-2222-222222222222"
+  }
+}
+

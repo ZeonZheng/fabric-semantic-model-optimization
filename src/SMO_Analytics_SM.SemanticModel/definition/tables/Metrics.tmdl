@@ -1,0 +1,51 @@
+table Metrics
+	lineageTag: 0cf621e7-94ae-437e-827a-e2c35635a284
+
+	measure 'Total scans' = COUNTROWS(smopt_scan_run)
+		formatString: #,0
+		displayFolder: Overview
+		lineageTag: 2ae0bf33-0d76-497e-b10a-b27951f72623
+
+	measure 'Models scanned' = DISTINCTCOUNT(smopt_model_scan[model_id])
+		formatString: #,0
+		displayFolder: Overview
+		lineageTag: d2241842-d416-4a5e-8741-c85db51138b2
+
+	measure 'Total findings' = COUNTROWS(smopt_finding)
+		formatString: #,0
+		displayFolder: Findings
+		lineageTag: b3651cc9-5ded-4178-a87d-1065eb1d4b9a
+
+	measure 'High findings' =
+			CALCULATE(
+				[Total findings],
+				smopt_finding[severity] = "HIGH"
+			)
+		formatString: #,0
+		displayFolder: Findings
+		lineageTag: efd2d422-8f43-46c4-a7a4-708005c624ba
+
+	measure 'Failed models' =
+			CALCULATE(
+				DISTINCTCOUNT(smopt_model_scan[model_id]),
+				smopt_model_scan[overall_status] = "FAILED"
+			)
+		formatString: #,0
+		displayFolder: Operations
+		lineageTag: d716bff6-6dcc-40b5-bf91-f54b85fa9a43
+
+	measure 'Estimated saving MB low' = DIVIDE(SUM(smopt_finding[estimated_saving_bytes_low]), 1048576)
+		formatString: #,0.00
+		displayFolder: Benefits
+		lineageTag: bf44c9c9-3dfa-49ee-9cb0-6748fcc9428f
+
+	measure 'Estimated saving MB high' = DIVIDE(SUM(smopt_finding[estimated_saving_bytes_high]), 1048576)
+		formatString: #,0.00
+		displayFolder: Benefits
+		lineageTag: 25b5a83d-1833-4869-9594-7233113a21f6
+
+	measure 'Latest scan at' = MAX(smopt_scan_run[completed_at])
+		formatString: General Date
+		displayFolder: Operations
+		lineageTag: db018480-fe31-4bf5-8a94-7ece04955750
+

@@ -1,0 +1,71 @@
+table smopt_scan_run
+	lineageTag: b3d35ba3-5805-4b8a-b9af-a8d5ddfa498c
+	sourceLineageTag: [smopt].[smopt_scan_run]
+
+	column scan_id
+		dataType: string
+		isKey
+		sourceColumn: scan_id
+		sourceLineageTag: scan_id
+		summarizeBy: none
+
+	column status
+		dataType: string
+		sourceColumn: status
+		sourceLineageTag: status
+		summarizeBy: none
+
+	column scanner_version
+		dataType: string
+		sourceColumn: scanner_version
+		sourceLineageTag: scanner_version
+		summarizeBy: none
+
+	column analysis_profile
+		dataType: string
+		sourceColumn: analysis_profile
+		sourceLineageTag: analysis_profile
+		summarizeBy: none
+
+	column started_at
+		dataType: dateTime
+		formatString: General Date
+		sourceColumn: started_at
+		sourceLineageTag: started_at
+		summarizeBy: none
+
+	column completed_at
+		dataType: dateTime
+		formatString: General Date
+		sourceColumn: completed_at
+		sourceLineageTag: completed_at
+		summarizeBy: none
+
+	column target_count
+		dataType: int64
+		formatString: 0
+		sourceColumn: target_count
+		sourceLineageTag: target_count
+		summarizeBy: sum
+
+	column success_count
+		dataType: int64
+		formatString: 0
+		sourceColumn: success_count
+		sourceLineageTag: success_count
+		summarizeBy: sum
+
+	column failed_count
+		dataType: int64
+		formatString: 0
+		sourceColumn: failed_count
+		sourceLineageTag: failed_count
+		summarizeBy: sum
+
+	partition smopt_scan_run = entity
+		mode: directLake
+		source
+			entityName: smopt_scan_run
+			schemaName: smopt
+			expressionSource: DatabaseQuery
+
