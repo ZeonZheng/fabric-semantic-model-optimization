@@ -1,0 +1,171 @@
+table 'Semantic Model Optimization Overview'
+	lineageTag: 0668e827-f3ba-5e18-8bd0-14a8422ec31a
+	sourceLineageTag: [semantic_model_optimization].[semantic_model_optimization_overview]
+
+	column analysis_id
+		dataType: string
+		sourceColumn: analysis_id
+		sourceLineageTag: analysis_id
+		summarizeBy: none
+
+	column workspace_id
+		dataType: string
+		sourceColumn: workspace_id
+		sourceLineageTag: workspace_id
+		summarizeBy: none
+
+	column workspace_name
+		dataType: string
+		sourceColumn: workspace_name
+		sourceLineageTag: workspace_name
+		summarizeBy: none
+
+	column semantic_model_id
+		dataType: string
+		isKey
+		sourceColumn: semantic_model_id
+		sourceLineageTag: semantic_model_id
+		summarizeBy: none
+
+	column semantic_model_name
+		dataType: string
+		sourceColumn: semantic_model_name
+		sourceLineageTag: semantic_model_name
+		summarizeBy: none
+
+	column storage_mode
+		dataType: string
+		sourceColumn: storage_mode
+		sourceLineageTag: storage_mode
+		summarizeBy: none
+
+	column analysis_status
+		dataType: string
+		sourceColumn: analysis_status
+		sourceLineageTag: analysis_status
+		summarizeBy: none
+
+	column analysis_completed_at
+		dataType: dateTime
+		formatString: General Date
+		sourceColumn: analysis_completed_at
+		sourceLineageTag: analysis_completed_at
+		summarizeBy: none
+
+	column scanner_version
+		dataType: string
+		sourceColumn: scanner_version
+		sourceLineageTag: scanner_version
+		summarizeBy: none
+
+	column semantic_model_size_bytes
+		dataType: int64
+		formatString: #,0
+		sourceColumn: semantic_model_size_bytes
+		sourceLineageTag: semantic_model_size_bytes
+		summarizeBy: sum
+
+	column optimization_opportunity_count
+		dataType: int64
+		formatString: #,0
+		sourceColumn: optimization_opportunity_count
+		sourceLineageTag: optimization_opportunity_count
+		summarizeBy: sum
+
+	column optimization_recommendation_count
+		dataType: int64
+		formatString: #,0
+		sourceColumn: optimization_recommendation_count
+		sourceLineageTag: optimization_recommendation_count
+		summarizeBy: sum
+
+	column optimization_finding_count
+		dataType: int64
+		formatString: #,0
+		sourceColumn: optimization_finding_count
+		sourceLineageTag: optimization_finding_count
+		summarizeBy: sum
+
+	column high_severity_finding_count
+		dataType: int64
+		formatString: #,0
+		sourceColumn: high_severity_finding_count
+		sourceLineageTag: high_severity_finding_count
+		summarizeBy: sum
+
+	column best_practice_analysis_status
+		dataType: string
+		sourceColumn: best_practice_analysis_status
+		sourceLineageTag: best_practice_analysis_status
+		summarizeBy: none
+
+	column storage_analysis_status
+		dataType: string
+		sourceColumn: storage_analysis_status
+		sourceLineageTag: storage_analysis_status
+		summarizeBy: none
+
+	column refresh_history_status
+		dataType: string
+		sourceColumn: refresh_history_status
+		sourceLineageTag: refresh_history_status
+		summarizeBy: none
+
+	column refresh_history_record_count
+		dataType: int64
+		formatString: #,0
+		sourceColumn: refresh_history_record_count
+		sourceLineageTag: refresh_history_record_count
+		summarizeBy: sum
+
+	column object_usage_analysis_status
+		dataType: string
+		sourceColumn: object_usage_analysis_status
+		sourceLineageTag: object_usage_analysis_status
+		summarizeBy: none
+
+	column object_usage_observation_count
+		dataType: int64
+		formatString: #,0
+		sourceColumn: object_usage_observation_count
+		sourceLineageTag: object_usage_observation_count
+		summarizeBy: sum
+
+	column direct_lake_analysis_status
+		dataType: string
+		sourceColumn: direct_lake_analysis_status
+		sourceLineageTag: direct_lake_analysis_status
+		summarizeBy: none
+
+	column direct_lake_observation_count
+		dataType: int64
+		formatString: #,0
+		sourceColumn: direct_lake_observation_count
+		sourceLineageTag: direct_lake_observation_count
+		summarizeBy: sum
+
+	column item_access_snapshot_status
+		dataType: string
+		sourceColumn: item_access_snapshot_status
+		sourceLineageTag: item_access_snapshot_status
+		summarizeBy: none
+
+	column item_access_record_count
+		dataType: int64
+		formatString: #,0
+		sourceColumn: item_access_record_count
+		sourceLineageTag: item_access_record_count
+		summarizeBy: sum
+
+	column data_availability_explanation
+		dataType: string
+		sourceColumn: data_availability_explanation
+		sourceLineageTag: data_availability_explanation
+		summarizeBy: none
+
+	partition 'semantic_model_optimization_overview' = entity
+		mode: directLake
+		source
+			entityName: semantic_model_optimization_overview
+			schemaName: semantic_model_optimization
+			expressionSource: DatabaseQuery

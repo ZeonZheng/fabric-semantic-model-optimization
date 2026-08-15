@@ -1,0 +1,151 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "storage_table",
+  "position": {
+    "x": 30,
+    "y": 280,
+    "z": 3000,
+    "height": 405,
+    "width": 1200,
+    "tabOrder": 3000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Column Storage"
+                    }
+                  },
+                  "Property": "semantic_model_name"
+                }
+              },
+              "queryRef": "Semantic Model Column Storage.semantic_model_name",
+              "nativeQueryRef": "Semantic model",
+              "displayName": "Semantic model"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Column Storage"
+                    }
+                  },
+                  "Property": "table_name"
+                }
+              },
+              "queryRef": "Semantic Model Column Storage.table_name",
+              "nativeQueryRef": "Table",
+              "displayName": "Table"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Column Storage"
+                    }
+                  },
+                  "Property": "column_name"
+                }
+              },
+              "queryRef": "Semantic Model Column Storage.column_name",
+              "nativeQueryRef": "Column",
+              "displayName": "Column"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Column Storage"
+                    }
+                  },
+                  "Property": "data_type"
+                }
+              },
+              "queryRef": "Semantic Model Column Storage.data_type",
+              "nativeQueryRef": "Data type",
+              "displayName": "Data type"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Column Storage"
+                    }
+                  },
+                  "Property": "cardinality"
+                }
+              },
+              "queryRef": "Semantic Model Column Storage.cardinality",
+              "nativeQueryRef": "Cardinality",
+              "displayName": "Cardinality"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Column Storage"
+                    }
+                  },
+                  "Property": "total_size_bytes"
+                }
+              },
+              "queryRef": "Semantic Model Column Storage.total_size_bytes",
+              "nativeQueryRef": "Total bytes",
+              "displayName": "Total bytes"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Column Storage"
+                    }
+                  },
+                  "Property": "percentage_of_semantic_model_size"
+                }
+              },
+              "queryRef": "Semantic Model Column Storage.percentage_of_semantic_model_size",
+              "nativeQueryRef": "% of model",
+              "displayName": "% of model"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Complete column storage evidence'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

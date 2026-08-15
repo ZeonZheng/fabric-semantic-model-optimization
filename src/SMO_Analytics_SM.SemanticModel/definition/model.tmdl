@@ -12,11 +12,37 @@ annotation __PBI_TimeIntelligenceEnabled = 0
 annotation PBI_QueryOrder = ["DatabaseQuery"]
 annotation PBI_ProTooling = ["WebModelingEdit","RemoteModeling"]
 
-ref table smopt_scan_run
-ref table smopt_model_scan
-ref table smopt_finding
-ref table smopt_dim_model
+ref table 'Semantic Model Optimization Overview'
+ref table 'Semantic Model Optimization Opportunities'
+ref table 'Semantic Model Optimization Recommendations'
+ref table 'Semantic Model Optimization Findings'
+ref table 'Semantic Model Column Storage'
+ref table 'Opportunity Recommendation Links'
+ref table 'Opportunity Finding Links'
 ref table Metrics
 
-ref cultureInfo en-US
+relationship overview_opportunities
+	fromColumn: 'Semantic Model Optimization Opportunities'[semantic_model_id]
+	toColumn: 'Semantic Model Optimization Overview'[semantic_model_id]
 
+relationship overview_recommendations
+	fromColumn: 'Semantic Model Optimization Recommendations'[semantic_model_id]
+	toColumn: 'Semantic Model Optimization Overview'[semantic_model_id]
+
+relationship overview_findings
+	fromColumn: 'Semantic Model Optimization Findings'[semantic_model_id]
+	toColumn: 'Semantic Model Optimization Overview'[semantic_model_id]
+
+relationship overview_column_storage
+	fromColumn: 'Semantic Model Column Storage'[semantic_model_id]
+	toColumn: 'Semantic Model Optimization Overview'[semantic_model_id]
+
+relationship opportunity_recommendation_bridge
+	fromColumn: 'Opportunity Recommendation Links'[opportunity_id]
+	toColumn: 'Semantic Model Optimization Opportunities'[opportunity_id]
+
+relationship opportunity_finding_bridge
+	fromColumn: 'Opportunity Finding Links'[opportunity_id]
+	toColumn: 'Semantic Model Optimization Opportunities'[opportunity_id]
+
+ref cultureInfo en-US

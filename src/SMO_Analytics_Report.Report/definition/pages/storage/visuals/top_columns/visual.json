@@ -1,19 +1,38 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
-  "name": "high_findings",
+  "name": "top_columns",
   "position": {
-    "x": 880,
-    "y": 40,
-    "z": 3000,
-    "height": 140,
-    "width": 360,
+    "x": 360,
+    "y": 30,
+    "z": 2000,
+    "height": 220,
+    "width": 870,
     "tabOrder": 2000
   },
   "visual": {
-    "visualType": "cardVisual",
+    "visualType": "clusteredBarChart",
     "query": {
       "queryState": {
-        "Data": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Column Storage"
+                    }
+                  },
+                  "Property": "column_name"
+                }
+              },
+              "queryRef": "Semantic Model Column Storage.column_name",
+              "nativeQueryRef": "Column",
+              "displayName": "Column"
+            }
+          ]
+        },
+        "Y": {
           "projections": [
             {
               "field": {
@@ -23,12 +42,12 @@
                       "Entity": "Metrics"
                     }
                   },
-                  "Property": "High findings"
+                  "Property": "Total column storage MB"
                 }
               },
-              "queryRef": "Metrics.High findings",
-              "nativeQueryRef": "High findings",
-              "displayName": "High findings"
+              "queryRef": "Metrics.Total column storage MB",
+              "nativeQueryRef": "Storage MB",
+              "displayName": "Storage MB"
             }
           ]
         }
@@ -48,7 +67,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'High-severity findings'"
+                  "Value": "'Largest columns by storage'"
                 }
               }
             }
@@ -59,4 +78,3 @@
     "drillFilterOtherVisuals": true
   }
 }
-

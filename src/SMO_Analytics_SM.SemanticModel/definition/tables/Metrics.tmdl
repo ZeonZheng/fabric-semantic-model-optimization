@@ -1,51 +1,49 @@
 table Metrics
 	lineageTag: 0cf621e7-94ae-437e-827a-e2c35635a284
 
-	measure 'Total scans' = COUNTROWS(smopt_scan_run)
+	measure 'Models scanned' = COALESCE(DISTINCTCOUNT('Semantic Model Optimization Overview'[semantic_model_id]), 0)
 		formatString: #,0
 		displayFolder: Overview
-		lineageTag: 2ae0bf33-0d76-497e-b10a-b27951f72623
 
-	measure 'Models scanned' = DISTINCTCOUNT(smopt_model_scan[model_id])
+	measure 'Total opportunities' = COALESCE(COUNTROWS('Semantic Model Optimization Opportunities'), 0)
 		formatString: #,0
-		displayFolder: Overview
-		lineageTag: d2241842-d416-4a5e-8741-c85db51138b2
+		displayFolder: Opportunities
 
-	measure 'Total findings' = COUNTROWS(smopt_finding)
+	measure 'Total recommendations' = COALESCE(COUNTROWS('Semantic Model Optimization Recommendations'), 0)
+		formatString: #,0
+		displayFolder: Recommendations
+
+	measure 'Total findings' = COALESCE(COUNTROWS('Semantic Model Optimization Findings'), 0)
 		formatString: #,0
 		displayFolder: Findings
-		lineageTag: b3651cc9-5ded-4178-a87d-1065eb1d4b9a
 
 	measure 'High findings' =
-			CALCULATE(
-				[Total findings],
-				smopt_finding[severity] = "HIGH"
+			COALESCE(
+				CALCULATE(
+					[Total findings],
+					'Semantic Model Optimization Findings'[severity] IN { "HIGH", "CRITICAL", "ERROR" }
+				),
+				0
 			)
 		formatString: #,0
 		displayFolder: Findings
-		lineageTag: efd2d422-8f43-46c4-a7a4-708005c624ba
 
-	measure 'Failed models' =
-			CALCULATE(
-				DISTINCTCOUNT(smopt_model_scan[model_id]),
-				smopt_model_scan[overall_status] = "FAILED"
-			)
+	measure 'Columns analyzed' = COALESCE(COUNTROWS('Semantic Model Column Storage'), 0)
 		formatString: #,0
-		displayFolder: Operations
-		lineageTag: d716bff6-6dcc-40b5-bf91-f54b85fa9a43
+		displayFolder: Storage
 
-	measure 'Estimated saving MB low' = DIVIDE(SUM(smopt_finding[estimated_saving_bytes_low]), 1048576)
+	measure 'Total column storage MB' = COALESCE(DIVIDE(SUM('Semantic Model Column Storage'[total_size_bytes]), 1048576), 0)
+		formatString: #,0.00
+		displayFolder: Storage
+
+	measure 'Estimated saving MB low' = COALESCE(DIVIDE(SUM('Semantic Model Optimization Findings'[estimated_saving_bytes_low]), 1048576), 0)
 		formatString: #,0.00
 		displayFolder: Benefits
-		lineageTag: bf44c9c9-3dfa-49ee-9cb0-6748fcc9428f
 
-	measure 'Estimated saving MB high' = DIVIDE(SUM(smopt_finding[estimated_saving_bytes_high]), 1048576)
+	measure 'Estimated saving MB high' = COALESCE(DIVIDE(SUM('Semantic Model Optimization Findings'[estimated_saving_bytes_high]), 1048576), 0)
 		formatString: #,0.00
 		displayFolder: Benefits
-		lineageTag: 25b5a83d-1833-4869-9594-7233113a21f6
 
-	measure 'Latest scan at' = MAX(smopt_scan_run[completed_at])
+	measure 'Latest analysis at' = MAX('Semantic Model Optimization Overview'[analysis_completed_at])
 		formatString: General Date
-		displayFolder: Operations
-		lineageTag: db018480-fe31-4bf5-8a94-7ece04955750
-
+		displayFolder: Overview

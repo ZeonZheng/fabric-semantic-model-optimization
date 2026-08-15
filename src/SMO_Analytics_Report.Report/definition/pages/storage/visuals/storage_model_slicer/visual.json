@@ -1,34 +1,34 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
-  "name": "models_scanned",
+  "name": "storage_model_slicer",
   "position": {
-    "x": 460,
-    "y": 40,
-    "z": 2000,
-    "height": 140,
-    "width": 360,
+    "x": 30,
+    "y": 30,
+    "z": 1000,
+    "height": 120,
+    "width": 300,
     "tabOrder": 1000
   },
   "visual": {
-    "visualType": "cardVisual",
+    "visualType": "slicer",
     "query": {
       "queryState": {
-        "Data": {
+        "Values": {
           "projections": [
             {
               "field": {
-                "Measure": {
+                "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Metrics"
+                      "Entity": "Semantic Model Column Storage"
                     }
                   },
-                  "Property": "Models scanned"
+                  "Property": "semantic_model_name"
                 }
               },
-              "queryRef": "Metrics.Models scanned",
-              "nativeQueryRef": "Models scanned",
-              "displayName": "Models scanned"
+              "queryRef": "Semantic Model Column Storage.semantic_model_name",
+              "nativeQueryRef": "Semantic model",
+              "displayName": "Semantic model"
             }
           ]
         }
@@ -48,7 +48,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Models scanned'"
+                  "Value": "'Semantic model'"
                 }
               }
             }
@@ -59,4 +59,3 @@
     "drillFilterOtherVisuals": true
   }
 }
-

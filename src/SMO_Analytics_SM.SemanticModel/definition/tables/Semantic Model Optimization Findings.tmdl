@@ -1,6 +1,6 @@
-table smopt_finding
-	lineageTag: 99df8720-71a8-4804-85f7-29f229285d13
-	sourceLineageTag: [smopt].[smopt_finding]
+table 'Semantic Model Optimization Findings'
+	lineageTag: d31e1daa-5025-5b88-aca1-ac8ac3d65ecc
+	sourceLineageTag: [semantic_model_optimization].[semantic_model_optimization_findings]
 
 	column finding_id
 		dataType: string
@@ -9,10 +9,10 @@ table smopt_finding
 		sourceLineageTag: finding_id
 		summarizeBy: none
 
-	column scan_id
+	column analysis_id
 		dataType: string
-		sourceColumn: scan_id
-		sourceLineageTag: scan_id
+		sourceColumn: analysis_id
+		sourceLineageTag: analysis_id
 		summarizeBy: none
 
 	column workspace_name
@@ -21,28 +21,28 @@ table smopt_finding
 		sourceLineageTag: workspace_name
 		summarizeBy: none
 
-	column model_id
+	column semantic_model_id
 		dataType: string
-		sourceColumn: model_id
-		sourceLineageTag: model_id
+		sourceColumn: semantic_model_id
+		sourceLineageTag: semantic_model_id
 		summarizeBy: none
 
-	column model_name
+	column semantic_model_name
 		dataType: string
-		sourceColumn: model_name
-		sourceLineageTag: model_name
+		sourceColumn: semantic_model_name
+		sourceLineageTag: semantic_model_name
 		summarizeBy: none
 
-	column source
+	column finding_source
 		dataType: string
-		sourceColumn: source
-		sourceLineageTag: source
+		sourceColumn: finding_source
+		sourceLineageTag: finding_source
 		summarizeBy: none
 
-	column category
+	column optimization_domain
 		dataType: string
-		sourceColumn: category
-		sourceLineageTag: category
+		sourceColumn: optimization_domain
+		sourceLineageTag: optimization_domain
 		summarizeBy: none
 
 	column rule_name
@@ -69,28 +69,40 @@ table smopt_finding
 		sourceLineageTag: impact_area
 		summarizeBy: none
 
-	column table_name
+	column affected_object_type
 		dataType: string
-		sourceColumn: table_name
-		sourceLineageTag: table_name
+		sourceColumn: affected_object_type
+		sourceLineageTag: affected_object_type
 		summarizeBy: none
 
-	column object_name
+	column affected_table_name
 		dataType: string
-		sourceColumn: object_name
-		sourceLineageTag: object_name
+		sourceColumn: affected_table_name
+		sourceLineageTag: affected_table_name
 		summarizeBy: none
 
-	column finding_text
+	column affected_object_name
 		dataType: string
-		sourceColumn: finding_text
-		sourceLineageTag: finding_text
+		sourceColumn: affected_object_name
+		sourceLineageTag: affected_object_name
+		summarizeBy: none
+
+	column finding_description
+		dataType: string
+		sourceColumn: finding_description
+		sourceLineageTag: finding_description
 		summarizeBy: none
 
 	column recommended_action
 		dataType: string
 		sourceColumn: recommended_action
 		sourceLineageTag: recommended_action
+		summarizeBy: none
+
+	column technical_evidence
+		dataType: string
+		sourceColumn: technical_evidence
+		sourceLineageTag: technical_evidence
 		summarizeBy: none
 
 	column estimated_saving_bytes_low
@@ -126,10 +138,9 @@ table smopt_finding
 		sourceLineageTag: detected_at
 		summarizeBy: none
 
-	partition smopt_finding = entity
+	partition 'semantic_model_optimization_findings' = entity
 		mode: directLake
 		source
-			entityName: smopt_finding
-			schemaName: smopt
+			entityName: semantic_model_optimization_findings
+			schemaName: semantic_model_optimization
 			expressionSource: DatabaseQuery
-

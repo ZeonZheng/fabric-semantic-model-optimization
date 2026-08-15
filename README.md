@@ -14,11 +14,11 @@ After deployment, normal operations run only the `Load_SMO_Data` pipeline.
 
 | Item | Fabric name | Purpose |
 | --- | --- | --- |
-| Lakehouse | `SMO_Analytics_Lakehouse` | Governed Delta output tables in the `smopt` schema |
+| Lakehouse | `SMO_Analytics_Lakehouse` | Technical history plus seven AI-friendly business tables across meaningful schemas |
 | Notebook | `SMO_Optimization_Scanner` | Read-only metadata, BPA, VertiPaq, refresh, and Direct Lake checks |
 | Pipeline | `Load_SMO_Data` | Member-facing entry point with two simple parameters |
-| Semantic model | `SMO_Analytics_SM` | Direct Lake analytical model |
-| Report | `SMO_Analytics_Report` | Scan status, findings, severity, and actions |
+| Semantic model | `SMO_Analytics_SM` | Direct Lake model over the seven-table current-state contract |
+| Report | `SMO_Analytics_Report` | Five pages and 15 visuals for overview, opportunities, recommendations, findings, and storage |
 
 ## Deploy
 
@@ -67,4 +67,4 @@ python tests/validate_repo.py
 
 ## Current stage
 
-Version `0.1.6` is the minimum end-to-end deployment baseline. It is designed for live Fabric validation and iterative correction of item definitions, Direct Lake binding, and report visuals.
+Version `0.2.0` restores the approved V2 business contract: five meaningful schemas, seven AI-friendly Direct Lake tables, per-model latest-state replacement, explicit empty-data explanations, and the five-page/15-visual report.

@@ -1,0 +1,151 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "opportunities_table",
+  "position": {
+    "x": 30,
+    "y": 175,
+    "z": 3000,
+    "height": 510,
+    "width": 1200,
+    "tabOrder": 3000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Opportunities"
+                    }
+                  },
+                  "Property": "semantic_model_name"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Opportunities.semantic_model_name",
+              "nativeQueryRef": "Semantic model",
+              "displayName": "Semantic model"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Opportunities"
+                    }
+                  },
+                  "Property": "opportunity_title"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Opportunities.opportunity_title",
+              "nativeQueryRef": "Opportunity",
+              "displayName": "Opportunity"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Opportunities"
+                    }
+                  },
+                  "Property": "highest_severity"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Opportunities.highest_severity",
+              "nativeQueryRef": "Severity",
+              "displayName": "Severity"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Opportunities"
+                    }
+                  },
+                  "Property": "optimization_domain"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Opportunities.optimization_domain",
+              "nativeQueryRef": "Domain",
+              "displayName": "Domain"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Opportunities"
+                    }
+                  },
+                  "Property": "finding_count"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Opportunities.finding_count",
+              "nativeQueryRef": "Findings",
+              "displayName": "Findings"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Opportunities"
+                    }
+                  },
+                  "Property": "recommendation_count"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Opportunities.recommendation_count",
+              "nativeQueryRef": "Recommendations",
+              "displayName": "Recommendations"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Opportunities"
+                    }
+                  },
+                  "Property": "opportunity_summary"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Opportunities.opportunity_summary",
+              "nativeQueryRef": "Summary",
+              "displayName": "Summary"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Prioritized optimization opportunities'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

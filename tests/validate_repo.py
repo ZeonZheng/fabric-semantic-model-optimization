@@ -53,6 +53,11 @@ def validate_scanner() -> None:
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
+        'SCANNER_VERSION = "2.0.0"',
+        "def ensure_curated_tables()",
+        "def curate_latest_model_analysis(result)",
+        '"semantic_model_optimization_overview"',
+        '"semantic_model_column_storage"',
     ):
         if required not in source:
             fail(f"Scanner is missing required text: {required}")
@@ -66,8 +71,13 @@ def validate_model() -> None:
     model = (model_root / "model.tmdl").read_text(encoding="utf-8")
     refs = re.findall(r"^ref table (.+)$", model, flags=re.MULTILINE)
     for table in refs:
+        table = table.strip("'")
         if not (model_root / "tables" / f"{table}.tmdl").exists():
             fail(f"Missing TMDL table file for {table}")
+    if len(refs) != 8:
+        fail(f"The V2 Direct Lake model must expose 7 business tables plus Metrics, found {len(refs)}.")
+    if "smopt_" in model:
+        fail("The V2 Direct Lake model must not expose deprecated smopt_* technical tables.")
     expressions = (model_root / "expressions.tmdl").read_text(encoding="utf-8")
     if "Sql.Database" not in expressions:
         fail("Direct Lake connection expression is missing.")
@@ -80,6 +90,9 @@ def validate_report() -> None:
     if "44444444-4444-4444-4444-444444444444" not in connection:
         fail("Report semantic-model placeholder is missing.")
     pages = json.loads((report_root / "definition/pages/pages.json").read_text())
+    if pages["pageOrder"] != ["overview", "opportunities", "recommendations", "findings", "storage"]:
+        fail("The report must retain the approved five-page information architecture.")
+    visual_count = 0
     for page in pages["pageOrder"]:
         page_root = report_root / "definition/pages" / page
         if not (page_root / "page.json").exists():
@@ -87,6 +100,9 @@ def validate_report() -> None:
         visuals = list((page_root / "visuals").glob("*/visual.json"))
         if not visuals:
             fail(f"Report page {page} has no visuals.")
+        visual_count += len(visuals)
+    if visual_count != 15:
+        fail(f"The approved report contract requires 15 visuals, found {visual_count}.")
 
 
 def validate_no_secrets() -> None:
@@ -115,4 +131,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

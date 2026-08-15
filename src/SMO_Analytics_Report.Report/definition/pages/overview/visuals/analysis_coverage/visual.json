@@ -1,0 +1,151 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "analysis_coverage",
+  "position": {
+    "x": 30,
+    "y": 435,
+    "z": 3000,
+    "height": 250,
+    "width": 1200,
+    "tabOrder": 3000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Overview"
+                    }
+                  },
+                  "Property": "workspace_name"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Overview.workspace_name",
+              "nativeQueryRef": "Workspace",
+              "displayName": "Workspace"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Overview"
+                    }
+                  },
+                  "Property": "semantic_model_name"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Overview.semantic_model_name",
+              "nativeQueryRef": "Semantic model",
+              "displayName": "Semantic model"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Overview"
+                    }
+                  },
+                  "Property": "analysis_status"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Overview.analysis_status",
+              "nativeQueryRef": "Analysis status",
+              "displayName": "Analysis status"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Overview"
+                    }
+                  },
+                  "Property": "refresh_history_status"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Overview.refresh_history_status",
+              "nativeQueryRef": "Refresh history",
+              "displayName": "Refresh history"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Overview"
+                    }
+                  },
+                  "Property": "object_usage_analysis_status"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Overview.object_usage_analysis_status",
+              "nativeQueryRef": "Object usage",
+              "displayName": "Object usage"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Overview"
+                    }
+                  },
+                  "Property": "direct_lake_analysis_status"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Overview.direct_lake_analysis_status",
+              "nativeQueryRef": "Direct Lake",
+              "displayName": "Direct Lake"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Overview"
+                    }
+                  },
+                  "Property": "data_availability_explanation"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Overview.data_availability_explanation",
+              "nativeQueryRef": "Data availability explanation",
+              "displayName": "Data availability explanation"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Analysis coverage and data availability'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

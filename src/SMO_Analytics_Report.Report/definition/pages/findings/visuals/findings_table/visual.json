@@ -1,0 +1,121 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "findings_table",
+  "position": {
+    "x": 30,
+    "y": 280,
+    "z": 3000,
+    "height": 405,
+    "width": 1200,
+    "tabOrder": 3000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Findings"
+                    }
+                  },
+                  "Property": "semantic_model_name"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Findings.semantic_model_name",
+              "nativeQueryRef": "Semantic model",
+              "displayName": "Semantic model"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Findings"
+                    }
+                  },
+                  "Property": "severity"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Findings.severity",
+              "nativeQueryRef": "Severity",
+              "displayName": "Severity"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Findings"
+                    }
+                  },
+                  "Property": "rule_name"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Findings.rule_name",
+              "nativeQueryRef": "Rule",
+              "displayName": "Rule"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Findings"
+                    }
+                  },
+                  "Property": "affected_object_name"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Findings.affected_object_name",
+              "nativeQueryRef": "Affected object",
+              "displayName": "Affected object"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Findings"
+                    }
+                  },
+                  "Property": "finding_description"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Findings.finding_description",
+              "nativeQueryRef": "Finding",
+              "displayName": "Finding"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Affected objects and findings'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,19 +1,38 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
-  "name": "total_findings",
+  "name": "findings_by_rule",
   "position": {
-    "x": 40,
-    "y": 40,
-    "z": 1000,
-    "height": 140,
-    "width": 360,
-    "tabOrder": 0
+    "x": 360,
+    "y": 30,
+    "z": 2000,
+    "height": 220,
+    "width": 870,
+    "tabOrder": 2000
   },
   "visual": {
-    "visualType": "cardVisual",
+    "visualType": "clusteredBarChart",
     "query": {
       "queryState": {
-        "Data": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Semantic Model Optimization Findings"
+                    }
+                  },
+                  "Property": "rule_name"
+                }
+              },
+              "queryRef": "Semantic Model Optimization Findings.rule_name",
+              "nativeQueryRef": "Rule",
+              "displayName": "Rule"
+            }
+          ]
+        },
+        "Y": {
           "projections": [
             {
               "field": {
@@ -27,8 +46,8 @@
                 }
               },
               "queryRef": "Metrics.Total findings",
-              "nativeQueryRef": "Total findings",
-              "displayName": "Total findings"
+              "nativeQueryRef": "Findings",
+              "displayName": "Findings"
             }
           ]
         }
@@ -48,7 +67,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Optimization findings'"
+                  "Value": "'Findings by rule'"
                 }
               }
             }
@@ -59,4 +78,3 @@
     "drillFilterOtherVisuals": true
   }
 }
-

@@ -1,27 +1,39 @@
-# Lakehouse V1 data contract
+# Lakehouse V2 data contract
 
-The scanner owns the `smopt` schema. Writes are idempotent Delta merges using stable business keys.
+V2 separates append-only technical evidence from a meaningful, AI-friendly current-state consumption layer. The report and downstream AI experiences use only the seven business tables below.
 
-| Table | Grain / key | Purpose |
+## Direct Lake consumption tables
+
+| Schema and table | Grain / key | Business meaning |
 | --- | --- | --- |
-| `smopt.smopt_scan_run` | one row per `scan_id` | Run status, timing, package versions, and target counts |
-| `smopt.smopt_model_scan` | `scan_id` + `model_id` | Per-model execution status and component outcomes |
-| `smopt.smopt_finding` | one row per `finding_id` | Normalized recommendations and technical evidence |
-| `smopt.smopt_vpa_column` | one row per column observation | VertiPaq size and cardinality evidence |
-| `smopt.smopt_vpa_table` | one row per table observation | VertiPaq table-size evidence |
-| `smopt.smopt_object_usage` | one row per observed object | Optional usage evidence |
-| `smopt.smopt_refresh` | one row per refresh observation | Refresh status and duration evidence |
-| `smopt.smopt_direct_lake` | one row per Direct Lake check | Direct Lake configuration findings |
-| `smopt.smopt_item_access_snapshot` | one row per principal snapshot | Observed item access for governed visibility |
-| `smopt.smopt_model_access` | one row per model/principal grant | Explicit analytical access contract |
-| `smopt.smopt_dim_model` | one row per model | Latest model state for reporting |
+| `semantic_model_optimization.semantic_model_optimization_overview` | one current row per semantic model | Latest analysis status, business counts, evidence-source coverage, and explanations for unavailable data |
+| `semantic_model_optimization.semantic_model_optimization_opportunities` | one current row per model and optimization domain/source | Prioritized optimization opportunities derived from normalized findings |
+| `semantic_model_optimization.semantic_model_optimization_recommendations` | one current row per distinct model/rule/action | Recommended actions with risk, validation, and estimated storage benefit context |
+| `semantic_model_optimization.semantic_model_optimization_findings` | one current row per affected object finding | Detailed evidence, severity, affected object, and recommended action |
+| `semantic_model_vertipaq.semantic_model_column_storage` | one current row per analyzed model column | VertiPaq size, encoding, cardinality, and percentage of model size |
+| `semantic_model_optimization.semantic_model_optimization_opportunity_recommendation_links` | one opportunity/recommendation relationship | Explicit bridge for AI and analytical navigation |
+| `semantic_model_optimization.semantic_model_optimization_opportunity_finding_links` | one opportunity/finding relationship | Explicit bridge from summarized opportunities to evidence |
 
-## Contract rules
+The five reserved business schemas are:
 
-- Additive columns are allowed within V1.
-- Renaming, deleting, or changing the meaning/type of an existing column requires V2.
-- `scan_id` groups all output from one execution.
-- `finding_id` and evidence IDs are stable hashes where source data allows it.
-- Byte-saving estimates are not claimed as validated CU savings.
-- Raw provider payloads are retained only in designated JSON evidence columns.
+- `analysis_control`
+- `semantic_model_metadata`
+- `semantic_model_vertipaq`
+- `semantic_model_best_practice`
+- `semantic_model_optimization`
 
+Names use complete business entities rather than abbreviations. Columns explicitly use terms such as `semantic_model_id`, `analysis_status`, `affected_object_name`, and `data_availability_explanation` so both people and AI can infer grain and meaning.
+
+## Current-state behavior
+
+- A successful or partially successful model analysis replaces only that semantic model's seven current-state slices.
+- A failed model analysis preserves the last usable current state.
+- Re-running a scan does not duplicate report counts.
+- The overview row records `NOT_RUN`, `NOT_APPLICABLE`, successful zero-record results, and a plain-language explanation.
+- High-severity counts return zero rather than blank.
+
+## Technical evidence compatibility
+
+The scanner continues writing the legacy `smopt.smopt_*` tables as a technical history and upgrade compatibility layer. They are intentionally excluded from the Direct Lake semantic model and should not be used for AI-generated reporting.
+
+Byte-saving estimates remain directional discovery evidence, not validated CU savings. CU improvement requires a separate controlled before/after validation lifecycle.

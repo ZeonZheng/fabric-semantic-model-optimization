@@ -1,0 +1,119 @@
+table 'Semantic Model Optimization Opportunities'
+	lineageTag: 6e0125e0-aad0-579b-b20b-33e534b55ef4
+	sourceLineageTag: [semantic_model_optimization].[semantic_model_optimization_opportunities]
+
+	column opportunity_id
+		dataType: string
+		isKey
+		sourceColumn: opportunity_id
+		sourceLineageTag: opportunity_id
+		summarizeBy: none
+
+	column analysis_id
+		dataType: string
+		sourceColumn: analysis_id
+		sourceLineageTag: analysis_id
+		summarizeBy: none
+
+	column workspace_name
+		dataType: string
+		sourceColumn: workspace_name
+		sourceLineageTag: workspace_name
+		summarizeBy: none
+
+	column semantic_model_id
+		dataType: string
+		sourceColumn: semantic_model_id
+		sourceLineageTag: semantic_model_id
+		summarizeBy: none
+
+	column semantic_model_name
+		dataType: string
+		sourceColumn: semantic_model_name
+		sourceLineageTag: semantic_model_name
+		summarizeBy: none
+
+	column opportunity_title
+		dataType: string
+		sourceColumn: opportunity_title
+		sourceLineageTag: opportunity_title
+		summarizeBy: none
+
+	column optimization_domain
+		dataType: string
+		sourceColumn: optimization_domain
+		sourceLineageTag: optimization_domain
+		summarizeBy: none
+
+	column finding_source
+		dataType: string
+		sourceColumn: finding_source
+		sourceLineageTag: finding_source
+		summarizeBy: none
+
+	column highest_severity
+		dataType: string
+		sourceColumn: highest_severity
+		sourceLineageTag: highest_severity
+		summarizeBy: none
+
+	column finding_count
+		dataType: int64
+		formatString: #,0
+		sourceColumn: finding_count
+		sourceLineageTag: finding_count
+		summarizeBy: sum
+
+	column recommendation_count
+		dataType: int64
+		formatString: #,0
+		sourceColumn: recommendation_count
+		sourceLineageTag: recommendation_count
+		summarizeBy: sum
+
+	column estimated_saving_bytes_low
+		dataType: int64
+		formatString: #,0
+		sourceColumn: estimated_saving_bytes_low
+		sourceLineageTag: estimated_saving_bytes_low
+		summarizeBy: sum
+
+	column estimated_saving_bytes_high
+		dataType: int64
+		formatString: #,0
+		sourceColumn: estimated_saving_bytes_high
+		sourceLineageTag: estimated_saving_bytes_high
+		summarizeBy: sum
+
+	column change_risk
+		dataType: string
+		sourceColumn: change_risk
+		sourceLineageTag: change_risk
+		summarizeBy: none
+
+	column opportunity_summary
+		dataType: string
+		sourceColumn: opportunity_summary
+		sourceLineageTag: opportunity_summary
+		summarizeBy: none
+
+	column priority_score
+		dataType: int64
+		formatString: #,0
+		sourceColumn: priority_score
+		sourceLineageTag: priority_score
+		summarizeBy: sum
+
+	column detected_at
+		dataType: dateTime
+		formatString: General Date
+		sourceColumn: detected_at
+		sourceLineageTag: detected_at
+		summarizeBy: none
+
+	partition 'semantic_model_optimization_opportunities' = entity
+		mode: directLake
+		source
+			entityName: semantic_model_optimization_opportunities
+			schemaName: semantic_model_optimization
+			expressionSource: DatabaseQuery
