@@ -1,6 +1,6 @@
 solution:
   name: Semantic Model Optimization Analytics
-  version: 0.1.0
+  version: 0.1.1
 
 source:
   repository_owner: ZeonZheng
@@ -28,4 +28,3 @@ folders:
     items:
       - SMO_Analytics_SM.SemanticModel
       - SMO_Analytics_Report.Report
-

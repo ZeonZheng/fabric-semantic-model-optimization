@@ -67,5 +67,4 @@ python tests/validate_repo.py
 
 ## Current stage
 
-Version `0.1.0` is the minimum end-to-end deployment baseline. It is designed for live Fabric validation and iterative correction of item definitions, Direct Lake binding, and report visuals.
-
+Version `0.1.1` is the minimum end-to-end deployment baseline. It is designed for live Fabric validation and iterative correction of item definitions, Direct Lake binding, and report visuals.

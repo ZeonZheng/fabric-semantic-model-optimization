@@ -12,6 +12,7 @@ import os
 import re
 import shutil
 import subprocess
+import sysconfig
 import tempfile
 import time
 from pathlib import Path
@@ -27,8 +28,18 @@ WORKSPACE_PLACEHOLDER = "00000000-0000-0000-0000-000000000000"
 
 def run_fab(command: str, *, timeout: int = 600, allow_failure: bool = False) -> str:
     """Run one ms-fabric-cli command and return stdout."""
+    fab_executable = shutil.which("fab")
+    if not fab_executable:
+        environment_fab = Path(sysconfig.get_path("scripts")) / "fab"
+        if environment_fab.is_file():
+            fab_executable = str(environment_fab)
+    if not fab_executable:
+        raise FileNotFoundError(
+            "ms-fabric-cli is installed but the fab entry point could not be located."
+        )
+
     result = subprocess.run(
-        ["fab", "-c", command],
+        [fab_executable, "-c", command],
         capture_output=True,
         text=True,
         timeout=timeout,
