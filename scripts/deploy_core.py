@@ -197,9 +197,14 @@ def _existing_items(workspace_id: str) -> dict[tuple[str, str], str]:
     }
 
 
-def _resolve_item_id(workspace_name: str, qualified_name: str) -> str:
+def _resolve_item_id(
+    workspace_name: str, qualified_name: str, folder_name: str | None = None
+) -> str:
+    parent = f"/{workspace_name}.Workspace"
+    if folder_name:
+        parent += f"/{folder_name}.Folder"
     item_id = run_fab(
-        f"get /{workspace_name}.Workspace/{qualified_name} -q id",
+        f"get {parent}/{qualified_name} -q id",
         allow_failure=True,
     )
     if not item_id:
@@ -222,9 +227,13 @@ def _initialize_tables(
     workspace_name: str,
     notebook_name: str,
     notebook_id: str,
+    folder_name: str | None = None,
 ) -> None:
+    parent = f"/{workspace_name}.Workspace"
+    if folder_name:
+        parent += f"/{folder_name}.Folder"
     start_output = run_fab(
-        f"job start /{workspace_name}.Workspace/{notebook_name}"
+        f"job start {parent}/{notebook_name}"
     )
     instance_match = re.search(
         r"Job instance '([0-9a-fA-F-]{36})' created", start_output
@@ -310,6 +319,19 @@ def deploy_solution(repo_root: str | Path) -> dict:
     workspace_id, workspace_name = _workspace_context()
     print(f"Target workspace: {workspace_name} ({workspace_id})")
 
+    folder_by_item = {
+        qualified_name: folder["name"]
+        for folder in config.get("folders", [])
+        for qualified_name in folder.get("items", [])
+    }
+    for folder_name in {folder["name"] for folder in config.get("folders", [])}:
+        exists = run_fab(
+            f"exists /{workspace_name}.Workspace/{folder_name}.Folder",
+            allow_failure=True,
+        )
+        if "true" not in exists.lower():
+            run_fab(f"create /{workspace_name}.Workspace/{folder_name}.Folder")
+
     mappings = [{"source_id": WORKSPACE_PLACEHOLDER, "target_id": workspace_id}]
     existing = _existing_items(workspace_id)
     for item in order:
@@ -369,13 +391,19 @@ def deploy_solution(repo_root: str | Path) -> dict:
                     target_path, endpoint_id, endpoint_connection
                 )
             format_argument = " --format .ipynb" if item_type == "Notebook" else ""
+            folder_name = folder_by_item.get(qualified_name)
+            destination_parent = f"/{workspace_name}.Workspace"
+            if folder_name:
+                destination_parent += f"/{folder_name}.Folder"
             run_fab(
-                f"import /{workspace_name}.Workspace/{qualified_name} "
+                f"import {destination_parent}/{qualified_name} "
                 f"-i '{target_path}' -f{format_argument}",
                 timeout=1200,
             )
 
-        target_id = _resolve_item_id(workspace_name, qualified_name)
+        target_id = _resolve_item_id(
+            workspace_name, qualified_name, folder_by_item.get(qualified_name)
+        )
         if not any(m["source_id"] == item["source_id"] for m in mappings):
             mappings.append({"source_id": item["source_id"], "target_id": target_id})
         deployed.append({"name": qualified_name, "id": target_id})
@@ -386,6 +414,7 @@ def deploy_solution(repo_root: str | Path) -> dict:
                 workspace_name,
                 scanner_qualified,
                 target_id,
+                folder_by_item.get(scanner_qualified),
             )
             _refresh_sql_endpoint(workspace_id, endpoint_id)
             with tempfile.TemporaryDirectory() as temporary:
@@ -393,7 +422,7 @@ def deploy_solution(repo_root: str | Path) -> dict:
                 shutil.copytree(source_path, restore_path)
                 _replace_ids(restore_path, mappings)
                 run_fab(
-                    f"import /{workspace_name}.Workspace/{qualified_name} "
+                    f"import {destination_parent}/{qualified_name} "
                     f"-i '{restore_path}' -f --format .ipynb",
                     timeout=1200,
                 )
@@ -402,7 +431,9 @@ def deploy_solution(repo_root: str | Path) -> dict:
     _move_items_to_folders(workspace_id, workspace_name, config.get("folders", []))
 
     semantic_model_id = _resolve_item_id(
-        workspace_name, config["items"]["semantic_model"]
+        workspace_name,
+        config["items"]["semantic_model"],
+        folder_by_item.get(config["items"]["semantic_model"]),
     )
     run_fab(
         f"api -A powerbi -X post datasets/{semantic_model_id}/refreshes "

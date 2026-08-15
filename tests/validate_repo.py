@@ -44,6 +44,8 @@ def validate_manifest() -> None:
     deploy_core = (ROOT / "scripts/deploy_core.py").read_text(encoding="utf-8")
     if "curated_contract_cell" not in deploy_core or "ensure_curated_tables()" not in deploy_core:
         fail("The deployment initializer must create the V2 curated tables before importing Direct Lake.")
+    if "folder_by_item" not in deploy_core or "destination_parent" not in deploy_core:
+        fail("Fabric item upgrades must address items through their configured folder paths.")
 
 
 def validate_scanner() -> None:
