@@ -89,6 +89,27 @@ def _replace_ids(root: Path, mappings: list[dict[str, str]]) -> None:
             path.write_text(content, encoding="utf-8")
 
 
+def _set_notebook_bool_default(
+    root: Path, parameter_name: str, value: bool
+) -> None:
+    replacement_value = "True" if value else "False"
+    pattern = re.compile(
+        rf"(?m)^({re.escape(parameter_name)}\s*=\s*)(?:True|False)(\b.*)$"
+    )
+    for path in root.rglob("*.ipynb"):
+        notebook = json.loads(path.read_text(encoding="utf-8"))
+        for cell in notebook.get("cells", []):
+            source = "".join(cell.get("source", []))
+            updated, count = pattern.subn(
+                rf"\g<1>{replacement_value}\g<2>", source, count=1
+            )
+            if count:
+                cell["source"] = updated.splitlines(keepends=True)
+                path.write_text(json.dumps(notebook, indent=1), encoding="utf-8")
+                return
+    raise ValueError(f"Notebook parameter not found: {parameter_name}")
+
+
 def _wait_for_lakehouse(workspace_name: str, lakehouse_name: str) -> tuple[str, str]:
     for attempt in range(30):
         endpoint_id = run_fab(
@@ -163,16 +184,8 @@ def _initialize_tables(
     notebook_name: str,
     notebook_id: str,
 ) -> None:
-    parameters = json.dumps(
-        {
-            "parameters": {
-                "initialize_only": {"type": "bool", "value": True},
-                "_inlineInstallationEnabled": {"type": "bool", "value": True},
-            }
-        }
-    )
     start_output = run_fab(
-        f"job start /{workspace_name}.Workspace/{notebook_name} -i '{parameters}'"
+        f"job start /{workspace_name}.Workspace/{notebook_name}"
     )
     instance_match = re.search(
         r"Job instance '([0-9a-fA-F-]{36})' created", start_output
@@ -306,6 +319,10 @@ def deploy_solution(repo_root: str | Path) -> dict:
             target_path = Path(temporary) / qualified_name
             shutil.copytree(source_path, target_path)
             _replace_ids(target_path, mappings)
+            if qualified_name == scanner_qualified:
+                _set_notebook_bool_default(
+                    target_path, "initialize_only", True
+                )
             if item_type == "SemanticModel":
                 if not endpoint_id or not endpoint_connection:
                     raise RuntimeError("Lakehouse SQL endpoint is unavailable.")
@@ -332,6 +349,15 @@ def deploy_solution(repo_root: str | Path) -> dict:
                 target_id,
             )
             _refresh_sql_endpoint(workspace_id, endpoint_id)
+            with tempfile.TemporaryDirectory() as temporary:
+                restore_path = Path(temporary) / qualified_name
+                shutil.copytree(source_path, restore_path)
+                _replace_ids(restore_path, mappings)
+                run_fab(
+                    f"import /{workspace_name}.Workspace/{qualified_name} "
+                    f"-i '{restore_path}' -f --format .ipynb",
+                    timeout=1200,
+                )
             initialized = True
 
     _move_items_to_folders(workspace_id, workspace_name, config.get("folders", []))
