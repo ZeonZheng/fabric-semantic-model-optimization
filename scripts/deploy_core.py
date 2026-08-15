@@ -167,7 +167,8 @@ def _initialize_tables(workspace_name: str, notebook_name: str) -> None:
         }
     )
     run_fab(
-        f"job run /{workspace_name}.Workspace/{notebook_name} -i '{parameters}'",
+        f"job run /{workspace_name}.Workspace/{notebook_name} -i '{parameters}' "
+        "--timeout 3600 --polling_interval 20",
         timeout=3600,
     )
 
