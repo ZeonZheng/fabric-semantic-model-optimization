@@ -553,7 +553,10 @@ def write_report() -> None:
             field_column(findings, "affected_object_name", "Affected object"), field_column(findings, "finding_description", "Finding"),
         ]}, "Related detailed findings", 4000,
                conditional_color=(f"{findings}.severity", "severity")),
-    ], **drillthrough_config(opportunities, "opportunity_id"))
+    # Drillthrough must bind to a field that is present in the source table visual.
+    # The synchronized semantic-model slicer preserves model scope, so the visible
+    # opportunity title is both user-friendly and unambiguous in the drill context.
+    ], **drillthrough_config(opportunities, "opportunity_title"))
 
     (PAGES / "pages.json").write_text(json.dumps({
         "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.0.0/schema.json",
