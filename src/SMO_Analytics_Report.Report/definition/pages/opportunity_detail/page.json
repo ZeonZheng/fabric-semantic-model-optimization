@@ -17,7 +17,7 @@
                 "Entity": "semantic_model_optimization_opportunities"
               }
             },
-            "Property": "opportunity_id"
+            "Property": "opportunity_title"
           }
         },
         "type": "Categorical",
@@ -39,7 +39,7 @@
                 "Entity": "semantic_model_optimization_opportunities"
               }
             },
-            "Property": "opportunity_id"
+            "Property": "opportunity_title"
           }
         }
       }
