@@ -127,6 +127,17 @@ def validate_report() -> None:
     detail_page = json.loads((report_root / "definition/pages/opportunity_detail/page.json").read_text())
     if detail_page.get("pageBinding", {}).get("type") != "Drillthrough":
         fail("Opportunity detail must be configured as a drillthrough page.")
+    drill_parameters = detail_page.get("pageBinding", {}).get("parameters", [])
+    drill_property = (
+        drill_parameters[0]
+        .get("fieldExpr", {})
+        .get("Column", {})
+        .get("Property")
+        if drill_parameters
+        else None
+    )
+    if drill_property != "opportunity_title":
+        fail("Opportunity drillthrough must use the visible opportunity title from the source table.")
     if workspace_sync_count != 6 or model_sync_count != 6:
         fail("Workspace and semantic-model slicers must be synchronized across every report page.")
     if visual_count != 36:
