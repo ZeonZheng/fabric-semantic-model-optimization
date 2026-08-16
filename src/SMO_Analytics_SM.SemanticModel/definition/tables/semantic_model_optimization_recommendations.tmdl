@@ -9,6 +9,12 @@ table semantic_model_optimization_recommendations
 		sourceLineageTag: recommendation_id
 		summarizeBy: none
 
+	column opportunity_id
+		dataType: string
+		sourceColumn: opportunity_id
+		sourceLineageTag: opportunity_id
+		summarizeBy: none
+
 	column analysis_id
 		dataType: string
 		sourceColumn: analysis_id

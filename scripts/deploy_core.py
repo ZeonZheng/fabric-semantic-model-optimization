@@ -150,18 +150,33 @@ def _make_initialization_notebook(root: Path, output_schema: str) -> None:
 
 
 def _wait_for_lakehouse(workspace_name: str, lakehouse_name: str) -> tuple[str, str]:
+    lakehouse_qualified = (
+        lakehouse_name
+        if lakehouse_name.endswith(".Lakehouse")
+        else f"{lakehouse_name}.Lakehouse"
+    )
     for attempt in range(30):
         endpoint_id = run_fab(
-            f"get /{workspace_name}.Workspace/{lakehouse_name} "
+            f"get /{workspace_name}.Workspace/{lakehouse_qualified} "
             "-q properties.sqlEndpointProperties.id",
             allow_failure=True,
         )
         connection = run_fab(
-            f"get /{workspace_name}.Workspace/{lakehouse_name} "
+            f"get /{workspace_name}.Workspace/{lakehouse_qualified} "
             "-q properties.sqlEndpointProperties.connectionString",
             allow_failure=True,
         )
-        if endpoint_id and connection:
+        endpoint_id = endpoint_id.strip()
+        connection = connection.strip()
+        endpoint_is_valid = bool(
+            re.fullmatch(r"[0-9a-fA-F-]{36}", endpoint_id)
+        )
+        connection_is_valid = bool(
+            connection
+            and "invalidpath" not in connection.lower()
+            and not connection.lower().startswith("x get:")
+        )
+        if endpoint_is_valid and connection_is_valid:
             return endpoint_id, connection
         time.sleep(min(5 + attempt, 15))
     raise TimeoutError("Lakehouse SQL analytics endpoint was not provisioned in time.")

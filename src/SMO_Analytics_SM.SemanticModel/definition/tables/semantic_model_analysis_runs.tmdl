@@ -1,0 +1,134 @@
+table semantic_model_analysis_runs
+	lineageTag: 1da04b6a-baca-58ee-a5fa-86e5ca1d0ae4
+	sourceLineageTag: [analysis_control].[semantic_model_analysis_runs]
+
+	column analysis_id
+		dataType: string
+		sourceColumn: analysis_id
+		sourceLineageTag: analysis_id
+		summarizeBy: none
+
+	column workspace_id
+		dataType: string
+		sourceColumn: workspace_id
+		sourceLineageTag: workspace_id
+		summarizeBy: none
+
+	column workspace_name
+		dataType: string
+		sourceColumn: workspace_name
+		sourceLineageTag: workspace_name
+		summarizeBy: none
+
+	column semantic_model_id
+		dataType: string
+		sourceColumn: semantic_model_id
+		sourceLineageTag: semantic_model_id
+		summarizeBy: none
+
+	column semantic_model_name
+		dataType: string
+		sourceColumn: semantic_model_name
+		sourceLineageTag: semantic_model_name
+		summarizeBy: none
+
+	column scanner_version
+		dataType: string
+		sourceColumn: scanner_version
+		sourceLineageTag: scanner_version
+		summarizeBy: none
+
+	column analysis_profile
+		dataType: string
+		sourceColumn: analysis_profile
+		sourceLineageTag: analysis_profile
+		summarizeBy: none
+
+	column analysis_status
+		dataType: string
+		sourceColumn: analysis_status
+		sourceLineageTag: analysis_status
+		summarizeBy: none
+
+	column permission_precheck_status
+		dataType: string
+		sourceColumn: permission_precheck_status
+		sourceLineageTag: permission_precheck_status
+		summarizeBy: none
+
+	column best_practice_analysis_status
+		dataType: string
+		sourceColumn: best_practice_analysis_status
+		sourceLineageTag: best_practice_analysis_status
+		summarizeBy: none
+
+	column storage_analysis_status
+		dataType: string
+		sourceColumn: storage_analysis_status
+		sourceLineageTag: storage_analysis_status
+		summarizeBy: none
+
+	column refresh_history_status
+		dataType: string
+		sourceColumn: refresh_history_status
+		sourceLineageTag: refresh_history_status
+		summarizeBy: none
+
+	column object_usage_analysis_status
+		dataType: string
+		sourceColumn: object_usage_analysis_status
+		sourceLineageTag: object_usage_analysis_status
+		summarizeBy: none
+
+	column direct_lake_analysis_status
+		dataType: string
+		sourceColumn: direct_lake_analysis_status
+		sourceLineageTag: direct_lake_analysis_status
+		summarizeBy: none
+
+	column item_access_snapshot_status
+		dataType: string
+		sourceColumn: item_access_snapshot_status
+		sourceLineageTag: item_access_snapshot_status
+		summarizeBy: none
+
+	column finding_count
+		dataType: int64
+		formatString: #,0
+		sourceColumn: finding_count
+		sourceLineageTag: finding_count
+		summarizeBy: sum
+
+	column started_at
+		dataType: dateTime
+		formatString: General Date
+		sourceColumn: started_at
+		sourceLineageTag: started_at
+		summarizeBy: none
+
+	column completed_at
+		dataType: dateTime
+		formatString: General Date
+		sourceColumn: completed_at
+		sourceLineageTag: completed_at
+		summarizeBy: none
+
+	column duration_seconds
+		dataType: double
+		formatString: #,0.00
+		sourceColumn: duration_seconds
+		sourceLineageTag: duration_seconds
+		summarizeBy: sum
+
+	column error_details
+		dataType: string
+		sourceColumn: error_details
+		sourceLineageTag: error_details
+		summarizeBy: none
+
+	partition 'semantic_model_analysis_runs' = entity
+		mode: directLake
+		source
+			entityName: semantic_model_analysis_runs
+			schemaName: analysis_control
+			expressionSource: DatabaseQuery

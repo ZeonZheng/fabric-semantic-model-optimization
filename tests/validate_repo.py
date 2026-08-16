@@ -63,6 +63,10 @@ def validate_scanner() -> None:
         "def curate_latest_model_analysis(result)",
         '"semantic_model_optimization_overview"',
         '"semantic_model_column_storage"',
+        '"semantic_model_analysis_runs"',
+        '"semantic_models"',
+        '"semantic_model_best_practice_rule_findings"',
+        '"semantic_model_table_storage"',
     ):
         if required not in source:
             fail(f"Scanner is missing required text: {required}")
@@ -79,8 +83,8 @@ def validate_model() -> None:
         table = table.strip("'")
         if not (model_root / "tables" / f"{table}.tmdl").exists():
             fail(f"Missing TMDL table file for {table}")
-    if len(refs) != 8:
-        fail(f"The V2 Direct Lake model must expose 7 business tables plus Metrics, found {len(refs)}.")
+    if len(refs) != 12:
+        fail(f"The M6.4 Direct Lake model must expose 11 business tables plus Metrics, found {len(refs)}.")
     if "smopt_" in model:
         fail("The V2 Direct Lake model must not expose deprecated smopt_* technical tables.")
     expressions = (model_root / "expressions.tmdl").read_text(encoding="utf-8")
@@ -95,19 +99,38 @@ def validate_report() -> None:
     if "44444444-4444-4444-4444-444444444444" not in connection:
         fail("Report semantic-model placeholder is missing.")
     pages = json.loads((report_root / "definition/pages/pages.json").read_text())
-    if pages["pageOrder"] != ["overview", "opportunities", "recommendations", "findings", "storage"]:
-        fail("The report must retain the approved five-page information architecture.")
+    expected_pages = ["overview", "opportunities", "recommendations", "findings", "storage", "opportunity_detail"]
+    if pages["pageOrder"] != expected_pages:
+        fail("The report must retain five visible pages plus one hidden drillthrough detail page.")
     visual_count = 0
+    visible_pages = []
+    workspace_sync_count = 0
+    model_sync_count = 0
     for page in pages["pageOrder"]:
         page_root = report_root / "definition/pages" / page
         if not (page_root / "page.json").exists():
             fail(f"Missing report page: {page}")
+        page_definition = json.loads((page_root / "page.json").read_text())
+        if page_definition.get("visibility") != "HiddenInViewMode":
+            visible_pages.append(page)
         visuals = list((page_root / "visuals").glob("*/visual.json"))
         if not visuals:
             fail(f"Report page {page} has no visuals.")
+        for visual_path in visuals:
+            visual_definition = json.loads(visual_path.read_text())
+            sync_group = visual_definition.get("visual", {}).get("syncGroup", {}).get("groupName")
+            workspace_sync_count += sync_group == "SMO_Workspace"
+            model_sync_count += sync_group == "SMO_SemanticModel"
         visual_count += len(visuals)
-    if visual_count != 15:
-        fail(f"The approved report contract requires 15 visuals, found {visual_count}.")
+    if visible_pages != ["overview", "opportunities", "recommendations", "findings", "storage"]:
+        fail(f"The report must expose exactly the approved five visible pages, found {visible_pages}.")
+    detail_page = json.loads((report_root / "definition/pages/opportunity_detail/page.json").read_text())
+    if detail_page.get("pageBinding", {}).get("type") != "Drillthrough":
+        fail("Opportunity detail must be configured as a drillthrough page.")
+    if workspace_sync_count != 6 or model_sync_count != 6:
+        fail("Workspace and semantic-model slicers must be synchronized across every report page.")
+    if visual_count != 36:
+        fail(f"The M6.4 report contract requires 36 visuals, found {visual_count}.")
 
 
 def validate_no_secrets() -> None:

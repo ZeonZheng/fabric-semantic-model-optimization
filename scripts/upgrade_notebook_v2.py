@@ -71,6 +71,7 @@ OPTIMIZATION_OPPORTUNITY_SCHEMA = T.StructType([
 
 OPTIMIZATION_RECOMMENDATION_SCHEMA = T.StructType([
     T.StructField("recommendation_id", T.StringType(), False),
+    T.StructField("opportunity_id", T.StringType(), False),
     T.StructField("analysis_id", T.StringType(), False),
     T.StructField("workspace_name", T.StringType()),
     T.StructField("semantic_model_id", T.StringType(), False),
@@ -89,6 +90,7 @@ OPTIMIZATION_RECOMMENDATION_SCHEMA = T.StructType([
 
 OPTIMIZATION_FINDING_SCHEMA = T.StructType([
     T.StructField("finding_id", T.StringType(), False),
+    T.StructField("opportunity_id", T.StringType(), False),
     T.StructField("analysis_id", T.StringType(), False),
     T.StructField("workspace_name", T.StringType()),
     T.StructField("semantic_model_id", T.StringType(), False),
@@ -138,7 +140,84 @@ COLUMN_STORAGE_SCHEMA = T.StructType([
     T.StructField("detected_at", T.TimestampType()),
 ])
 
+ANALYSIS_RUN_SCHEMA = T.StructType([
+    T.StructField("analysis_id", T.StringType(), False),
+    T.StructField("workspace_id", T.StringType(), False),
+    T.StructField("workspace_name", T.StringType()),
+    T.StructField("semantic_model_id", T.StringType(), False),
+    T.StructField("semantic_model_name", T.StringType()),
+    T.StructField("scanner_version", T.StringType()),
+    T.StructField("analysis_profile", T.StringType()),
+    T.StructField("analysis_status", T.StringType()),
+    T.StructField("permission_precheck_status", T.StringType()),
+    T.StructField("best_practice_analysis_status", T.StringType()),
+    T.StructField("storage_analysis_status", T.StringType()),
+    T.StructField("refresh_history_status", T.StringType()),
+    T.StructField("object_usage_analysis_status", T.StringType()),
+    T.StructField("direct_lake_analysis_status", T.StringType()),
+    T.StructField("item_access_snapshot_status", T.StringType()),
+    T.StructField("finding_count", T.IntegerType()),
+    T.StructField("started_at", T.TimestampType()),
+    T.StructField("completed_at", T.TimestampType()),
+    T.StructField("duration_seconds", T.DoubleType()),
+    T.StructField("error_details", T.StringType()),
+])
+
+SEMANTIC_MODEL_SCHEMA = T.StructType([
+    T.StructField("semantic_model_id", T.StringType(), False),
+    T.StructField("workspace_id", T.StringType(), False),
+    T.StructField("workspace_name", T.StringType()),
+    T.StructField("semantic_model_name", T.StringType()),
+    T.StructField("capacity_id", T.StringType()),
+    T.StructField("capacity_name", T.StringType()),
+    T.StructField("storage_mode", T.StringType()),
+    T.StructField("semantic_model_size_bytes", T.LongType()),
+    T.StructField("latest_analysis_id", T.StringType()),
+    T.StructField("latest_analysis_status", T.StringType()),
+    T.StructField("latest_analysis_at", T.TimestampType()),
+    T.StructField("scanner_version", T.StringType()),
+])
+
+BEST_PRACTICE_FINDING_SCHEMA = T.StructType([
+    T.StructField("best_practice_finding_id", T.StringType(), False),
+    T.StructField("analysis_id", T.StringType(), False),
+    T.StructField("workspace_name", T.StringType()),
+    T.StructField("semantic_model_id", T.StringType(), False),
+    T.StructField("semantic_model_name", T.StringType()),
+    T.StructField("rule_id", T.StringType()),
+    T.StructField("rule_name", T.StringType()),
+    T.StructField("category", T.StringType()),
+    T.StructField("severity", T.StringType()),
+    T.StructField("affected_object_type", T.StringType()),
+    T.StructField("affected_table_name", T.StringType()),
+    T.StructField("affected_object_name", T.StringType()),
+    T.StructField("finding_description", T.StringType()),
+    T.StructField("recommended_action", T.StringType()),
+    T.StructField("technical_evidence", T.StringType()),
+    T.StructField("documentation_url", T.StringType()),
+    T.StructField("detected_at", T.TimestampType()),
+])
+
+TABLE_STORAGE_SCHEMA = T.StructType([
+    T.StructField("table_storage_record_id", T.StringType(), False),
+    T.StructField("analysis_id", T.StringType(), False),
+    T.StructField("workspace_name", T.StringType()),
+    T.StructField("semantic_model_id", T.StringType(), False),
+    T.StructField("semantic_model_name", T.StringType()),
+    T.StructField("table_name", T.StringType()),
+    T.StructField("row_count", T.LongType()),
+    T.StructField("data_size_bytes", T.LongType()),
+    T.StructField("dictionary_size_bytes", T.LongType()),
+    T.StructField("hierarchy_size_bytes", T.LongType()),
+    T.StructField("total_size_bytes", T.LongType()),
+    T.StructField("percentage_of_semantic_model_size", T.DoubleType()),
+    T.StructField("detected_at", T.TimestampType()),
+])
+
 CURATED_TABLES = {
+    "analysis_runs": ("analysis_control", "semantic_model_analysis_runs", ANALYSIS_RUN_SCHEMA),
+    "semantic_models": ("semantic_model_metadata", "semantic_models", SEMANTIC_MODEL_SCHEMA),
+    "best_practice_findings": ("semantic_model_best_practice", "semantic_model_best_practice_rule_findings", BEST_PRACTICE_FINDING_SCHEMA),
     "overview": ("semantic_model_optimization", "semantic_model_optimization_overview", OPTIMIZATION_OVERVIEW_SCHEMA),
     "opportunities": ("semantic_model_optimization", "semantic_model_optimization_opportunities", OPTIMIZATION_OPPORTUNITY_SCHEMA),
     "recommendations": ("semantic_model_optimization", "semantic_model_optimization_recommendations", OPTIMIZATION_RECOMMENDATION_SCHEMA),
@@ -146,6 +225,7 @@ CURATED_TABLES = {
     "opportunity_recommendation_links": ("semantic_model_optimization", "semantic_model_optimization_opportunity_recommendation_links", OPTIMIZATION_LINK_SCHEMA),
     "opportunity_finding_links": ("semantic_model_optimization", "semantic_model_optimization_opportunity_finding_links", OPTIMIZATION_LINK_SCHEMA),
     "column_storage": ("semantic_model_vertipaq", "semantic_model_column_storage", COLUMN_STORAGE_SCHEMA),
+    "table_storage": ("semantic_model_vertipaq", "semantic_model_table_storage", TABLE_STORAGE_SCHEMA),
 }
 
 
@@ -161,6 +241,15 @@ def ensure_curated_tables():
         name = curated_table_name(logical_name)
         if not spark.catalog.tableExists(name):
             spark.createDataFrame([], schema).write.format("delta").mode("errorifexists").saveAsTable(name)
+            continue
+        existing_columns = {field.name.lower() for field in spark.table(name).schema.fields}
+        missing_fields = [field for field in schema.fields if field.name.lower() not in existing_columns]
+        if missing_fields:
+            additions = ", ".join(
+                f"`{field.name}` {field.dataType.simpleString().upper()}"
+                for field in missing_fields
+            )
+            spark.sql(f"ALTER TABLE {name} ADD COLUMNS ({additions})")
 
 
 def replace_semantic_model_current_state(logical_name, semantic_model_id, rows):
@@ -170,6 +259,22 @@ def replace_semantic_model_current_state(logical_name, semantic_model_id, rows):
     DeltaTable.forName(spark, name).delete(f"semantic_model_id = '{escaped_model_id}'")
     if rows:
         spark.createDataFrame(rows, schema=schema).write.format("delta").mode("append").saveAsTable(name)
+
+
+def upsert_curated_history(logical_name, rows, keys):
+    if not rows:
+        return
+    _, _, schema = CURATED_TABLES[logical_name]
+    source = spark.createDataFrame(rows, schema=schema)
+    condition = " AND ".join(f"t.`{key}` = s.`{key}`" for key in keys)
+    (
+        DeltaTable.forName(spark, curated_table_name(logical_name))
+        .alias("t")
+        .merge(source.alias("s"), condition)
+        .whenMatchedUpdateAll()
+        .whenNotMatchedInsertAll()
+        .execute()
+    )
 
 
 def severity_value(value):
@@ -209,6 +314,29 @@ def availability_explanations(model_row, result):
 
 def curate_latest_model_analysis(result):
     model_row = result["model_row"]
+    analysis_run_rows = [{
+        "analysis_id": model_row["scan_id"],
+        "workspace_id": model_row["workspace_id"],
+        "workspace_name": model_row["workspace_name"],
+        "semantic_model_id": model_row["model_id"],
+        "semantic_model_name": model_row["model_name"],
+        "scanner_version": model_row["scanner_version"],
+        "analysis_profile": analysis_profile,
+        "analysis_status": model_row["overall_status"],
+        "permission_precheck_status": model_row["permission_precheck_status"],
+        "best_practice_analysis_status": model_row["bpa_status"],
+        "storage_analysis_status": model_row["vpa_status"],
+        "refresh_history_status": model_row["refresh_status"],
+        "object_usage_analysis_status": model_row["usage_status"],
+        "direct_lake_analysis_status": model_row["direct_lake_status"],
+        "item_access_snapshot_status": model_row["access_snapshot_status"],
+        "finding_count": model_row["finding_count"],
+        "started_at": model_row["started_at"],
+        "completed_at": model_row["completed_at"],
+        "duration_seconds": model_row["duration_seconds"],
+        "error_details": model_row["error_json"],
+    }]
+    upsert_curated_history("analysis_runs", analysis_run_rows, ["analysis_id", "semantic_model_id"])
     if model_row["overall_status"] not in {"SUCCEEDED", "PARTIAL"}:
         return
 
@@ -244,6 +372,7 @@ def curate_latest_model_analysis(result):
         )
         recommendation = recommendation_groups.setdefault(recommendation_id, {
             "findings": [],
+            "opportunity_id": opportunity_id,
             "domain": domain,
             "source": source,
             "title": finding.get("rule_name") or "Optimization recommendation",
@@ -260,6 +389,7 @@ def curate_latest_model_analysis(result):
         })
         finding_rows.append({
             "finding_id": finding["finding_id"],
+            "opportunity_id": opportunity_id,
             "analysis_id": analysis_id,
             "workspace_name": workspace_name,
             "semantic_model_id": semantic_model_id,
@@ -314,6 +444,7 @@ def curate_latest_model_analysis(result):
         highest_risk = max(grouped_findings, key=lambda row: risk_value(row.get("change_risk")))
         recommendation_rows.append({
             "recommendation_id": recommendation_id,
+            "opportunity_id": group["opportunity_id"],
             "analysis_id": analysis_id,
             "workspace_name": workspace_name,
             "semantic_model_id": semantic_model_id,
@@ -359,6 +490,57 @@ def curate_latest_model_analysis(result):
         "detected_at": row.get("detected_at"),
     } for row in result["vpa_columns"]]
 
+    table_storage_rows = [{
+        "table_storage_record_id": row["evidence_id"],
+        "analysis_id": analysis_id,
+        "workspace_name": workspace_name,
+        "semantic_model_id": semantic_model_id,
+        "semantic_model_name": semantic_model_name,
+        "table_name": row.get("table_name"),
+        "row_count": row.get("row_count"),
+        "data_size_bytes": row.get("data_size_bytes"),
+        "dictionary_size_bytes": row.get("dictionary_size_bytes"),
+        "hierarchy_size_bytes": row.get("hierarchy_size_bytes"),
+        "total_size_bytes": row.get("total_size_bytes"),
+        "percentage_of_semantic_model_size": row.get("model_size_pct"),
+        "detected_at": row.get("detected_at"),
+    } for row in result["vpa_tables"]]
+
+    best_practice_rows = [{
+        "best_practice_finding_id": finding["finding_id"],
+        "analysis_id": analysis_id,
+        "workspace_name": workspace_name,
+        "semantic_model_id": semantic_model_id,
+        "semantic_model_name": semantic_model_name,
+        "rule_id": finding.get("rule_id"),
+        "rule_name": finding.get("rule_name"),
+        "category": finding.get("category"),
+        "severity": finding.get("severity"),
+        "affected_object_type": finding.get("object_type"),
+        "affected_table_name": finding.get("table_name"),
+        "affected_object_name": finding.get("object_name"),
+        "finding_description": finding.get("finding_text"),
+        "recommended_action": finding.get("recommended_action"),
+        "technical_evidence": finding.get("technical_evidence"),
+        "documentation_url": finding.get("documentation_url"),
+        "detected_at": finding.get("detected_at"),
+    } for finding in findings if (finding.get("source") or "").upper() == "BPA"]
+
+    semantic_model_rows = [{
+        "semantic_model_id": semantic_model_id,
+        "workspace_id": model_row["workspace_id"],
+        "workspace_name": workspace_name,
+        "semantic_model_name": semantic_model_name,
+        "capacity_id": model_row["capacity_id"],
+        "capacity_name": model_row["capacity_name"],
+        "storage_mode": model_row["storage_mode"],
+        "semantic_model_size_bytes": model_row["model_size_bytes"],
+        "latest_analysis_id": analysis_id,
+        "latest_analysis_status": model_row["overall_status"],
+        "latest_analysis_at": model_row["completed_at"],
+        "scanner_version": model_row["scanner_version"],
+    }]
+
     overview_rows = [{
         "analysis_id": analysis_id,
         "workspace_id": model_row["workspace_id"],
@@ -388,6 +570,8 @@ def curate_latest_model_analysis(result):
     }]
 
     replacements = {
+        "semantic_models": semantic_model_rows,
+        "best_practice_findings": best_practice_rows,
         "overview": overview_rows,
         "opportunities": opportunity_rows,
         "recommendations": recommendation_rows,
@@ -395,6 +579,7 @@ def curate_latest_model_analysis(result):
         "opportunity_recommendation_links": recommendation_link_rows,
         "opportunity_finding_links": finding_links,
         "column_storage": column_storage_rows,
+        "table_storage": table_storage_rows,
     }
     for logical_name, rows in replacements.items():
         replace_semantic_model_current_state(logical_name, semantic_model_id, rows)
@@ -420,7 +605,13 @@ def main() -> None:
         if "Semantic Model Optimization Scanner — V1.2" in text:
             set_source(cell, text.replace("Semantic Model Optimization Scanner — V1.2", "Semantic Model Optimization Scanner — V2.0"))
 
-    if not any("V2 AI-friendly current-state consumption contract" in source_text(cell) for cell in cells):
+    existing_curation_cell = next(
+        (cell for cell in cells if "V2 AI-friendly current-state consumption contract" in source_text(cell)),
+        None,
+    )
+    if existing_curation_cell is not None:
+        set_source(existing_curation_cell, CURATION_CELL)
+    else:
         execute_index = next(
             index for index, cell in enumerate(cells)
             if "# ---------- Execute scan and persist each model immediately ----------" in source_text(cell)

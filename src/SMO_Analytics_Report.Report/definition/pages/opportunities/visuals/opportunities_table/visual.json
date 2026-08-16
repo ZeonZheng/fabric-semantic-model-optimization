@@ -3,9 +3,9 @@
   "name": "opportunities_table",
   "position": {
     "x": 30,
-    "y": 175,
+    "y": 240,
     "z": 3000,
-    "height": 510,
+    "height": 440,
     "width": 1200,
     "tabOrder": 3000
   },
@@ -15,21 +15,6 @@
       "queryState": {
         "Values": {
           "projections": [
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_opportunities"
-                    }
-                  },
-                  "Property": "semantic_model_name"
-                }
-              },
-              "queryRef": "semantic_model_optimization_opportunities.semantic_model_name",
-              "nativeQueryRef": "Semantic model",
-              "displayName": "Semantic model"
-            },
             {
               "field": {
                 "Column": {
@@ -113,6 +98,21 @@
                       "Entity": "semantic_model_optimization_opportunities"
                     }
                   },
+                  "Property": "change_risk"
+                }
+              },
+              "queryRef": "semantic_model_optimization_opportunities.change_risk",
+              "nativeQueryRef": "Change risk",
+              "displayName": "Change risk"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_opportunities"
+                    }
+                  },
                   "Property": "opportunity_summary"
                 }
               },
@@ -138,7 +138,31 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Prioritized optimization opportunities'"
+                  "Value": "'Right-click an opportunity to drill through to all related details'"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#102A43'"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "stylePreset": [
+        {
+          "properties": {
+            "name": {
+              "expr": {
+                "Literal": {
+                  "Value": "'None'"
                 }
               }
             }
@@ -146,6 +170,93 @@
         }
       ]
     },
-    "drillFilterOtherVisuals": true
+    "drillFilterOtherVisuals": true,
+    "objects": {
+      "columnHeaders": [
+        {
+          "properties": {
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#FFFFFF'"
+                    }
+                  }
+                }
+              }
+            },
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#243B53'"
+                    }
+                  }
+                }
+              }
+            },
+            "autoSizeColumnWidth": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "values": [
+        {
+          "properties": {
+            "backColorPrimary": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#FFFFFF'"
+                    }
+                  }
+                }
+              }
+            },
+            "backColorSecondary": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#F4F7FA'"
+                    }
+                  }
+                }
+              }
+            },
+            "fontColorPrimary": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#102A43'"
+                    }
+                  }
+                }
+              }
+            },
+            "fontColorSecondary": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#102A43'"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
   }
 }

@@ -1,7 +1,7 @@
 table Metrics
 	lineageTag: 0cf621e7-94ae-437e-827a-e2c35635a284
 
-	measure 'Models scanned' = COALESCE(DISTINCTCOUNT(semantic_model_optimization_overview[semantic_model_id]), 0)
+	measure 'Models scanned' = COALESCE(DISTINCTCOUNT(semantic_models[semantic_model_id]), 0)
 		formatString: #,0
 		displayFolder: Overview
 
@@ -47,3 +47,25 @@ table Metrics
 	measure 'Latest analysis at' = MAX(semantic_model_optimization_overview[analysis_completed_at])
 		formatString: General Date
 		displayFolder: Overview
+
+	measure 'Selected scope title' =
+			VAR WorkspaceName = SELECTEDVALUE(semantic_models[workspace_name], "All workspaces")
+			VAR ModelName = SELECTEDVALUE(semantic_models[semantic_model_name], "All semantic models")
+			RETURN WorkspaceName & " · " & ModelName
+		displayFolder: Report experience
+
+	measure 'Severity color' =
+			SWITCH(
+				SELECTEDVALUE(semantic_model_optimization_findings[severity]),
+				"CRITICAL", "#A4262C", "ERROR", "#A4262C", "HIGH", "#D13438",
+				"WARNING", "#F59E0B", "MEDIUM", "#F59E0B", "INFO", "#0078D4",
+				"LOW", "#107C10", "#605E5C"
+			)
+		displayFolder: Report experience
+
+	measure 'Risk color' =
+			SWITCH(
+				SELECTEDVALUE(semantic_model_optimization_recommendations[change_risk]),
+				"HIGH", "#D13438", "MEDIUM", "#F59E0B", "LOW", "#107C10", "#605E5C"
+			)
+		displayFolder: Report experience

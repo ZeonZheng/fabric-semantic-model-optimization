@@ -2,12 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "findings_by_rule",
   "position": {
-    "x": 360,
-    "y": 30,
-    "z": 2000,
-    "height": 220,
-    "width": 870,
-    "tabOrder": 2000
+    "x": 300,
+    "y": 130,
+    "z": 2001,
+    "height": 210,
+    "width": 930,
+    "tabOrder": 2001
   },
   "visual": {
     "visualType": "clusteredBarChart",
@@ -68,6 +68,48 @@
               "expr": {
                 "Literal": {
                   "Value": "'Findings by rule'"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#102A43'"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "background": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "color": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#FFFFFF'"
+                    }
+                  }
+                }
+              }
+            },
+            "transparency": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
                 }
               }
             }

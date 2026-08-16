@@ -1,0 +1,96 @@
+table semantic_model_table_storage
+	lineageTag: 7f50c20c-1e71-56f0-bd2f-e6059c2b7d79
+	sourceLineageTag: [semantic_model_vertipaq].[semantic_model_table_storage]
+
+	column table_storage_record_id
+		dataType: string
+		isKey
+		sourceColumn: table_storage_record_id
+		sourceLineageTag: table_storage_record_id
+		summarizeBy: none
+
+	column analysis_id
+		dataType: string
+		sourceColumn: analysis_id
+		sourceLineageTag: analysis_id
+		summarizeBy: none
+
+	column workspace_name
+		dataType: string
+		sourceColumn: workspace_name
+		sourceLineageTag: workspace_name
+		summarizeBy: none
+
+	column semantic_model_id
+		dataType: string
+		sourceColumn: semantic_model_id
+		sourceLineageTag: semantic_model_id
+		summarizeBy: none
+
+	column semantic_model_name
+		dataType: string
+		sourceColumn: semantic_model_name
+		sourceLineageTag: semantic_model_name
+		summarizeBy: none
+
+	column table_name
+		dataType: string
+		sourceColumn: table_name
+		sourceLineageTag: table_name
+		summarizeBy: none
+
+	column row_count
+		dataType: int64
+		formatString: #,0
+		sourceColumn: row_count
+		sourceLineageTag: row_count
+		summarizeBy: sum
+
+	column data_size_bytes
+		dataType: int64
+		formatString: #,0
+		sourceColumn: data_size_bytes
+		sourceLineageTag: data_size_bytes
+		summarizeBy: sum
+
+	column dictionary_size_bytes
+		dataType: int64
+		formatString: #,0
+		sourceColumn: dictionary_size_bytes
+		sourceLineageTag: dictionary_size_bytes
+		summarizeBy: sum
+
+	column hierarchy_size_bytes
+		dataType: int64
+		formatString: #,0
+		sourceColumn: hierarchy_size_bytes
+		sourceLineageTag: hierarchy_size_bytes
+		summarizeBy: sum
+
+	column total_size_bytes
+		dataType: int64
+		formatString: #,0
+		sourceColumn: total_size_bytes
+		sourceLineageTag: total_size_bytes
+		summarizeBy: sum
+
+	column percentage_of_semantic_model_size
+		dataType: double
+		formatString: #,0.00
+		sourceColumn: percentage_of_semantic_model_size
+		sourceLineageTag: percentage_of_semantic_model_size
+		summarizeBy: sum
+
+	column detected_at
+		dataType: dateTime
+		formatString: General Date
+		sourceColumn: detected_at
+		sourceLineageTag: detected_at
+		summarizeBy: none
+
+	partition 'semantic_model_table_storage' = entity
+		mode: directLake
+		source
+			entityName: semantic_model_table_storage
+			schemaName: semantic_model_vertipaq
+			expressionSource: DatabaseQuery

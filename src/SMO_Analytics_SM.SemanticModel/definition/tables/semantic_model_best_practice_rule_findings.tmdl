@@ -1,0 +1,114 @@
+table semantic_model_best_practice_rule_findings
+	lineageTag: 1dabab6e-a931-54fd-a612-d44ae70aaa58
+	sourceLineageTag: [semantic_model_best_practice].[semantic_model_best_practice_rule_findings]
+
+	column best_practice_finding_id
+		dataType: string
+		isKey
+		sourceColumn: best_practice_finding_id
+		sourceLineageTag: best_practice_finding_id
+		summarizeBy: none
+
+	column analysis_id
+		dataType: string
+		sourceColumn: analysis_id
+		sourceLineageTag: analysis_id
+		summarizeBy: none
+
+	column workspace_name
+		dataType: string
+		sourceColumn: workspace_name
+		sourceLineageTag: workspace_name
+		summarizeBy: none
+
+	column semantic_model_id
+		dataType: string
+		sourceColumn: semantic_model_id
+		sourceLineageTag: semantic_model_id
+		summarizeBy: none
+
+	column semantic_model_name
+		dataType: string
+		sourceColumn: semantic_model_name
+		sourceLineageTag: semantic_model_name
+		summarizeBy: none
+
+	column rule_id
+		dataType: string
+		sourceColumn: rule_id
+		sourceLineageTag: rule_id
+		summarizeBy: none
+
+	column rule_name
+		dataType: string
+		sourceColumn: rule_name
+		sourceLineageTag: rule_name
+		summarizeBy: none
+
+	column category
+		dataType: string
+		sourceColumn: category
+		sourceLineageTag: category
+		summarizeBy: none
+
+	column severity
+		dataType: string
+		sourceColumn: severity
+		sourceLineageTag: severity
+		summarizeBy: none
+
+	column affected_object_type
+		dataType: string
+		sourceColumn: affected_object_type
+		sourceLineageTag: affected_object_type
+		summarizeBy: none
+
+	column affected_table_name
+		dataType: string
+		sourceColumn: affected_table_name
+		sourceLineageTag: affected_table_name
+		summarizeBy: none
+
+	column affected_object_name
+		dataType: string
+		sourceColumn: affected_object_name
+		sourceLineageTag: affected_object_name
+		summarizeBy: none
+
+	column finding_description
+		dataType: string
+		sourceColumn: finding_description
+		sourceLineageTag: finding_description
+		summarizeBy: none
+
+	column recommended_action
+		dataType: string
+		sourceColumn: recommended_action
+		sourceLineageTag: recommended_action
+		summarizeBy: none
+
+	column technical_evidence
+		dataType: string
+		sourceColumn: technical_evidence
+		sourceLineageTag: technical_evidence
+		summarizeBy: none
+
+	column documentation_url
+		dataType: string
+		sourceColumn: documentation_url
+		sourceLineageTag: documentation_url
+		summarizeBy: none
+
+	column detected_at
+		dataType: dateTime
+		formatString: General Date
+		sourceColumn: detected_at
+		sourceLineageTag: detected_at
+		summarizeBy: none
+
+	partition 'semantic_model_best_practice_rule_findings' = entity
+		mode: directLake
+		source
+			entityName: semantic_model_best_practice_rule_findings
+			schemaName: semantic_model_best_practice
+			expressionSource: DatabaseQuery

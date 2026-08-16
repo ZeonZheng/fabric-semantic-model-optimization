@@ -1,0 +1,48 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.3.0/schema.json",
+  "name": "opportunity_detail",
+  "displayName": "Opportunity details",
+  "displayOption": "FitToPage",
+  "height": 720,
+  "width": 1280,
+  "visibility": "HiddenInViewMode",
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "Filter9f9d2c44a76c4b589ea25720",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "semantic_model_optimization_opportunities"
+              }
+            },
+            "Property": "opportunity_id"
+          }
+        },
+        "type": "Categorical",
+        "howCreated": "Drillthrough"
+      }
+    ]
+  },
+  "pageBinding": {
+    "name": "Pod",
+    "type": "Drillthrough",
+    "parameters": [
+      {
+        "name": "Param_Filter9f9d2c44a76c4b589ea25720",
+        "boundFilter": "Filter9f9d2c44a76c4b589ea25720",
+        "fieldExpr": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "semantic_model_optimization_opportunities"
+              }
+            },
+            "Property": "opportunity_id"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -3,11 +3,11 @@
   "name": "optimization_kpis",
   "position": {
     "x": 30,
-    "y": 30,
-    "z": 1000,
-    "height": 130,
+    "y": 130,
+    "z": 2000,
+    "height": 110,
     "width": 1200,
-    "tabOrder": 1000
+    "tabOrder": 2000
   },
   "visual": {
     "visualType": "cardVisual",
@@ -94,6 +94,48 @@
               "expr": {
                 "Literal": {
                   "Value": "'Current optimization analysis'"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#102A43'"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "background": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "color": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#FFFFFF'"
+                    }
+                  }
+                }
+              }
+            },
+            "transparency": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
                 }
               }
             }

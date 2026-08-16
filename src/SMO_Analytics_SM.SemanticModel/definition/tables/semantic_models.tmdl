@@ -1,0 +1,85 @@
+table semantic_models
+	lineageTag: 0c83b55c-20e7-54fa-b4a2-b0c9f01f83bb
+	sourceLineageTag: [semantic_model_metadata].[semantic_models]
+
+	column semantic_model_id
+		dataType: string
+		isKey
+		sourceColumn: semantic_model_id
+		sourceLineageTag: semantic_model_id
+		summarizeBy: none
+
+	column workspace_id
+		dataType: string
+		sourceColumn: workspace_id
+		sourceLineageTag: workspace_id
+		summarizeBy: none
+
+	column workspace_name
+		dataType: string
+		sourceColumn: workspace_name
+		sourceLineageTag: workspace_name
+		summarizeBy: none
+
+	column semantic_model_name
+		dataType: string
+		sourceColumn: semantic_model_name
+		sourceLineageTag: semantic_model_name
+		summarizeBy: none
+
+	column capacity_id
+		dataType: string
+		sourceColumn: capacity_id
+		sourceLineageTag: capacity_id
+		summarizeBy: none
+
+	column capacity_name
+		dataType: string
+		sourceColumn: capacity_name
+		sourceLineageTag: capacity_name
+		summarizeBy: none
+
+	column storage_mode
+		dataType: string
+		sourceColumn: storage_mode
+		sourceLineageTag: storage_mode
+		summarizeBy: none
+
+	column semantic_model_size_bytes
+		dataType: int64
+		formatString: #,0
+		sourceColumn: semantic_model_size_bytes
+		sourceLineageTag: semantic_model_size_bytes
+		summarizeBy: sum
+
+	column latest_analysis_id
+		dataType: string
+		sourceColumn: latest_analysis_id
+		sourceLineageTag: latest_analysis_id
+		summarizeBy: none
+
+	column latest_analysis_status
+		dataType: string
+		sourceColumn: latest_analysis_status
+		sourceLineageTag: latest_analysis_status
+		summarizeBy: none
+
+	column latest_analysis_at
+		dataType: dateTime
+		formatString: General Date
+		sourceColumn: latest_analysis_at
+		sourceLineageTag: latest_analysis_at
+		summarizeBy: none
+
+	column scanner_version
+		dataType: string
+		sourceColumn: scanner_version
+		sourceLineageTag: scanner_version
+		summarizeBy: none
+
+	partition 'semantic_models' = entity
+		mode: directLake
+		source
+			entityName: semantic_models
+			schemaName: semantic_model_metadata
+			expressionSource: DatabaseQuery

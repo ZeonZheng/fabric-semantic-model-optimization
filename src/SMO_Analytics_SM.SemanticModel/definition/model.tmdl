@@ -12,37 +12,49 @@ annotation __PBI_TimeIntelligenceEnabled = 0
 annotation PBI_QueryOrder = ["DatabaseQuery"]
 annotation PBI_ProTooling = ["WebModelingEdit","RemoteModeling"]
 
+ref table semantic_models
+ref table semantic_model_analysis_runs
 ref table semantic_model_optimization_overview
 ref table semantic_model_optimization_opportunities
 ref table semantic_model_optimization_recommendations
 ref table semantic_model_optimization_findings
 ref table semantic_model_column_storage
+ref table semantic_model_table_storage
+ref table semantic_model_best_practice_rule_findings
 ref table semantic_model_optimization_opportunity_recommendation_links
 ref table semantic_model_optimization_opportunity_finding_links
 ref table Metrics
 
-relationship overview_opportunities
+relationship models_overview
+	fromColumn: semantic_model_optimization_overview.semantic_model_id
+	toColumn: semantic_models.semantic_model_id
+
+relationship models_analysis_runs
+	fromColumn: semantic_model_analysis_runs.semantic_model_id
+	toColumn: semantic_models.semantic_model_id
+
+relationship models_opportunities
 	fromColumn: semantic_model_optimization_opportunities.semantic_model_id
-	toColumn: semantic_model_optimization_overview.semantic_model_id
+	toColumn: semantic_models.semantic_model_id
 
-relationship overview_recommendations
-	fromColumn: semantic_model_optimization_recommendations.semantic_model_id
-	toColumn: semantic_model_optimization_overview.semantic_model_id
+relationship models_bpa_findings
+	fromColumn: semantic_model_best_practice_rule_findings.semantic_model_id
+	toColumn: semantic_models.semantic_model_id
 
-relationship overview_findings
-	fromColumn: semantic_model_optimization_findings.semantic_model_id
-	toColumn: semantic_model_optimization_overview.semantic_model_id
-
-relationship overview_column_storage
+relationship models_column_storage
 	fromColumn: semantic_model_column_storage.semantic_model_id
-	toColumn: semantic_model_optimization_overview.semantic_model_id
+	toColumn: semantic_models.semantic_model_id
 
-relationship opportunity_recommendation_bridge
-	fromColumn: semantic_model_optimization_opportunity_recommendation_links.opportunity_id
+relationship models_table_storage
+	fromColumn: semantic_model_table_storage.semantic_model_id
+	toColumn: semantic_models.semantic_model_id
+
+relationship opportunity_recommendations
+	fromColumn: semantic_model_optimization_recommendations.opportunity_id
 	toColumn: semantic_model_optimization_opportunities.opportunity_id
 
-relationship opportunity_finding_bridge
-	fromColumn: semantic_model_optimization_opportunity_finding_links.opportunity_id
+relationship opportunity_findings
+	fromColumn: semantic_model_optimization_findings.opportunity_id
 	toColumn: semantic_model_optimization_opportunities.opportunity_id
 
 ref cultureInfo en-US

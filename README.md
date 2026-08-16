@@ -14,11 +14,11 @@ After deployment, normal operations run only the `Load_SMO_Data` pipeline.
 
 | Item | Fabric name | Purpose |
 | --- | --- | --- |
-| Lakehouse | `SMO_Analytics_Lakehouse` | Technical history plus seven AI-friendly business tables across meaningful schemas |
+| Lakehouse | `SMO_Analytics_Lakehouse` | Raw technical history plus eleven AI-friendly business tables across meaningful schemas |
 | Notebook | `SMO_Optimization_Scanner` | Read-only metadata, BPA, VertiPaq, refresh, and Direct Lake checks |
 | Pipeline | `Load_SMO_Data` | Member-facing entry point with two simple parameters |
-| Semantic model | `SMO_Analytics_SM` | Direct Lake model over the seven-table current-state contract |
-| Report | `SMO_Analytics_Report` | Five pages and 15 visuals for overview, opportunities, recommendations, findings, and storage |
+| Semantic model | `SMO_Analytics_SM` | Direct Lake model centered on the `semantic_models` business dimension |
+| Report | `SMO_Analytics_Report` | Five visible pages with synchronized scope filters, drillthrough, risk highlighting, and storage analysis |
 
 ## Deploy
 
@@ -67,4 +67,4 @@ python tests/validate_repo.py
 
 ## Current stage
 
-Version `0.2.4` restores the approved V2 business contract: five meaningful schemas, seven AI-friendly Direct Lake tables, per-model latest-state replacement, explicit empty-data explanations, and the five-page/15-visual report.
+Version `0.3.0` completes the M6.4 consumption contract: no empty business schemas, eleven AI-friendly Direct Lake tables, a central semantic-model dimension, historical run control, table- and column-level storage, synchronized report filters, and opportunity drillthrough.
