@@ -67,4 +67,4 @@ python tests/validate_repo.py
 
 ## Current stage
 
-Version `0.4.0` implements M6.5.1 recommendation quality: every finding retains its evidence while receiving an explicit actionability state and 0–100 priority score; recommendations add business impact, validation, rollback, and automation guidance; and the report exposes a highlighted **Top actionable recommendations** queue.
+Version `0.4.1` implements M6.5.1 recommendation quality and current-state reconciliation: every finding retains its evidence while receiving an explicit actionability state and 0–100 priority score; recommendations add business impact, validation, rollback, and automation guidance; the report exposes a highlighted **Top actionable recommendations** queue; and a full workspace scan removes report-facing rows for models that are no longer eligible in that workspace scope.

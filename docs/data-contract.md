@@ -31,6 +31,7 @@ Names use complete business entities rather than abbreviations. Columns explicit
 ## Current-state behavior
 
 - A successful or partially successful model analysis replaces only that semantic model's current-state slices.
+- A full workspace scan reconciles the consumption layer to the eligible model inventory and removes stale rows for deleted, excluded, or no-longer-eligible models. A selected-model scan never removes other models.
 - Analysis runs are retained as history and upserted by `analysis_id` plus `semantic_model_id`.
 - A failed model analysis preserves the last usable current state.
 - Re-running a scan does not duplicate report counts.

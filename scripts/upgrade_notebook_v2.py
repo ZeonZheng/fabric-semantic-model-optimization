@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 
@@ -254,6 +255,10 @@ CURATED_TABLES = {
     "table_storage": ("semantic_model_vertipaq", "semantic_model_table_storage", TABLE_STORAGE_SCHEMA),
 }
 
+CURRENT_STATE_TABLES = tuple(
+    logical_name for logical_name in CURATED_TABLES if logical_name != "analysis_runs"
+)
+
 
 def curated_table_name(logical_name):
     schema_name, physical_name, _ = CURATED_TABLES[logical_name]
@@ -285,6 +290,48 @@ def replace_semantic_model_current_state(logical_name, semantic_model_id, rows):
     DeltaTable.forName(spark, name).delete(f"semantic_model_id = '{escaped_model_id}'")
     if rows:
         spark.createDataFrame(rows, schema=schema).write.format("delta").mode("append").saveAsTable(name)
+
+
+def reconcile_workspace_current_state(targets):
+    """Remove current-state rows for models no longer eligible in a full workspace scan."""
+    workspace_targets = {}
+    for target in targets:
+        if target.get("scope_source") != "WORKSPACE":
+            continue
+        workspace_targets.setdefault(target["workspace_id"], set()).add(target["model_id"])
+
+    if not workspace_targets:
+        return
+
+    model_dimension = spark.table(curated_table_name("semantic_models"))
+    stale_model_ids = set()
+    for workspace_id, eligible_model_ids in workspace_targets.items():
+        escaped_workspace_id = workspace_id.replace("'", "''")
+        existing_model_ids = {
+            row["semantic_model_id"]
+            for row in (
+                model_dimension
+                .where(f"workspace_id = '{escaped_workspace_id}'")
+                .select("semantic_model_id")
+                .collect()
+            )
+        }
+        stale_model_ids.update(existing_model_ids - eligible_model_ids)
+
+    if not stale_model_ids:
+        return
+
+    quoted_ids = ", ".join(
+        "'" + model_id.replace("'", "''") + "'"
+        for model_id in sorted(stale_model_ids)
+    )
+    predicate = f"semantic_model_id IN ({quoted_ids})"
+    for logical_name in CURRENT_STATE_TABLES:
+        DeltaTable.forName(spark, curated_table_name(logical_name)).delete(predicate)
+    print(
+        f"Removed stale current-state rows for {len(stale_model_ids)} semantic model(s) "
+        "outside the eligible full-workspace scan scope."
+    )
 
 
 def upsert_curated_history(logical_name, rows, keys):
@@ -638,12 +685,17 @@ def main() -> None:
 
     for cell in cells:
         text = source_text(cell)
-        if 'SCANNER_VERSION = "1.2.0"' in text or 'SCANNER_VERSION = "2.0.0"' in text:
-            text = text.replace('SCANNER_VERSION = "1.2.0"', 'SCANNER_VERSION = "2.1.0"')
-            set_source(cell, text.replace('SCANNER_VERSION = "2.0.0"', 'SCANNER_VERSION = "2.1.0"'))
-        if "Semantic Model Optimization Scanner — V1.2" in text or "Semantic Model Optimization Scanner — V2.0" in text:
-            text = text.replace("Semantic Model Optimization Scanner — V1.2", "Semantic Model Optimization Scanner — V2.1")
-            set_source(cell, text.replace("Semantic Model Optimization Scanner — V2.0", "Semantic Model Optimization Scanner — V2.1"))
+        for previous_version in ("1.2.0", "2.0.0", "2.1.0"):
+            text = text.replace(
+                f'SCANNER_VERSION = "{previous_version}"',
+                'SCANNER_VERSION = "2.1.1"',
+            )
+        text = re.sub(
+            r"Semantic Model Optimization Scanner — V(?:1\.2|2\.0|2\.1(?:\.1)*)",
+            "Semantic Model Optimization Scanner — V2.1.1",
+            text,
+        )
+        set_source(cell, text)
 
     quality_rules_source = QUALITY_RULES.read_text(encoding="utf-8")
     curation_cell = CURATION_CELL.replace("# __QUALITY_RULES_SOURCE__", quality_rules_source)
@@ -689,7 +741,14 @@ def main() -> None:
             '                upsert_rows("item_access_snapshot", result["access_rows"])',
             '                upsert_rows("item_access_snapshot", result["access_rows"])\n                curate_latest_model_analysis(result)',
         )
+        block += "\n            reconcile_workspace_current_state(targets)"
         execute = execute[:start] + block + execute[end:]
+    if "reconcile_workspace_current_state(targets)" not in execute:
+        execute = execute.replace(
+            "                curate_latest_model_analysis(result)\n",
+            "                curate_latest_model_analysis(result)\n"
+            "            reconcile_workspace_current_state(targets)\n",
+        )
     set_source(execute_cell, execute)
 
     final_cell = next(cell for cell in cells if "final_status = \"FAILED\"" in source_text(cell))
