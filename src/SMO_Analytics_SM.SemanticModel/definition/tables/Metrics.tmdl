@@ -13,7 +13,40 @@ table Metrics
 		formatString: #,0
 		displayFolder: Recommendations
 
+	measure 'Actionable recommendations' =
+			COALESCE(
+				CALCULATE(
+					[Total recommendations],
+					semantic_model_optimization_recommendations[actionability_status] = "ACTIONABLE"
+				),
+				0
+			)
+		formatString: #,0
+		displayFolder: Recommendations
+
+	measure 'Review required recommendations' =
+			COALESCE(
+				CALCULATE(
+					[Total recommendations],
+					semantic_model_optimization_recommendations[actionability_status] = "REVIEW_REQUIRED"
+				),
+				0
+			)
+		formatString: #,0
+		displayFolder: Recommendations
+
 	measure 'Total findings' = COALESCE(COUNTROWS(semantic_model_optimization_findings), 0)
+		formatString: #,0
+		displayFolder: Findings
+
+	measure 'Suppressed findings' =
+			COALESCE(
+				CALCULATE(
+					[Total findings],
+					semantic_model_optimization_findings[actionability_status] = "SUPPRESSED"
+				),
+				0
+			)
 		formatString: #,0
 		displayFolder: Findings
 
@@ -67,5 +100,13 @@ table Metrics
 			SWITCH(
 				SELECTEDVALUE(semantic_model_optimization_recommendations[change_risk]),
 				"HIGH", "#D13438", "MEDIUM", "#F59E0B", "LOW", "#107C10", "#605E5C"
+			)
+		displayFolder: Report experience
+
+	measure 'Actionability color' =
+			SWITCH(
+				SELECTEDVALUE(semantic_model_optimization_recommendations[actionability_status]),
+				"ACTIONABLE", "#D9EAD3", "REVIEW_REQUIRED", "#FCE8B2",
+				"INFORMATIONAL", "#D9EAF7", "SUPPRESSED", "#E5E7EB", "#FFFFFF"
 			)
 		displayFolder: Report experience

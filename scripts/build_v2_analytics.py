@@ -51,7 +51,9 @@ TABLE_DEFINITIONS = {
             ("analysis_status", "string"), ("analysis_completed_at", "dateTime"), ("scanner_version", "string"),
             ("semantic_model_size_bytes", "int64"), ("optimization_opportunity_count", "int64"),
             ("optimization_recommendation_count", "int64"), ("optimization_finding_count", "int64"),
-            ("high_severity_finding_count", "int64"), ("best_practice_analysis_status", "string"),
+            ("high_severity_finding_count", "int64"), ("actionable_recommendation_count", "int64"),
+            ("review_required_recommendation_count", "int64"), ("suppressed_finding_count", "int64"),
+            ("best_practice_analysis_status", "string"),
             ("storage_analysis_status", "string"), ("refresh_history_status", "string"),
             ("refresh_history_record_count", "int64"), ("object_usage_analysis_status", "string"),
             ("object_usage_observation_count", "int64"), ("direct_lake_analysis_status", "string"),
@@ -67,7 +69,10 @@ TABLE_DEFINITIONS = {
             ("optimization_domain", "string"), ("finding_source", "string"), ("highest_severity", "string"),
             ("finding_count", "int64"), ("recommendation_count", "int64"),
             ("estimated_saving_bytes_low", "int64"), ("estimated_saving_bytes_high", "int64"),
-            ("change_risk", "string"), ("opportunity_summary", "string"), ("priority_score", "int64"),
+            ("change_risk", "string"), ("opportunity_summary", "string"),
+            ("actionability_status", "string"), ("actionable_finding_count", "int64"),
+            ("review_required_finding_count", "int64"), ("suppressed_finding_count", "int64"),
+            ("priority_score", "int64"), ("priority_band", "string"),
             ("detected_at", "dateTime"),
         ],
     },
@@ -79,7 +84,12 @@ TABLE_DEFINITIONS = {
             ("optimization_domain", "string"), ("recommended_action", "string"), ("change_risk", "string"),
             ("validation_required", "boolean"), ("estimated_saving_bytes_low", "int64"),
             ("estimated_saving_bytes_high", "int64"), ("finding_source", "string"),
-            ("affected_finding_count", "int64"), ("detected_at", "dateTime"),
+            ("affected_finding_count", "int64"), ("actionable_finding_count", "int64"),
+            ("suppressed_finding_count", "int64"), ("actionability_status", "string"),
+            ("actionability_reason", "string"), ("recommendation_priority_score", "int64"),
+            ("recommendation_priority_band", "string"), ("automation_eligibility", "string"),
+            ("why_it_matters", "string"), ("validation_method", "string"),
+            ("rollback_guidance", "string"), ("detected_at", "dateTime"),
         ],
     },
     "semantic_model_optimization_findings": {
@@ -93,7 +103,10 @@ TABLE_DEFINITIONS = {
             ("finding_description", "string"), ("recommended_action", "string"),
             ("technical_evidence", "string"), ("estimated_saving_bytes_low", "int64"),
             ("estimated_saving_bytes_high", "int64"), ("change_risk", "string"),
-            ("validation_required", "boolean"), ("detected_at", "dateTime"),
+            ("validation_required", "boolean"), ("actionability_status", "string"),
+            ("actionability_reason", "string"), ("suppression_reason", "string"),
+            ("finding_priority_score", "int64"), ("finding_priority_band", "string"),
+            ("detected_at", "dateTime"),
         ],
     },
     "semantic_model_column_storage": {
@@ -192,7 +205,40 @@ METRICS = """table Metrics
 \t\tformatString: #,0
 \t\tdisplayFolder: Recommendations
 
+\tmeasure 'Actionable recommendations' =
+\t\t\tCOALESCE(
+\t\t\t\tCALCULATE(
+\t\t\t\t\t[Total recommendations],
+\t\t\t\t\tsemantic_model_optimization_recommendations[actionability_status] = "ACTIONABLE"
+\t\t\t\t),
+\t\t\t\t0
+\t\t\t)
+\t\tformatString: #,0
+\t\tdisplayFolder: Recommendations
+
+\tmeasure 'Review required recommendations' =
+\t\t\tCOALESCE(
+\t\t\t\tCALCULATE(
+\t\t\t\t\t[Total recommendations],
+\t\t\t\t\tsemantic_model_optimization_recommendations[actionability_status] = "REVIEW_REQUIRED"
+\t\t\t\t),
+\t\t\t\t0
+\t\t\t)
+\t\tformatString: #,0
+\t\tdisplayFolder: Recommendations
+
 \tmeasure 'Total findings' = COALESCE(COUNTROWS(semantic_model_optimization_findings), 0)
+\t\tformatString: #,0
+\t\tdisplayFolder: Findings
+
+\tmeasure 'Suppressed findings' =
+\t\t\tCOALESCE(
+\t\t\t\tCALCULATE(
+\t\t\t\t\t[Total findings],
+\t\t\t\t\tsemantic_model_optimization_findings[actionability_status] = "SUPPRESSED"
+\t\t\t\t),
+\t\t\t\t0
+\t\t\t)
 \t\tformatString: #,0
 \t\tdisplayFolder: Findings
 
@@ -246,6 +292,14 @@ METRICS = """table Metrics
 \t\t\tSWITCH(
 \t\t\t\tSELECTEDVALUE(semantic_model_optimization_recommendations[change_risk]),
 \t\t\t\t"HIGH", "#D13438", "MEDIUM", "#F59E0B", "LOW", "#107C10", "#605E5C"
+\t\t\t)
+\t\tdisplayFolder: Report experience
+
+\tmeasure 'Actionability color' =
+\t\t\tSWITCH(
+\t\t\t\tSELECTEDVALUE(semantic_model_optimization_recommendations[actionability_status]),
+\t\t\t\t"ACTIONABLE", "#D9EAD3", "REVIEW_REQUIRED", "#FCE8B2",
+\t\t\t\t"INFORMATIONAL", "#D9EAF7", "SUPPRESSED", "#E5E7EB", "#FFFFFF"
 \t\t\t)
 \t\tdisplayFolder: Report experience
 """
@@ -325,6 +379,7 @@ def table_formatting() -> tuple[dict, dict]:
             "fontColor": {"solid": {"color": literal("#FFFFFF")}},
             "backColor": {"solid": {"color": literal("#243B53")}},
             "autoSizeColumnWidth": {"expr": {"Literal": {"Value": "true"}}},
+            "columnAdjustment": literal("growToFit"),
         }}],
         "values": [{"properties": {
             "backColorPrimary": {"solid": {"color": literal("#FFFFFF")}},
@@ -341,6 +396,7 @@ def visual(
     name: str, visual_type: str, x: int, y: int, width: int, height: int,
     roles: dict, title: str, z: int, *, sync_group: str | None = None,
     conditional_color: tuple[str, str] | None = None,
+    sort_by: tuple[str, str] | None = None,
 ) -> dict:
     title_objects = {"title": [{"properties": {
         "show": {"expr": {"Literal": {"Value": "true"}}},
@@ -358,6 +414,15 @@ def visual(
             "drillFilterOtherVisuals": True,
         },
     }
+    if sort_by:
+        entity, prop = sort_by
+        result["visual"]["query"]["sortDefinition"] = {
+            "sort": [{
+                "field": {"Column": {"Expression": {"SourceRef": {"Entity": entity}}, "Property": prop}},
+                "direction": "Descending",
+            }],
+            "isDefaultSort": False,
+        }
     if visual_type == "slicer":
         result["visual"]["objects"] = {"data": [{"properties": {"mode": literal("Dropdown")}}]}
         result["visual"]["visualContainerObjects"]["padding"] = [{"properties": {
@@ -381,6 +446,10 @@ def visual(
                     ("INFO", "#D9EAF7"), ("LOW", "#D9EAD3"),
                 ],
                 "risk": [("HIGH", "#F4CCCC"), ("MEDIUM", "#FCE8B2"), ("LOW", "#D9EAD3")],
+                "actionability": [
+                    ("ACTIONABLE", "#D9EAD3"), ("REVIEW_REQUIRED", "#FCE8B2"),
+                    ("INFORMATIONAL", "#D9EAF7"), ("SUPPRESSED", "#E5E7EB"),
+                ],
             }[color_kind]
             left = {"Column": {"Expression": {"SourceRef": {"Entity": entity}}, "Property": prop}}
             conditional = {
@@ -469,6 +538,9 @@ def write_report() -> None:
         visual("optimization_kpis", "cardVisual", 30, 130, 1200, 110, {"Data": [
             field_measure("Models scanned", "Models scanned"), field_measure("Total opportunities", "Opportunities"),
             field_measure("Total findings", "Findings"), field_measure("High findings", "High findings"),
+            field_measure("Actionable recommendations", "Actionable"),
+            field_measure("Review required recommendations", "Review required"),
+            field_measure("Suppressed findings", "Suppressed"),
         ]}, "Current optimization analysis", 2000),
         visual("findings_by_severity", "clusteredColumnChart", 30, 260, 470, 420,
                {"Category": [field_column(findings, "severity", "Severity")], "Y": [field_measure("Total findings", "Findings")]},
@@ -488,25 +560,43 @@ def write_report() -> None:
                {"Values": [field_column(opportunities, "optimization_domain", "Optimization domain")]}, "Optimization domain", 2001),
         visual("opportunities_table", "tableEx", 30, 240, 1200, 440, {"Values": [
             field_column(opportunities, "opportunity_title", "Opportunity"), field_column(opportunities, "highest_severity", "Severity"),
+            field_column(opportunities, "priority_score", "Priority score"), field_column(opportunities, "priority_band", "Priority band"),
+            field_column(opportunities, "actionability_status", "Actionability"),
             field_column(opportunities, "optimization_domain", "Domain"), field_column(opportunities, "finding_count", "Findings"),
             field_column(opportunities, "recommendation_count", "Recommendations"), field_column(opportunities, "change_risk", "Change risk"),
             field_column(opportunities, "opportunity_summary", "Summary"),
-        ]}, "Right-click an opportunity to drill through to all related details", 3000),
+        ]}, "Right-click an opportunity to drill through to all related details", 3000,
+               sort_by=(opportunities, "priority_score")),
     ])
 
     write_page("recommendations", "Recommendations", global_slicers() + [
-        visual("risk_slicer", "slicer", 30, 130, 250, 88,
-               {"Values": [field_column(recommendations, "change_risk", "Change risk")]}, "Change risk", 2000),
-        visual("recommendations_by_domain", "clusteredBarChart", 300, 130, 930, 210,
-               {"Category": [field_column(recommendations, "optimization_domain", "Optimization domain")], "Y": [field_measure("Total recommendations", "Recommendations")]},
-               "Recommendations by domain", 2001),
-        visual("recommendations_table", "tableEx", 30, 365, 1200, 315, {"Values": [
+        visual("recommendation_quality_kpis", "cardVisual", 30, 130, 1200, 85, {"Data": [
+            field_measure("Total recommendations", "All recommendations"),
+            field_measure("Actionable recommendations", "Actionable"),
+            field_measure("Review required recommendations", "Review required"),
+            field_measure("Suppressed findings", "Suppressed findings"),
+        ]}, "Recommendation action queue", 2000),
+        visual("actionability_slicer", "slicer", 30, 230, 360, 88,
+               {"Values": [field_column(recommendations, "actionability_status", "Actionability")]}, "Actionability", 2100),
+        visual("priority_band_slicer", "slicer", 410, 230, 360, 88,
+               {"Values": [field_column(recommendations, "recommendation_priority_band", "Priority band")]}, "Priority band", 2101),
+        visual("risk_slicer", "slicer", 790, 230, 440, 88,
+               {"Values": [field_column(recommendations, "change_risk", "Change risk")]}, "Change risk", 2102),
+        visual("top_actionable_recommendations", "tableEx", 30, 335, 1200, 345, {"Values": [
+            field_column(recommendations, "recommendation_priority_score", "Priority score"),
+            field_column(recommendations, "recommendation_priority_band", "Priority band"),
+            field_column(recommendations, "actionability_status", "Actionability"),
             field_column(recommendations, "recommendation_title", "Recommendation"),
-            field_column(recommendations, "recommended_action", "Recommended action"), field_column(recommendations, "change_risk", "Change risk"),
-            field_column(recommendations, "validation_required", "Validation required"),
-            field_column(recommendations, "affected_finding_count", "Affected findings"),
-        ]}, "Recommended actions with risk highlighting", 3000,
-               conditional_color=(f"{recommendations}.change_risk", "risk")),
+            field_column(recommendations, "why_it_matters", "Why it matters"),
+            field_column(recommendations, "recommended_action", "Recommended action"),
+            field_column(recommendations, "validation_method", "Validation method"),
+            field_column(recommendations, "automation_eligibility", "Automation eligibility"),
+            field_column(recommendations, "change_risk", "Change risk"),
+            field_column(recommendations, "actionable_finding_count", "Actionable findings"),
+            field_column(recommendations, "suppressed_finding_count", "Suppressed findings"),
+        ]}, "Top actionable recommendations — use Actionability and Priority band to focus the queue", 3000,
+               conditional_color=(f"{recommendations}.actionability_status", "actionability"),
+               sort_by=(recommendations, "recommendation_priority_score")),
     ])
 
     write_page("findings", "Detailed findings", global_slicers() + [
@@ -516,11 +606,16 @@ def write_report() -> None:
                {"Category": [field_column(findings, "rule_name", "Rule")], "Y": [field_measure("Total findings", "Findings")]},
                "Findings by rule", 2001),
         visual("findings_table", "tableEx", 30, 365, 1200, 315, {"Values": [
+            field_column(findings, "finding_priority_score", "Priority score"),
+            field_column(findings, "finding_priority_band", "Priority band"),
+            field_column(findings, "actionability_status", "Actionability"),
             field_column(findings, "severity", "Severity"), field_column(findings, "rule_name", "Rule"),
             field_column(findings, "affected_table_name", "Table"), field_column(findings, "affected_object_name", "Affected object"),
             field_column(findings, "finding_description", "Finding"), field_column(findings, "recommended_action", "Recommended action"),
+            field_column(findings, "suppression_reason", "Suppression reason"),
         ]}, "Affected objects and findings", 3000,
-               conditional_color=(f"{findings}.severity", "severity")),
+               conditional_color=(f"{findings}.severity", "severity"),
+               sort_by=(findings, "finding_priority_score")),
     ])
 
     write_page("storage", "Storage analysis", global_slicers() + [

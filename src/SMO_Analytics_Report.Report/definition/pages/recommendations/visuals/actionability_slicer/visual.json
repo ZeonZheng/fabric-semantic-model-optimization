@@ -1,19 +1,19 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
-  "name": "recommendations_by_domain",
+  "name": "actionability_slicer",
   "position": {
-    "x": 300,
-    "y": 130,
-    "z": 2001,
-    "height": 210,
-    "width": 930,
-    "tabOrder": 2001
+    "x": 30,
+    "y": 230,
+    "z": 2100,
+    "height": 88,
+    "width": 360,
+    "tabOrder": 2100
   },
   "visual": {
-    "visualType": "clusteredBarChart",
+    "visualType": "slicer",
     "query": {
       "queryState": {
-        "Category": {
+        "Values": {
           "projections": [
             {
               "field": {
@@ -23,31 +23,12 @@
                       "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
-                  "Property": "optimization_domain"
+                  "Property": "actionability_status"
                 }
               },
-              "queryRef": "semantic_model_optimization_recommendations.optimization_domain",
-              "nativeQueryRef": "Optimization domain",
-              "displayName": "Optimization domain"
-            }
-          ]
-        },
-        "Y": {
-          "projections": [
-            {
-              "field": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "Metrics"
-                    }
-                  },
-                  "Property": "Total recommendations"
-                }
-              },
-              "queryRef": "Metrics.Total recommendations",
-              "nativeQueryRef": "Recommendations",
-              "displayName": "Recommendations"
+              "queryRef": "semantic_model_optimization_recommendations.actionability_status",
+              "nativeQueryRef": "Actionability",
+              "displayName": "Actionability"
             }
           ]
         }
@@ -67,7 +48,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Recommendations by domain'"
+                  "Value": "'Actionability'"
                 }
               }
             },
@@ -85,31 +66,34 @@
           }
         }
       ],
-      "background": [
+      "padding": [
         {
           "properties": {
-            "show": {
+            "top": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "8D"
                 }
               }
             },
-            "color": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#FFFFFF'"
-                    }
-                  }
+            "bottom": {
+              "expr": {
+                "Literal": {
+                  "Value": "8D"
                 }
               }
             },
-            "transparency": {
+            "left": {
               "expr": {
                 "Literal": {
-                  "Value": "0D"
+                  "Value": "8D"
+                }
+              }
+            },
+            "right": {
+              "expr": {
+                "Literal": {
+                  "Value": "8D"
                 }
               }
             }
@@ -117,6 +101,21 @@
         }
       ]
     },
-    "drillFilterOtherVisuals": true
+    "drillFilterOtherVisuals": true,
+    "objects": {
+      "data": [
+        {
+          "properties": {
+            "mode": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Dropdown'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
   }
 }

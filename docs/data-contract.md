@@ -9,10 +9,10 @@ V2 separates append-only technical evidence from a meaningful, AI-friendly consu
 | `analysis_control.semantic_model_analysis_runs` | one historical row per analysis and semantic model | Auditable scan profile, status, component coverage, timing, and errors |
 | `semantic_model_metadata.semantic_models` | one current row per semantic model | Central, human-readable model dimension used by all report filters and facts |
 | `semantic_model_best_practice.semantic_model_best_practice_rule_findings` | one current row per BPA rule finding and affected object | Best-practice-specific rule evidence, documentation, and remediation |
-| `semantic_model_optimization.semantic_model_optimization_overview` | one current row per semantic model | Latest analysis status, business counts, evidence-source coverage, and explanations for unavailable data |
-| `semantic_model_optimization.semantic_model_optimization_opportunities` | one current row per model and optimization domain/source | Prioritized optimization opportunities derived from normalized findings |
-| `semantic_model_optimization.semantic_model_optimization_recommendations` | one current row per distinct model/rule/action | Recommended actions with risk, validation, and estimated storage benefit context |
-| `semantic_model_optimization.semantic_model_optimization_findings` | one current row per affected object finding | Detailed evidence, severity, affected object, and recommended action |
+| `semantic_model_optimization.semantic_model_optimization_overview` | one current row per semantic model | Latest analysis status, action-queue counts, evidence-source coverage, and explanations for unavailable data |
+| `semantic_model_optimization.semantic_model_optimization_opportunities` | one current row per model and optimization domain/source | Prioritized opportunities with actionability and actionable/review/suppressed finding rollups |
+| `semantic_model_optimization.semantic_model_optimization_recommendations` | one current row per distinct model/rule/action | Implementation-ready actions with priority, business impact, validation, rollback, automation, risk, and evidence counts |
+| `semantic_model_optimization.semantic_model_optimization_findings` | one current row per affected object finding | Complete evidence plus actionability, suppression reason, and deterministic priority |
 | `semantic_model_vertipaq.semantic_model_column_storage` | one current row per analyzed model column | VertiPaq size, encoding, cardinality, and percentage of model size |
 | `semantic_model_vertipaq.semantic_model_table_storage` | one current row per analyzed model table | Table row count and aggregate VertiPaq storage footprint |
 | `semantic_model_optimization.semantic_model_optimization_opportunity_recommendation_links` | one opportunity/recommendation relationship | Explicit bridge for AI and analytical navigation |
@@ -36,6 +36,19 @@ Names use complete business entities rather than abbreviations. Columns explicit
 - Re-running a scan does not duplicate report counts.
 - The overview row records `NOT_RUN`, `NOT_APPLICABLE`, successful zero-record results, and a plain-language explanation.
 - High-severity counts return zero rather than blank.
+
+## Actionability and priority
+
+Raw findings are never deleted by quality grading. Each finding receives one of four explicit states:
+
+| State | Meaning |
+| --- | --- |
+| `ACTIONABLE` | Evidence, confidence, recommended action, and change risk meet the execution threshold |
+| `REVIEW_REQUIRED` | A human must confirm the evidence or review a high-risk design change |
+| `INFORMATIONAL` | Useful context that does not yet form an executable change |
+| `SUPPRESSED` | Retained for audit but removed from the action queue, for example a generated Auto Date/Time object or missing evidence |
+
+`finding_priority_score` and `recommendation_priority_score` use a deterministic 0–100 scale. The corresponding bands are `P1_CRITICAL`, `P2_HIGH`, `P3_MEDIUM`, and `P4_LOW`. Generated Auto Date/Time objects are suppressed individually and consolidated into one model-level recommendation to replace them with an explicit date dimension.
 
 ## Technical evidence compatibility
 

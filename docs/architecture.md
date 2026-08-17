@@ -8,9 +8,10 @@ The solution separates deployment, recurring discovery, and benefit validation:
 2. The scanner initializes the technical evidence and V2 business contracts once.
 3. `Load_SMO_Data` runs the scanner for an explicit workspace/model scope.
 4. The scanner preserves technical history and refreshes each model's latest usable business state.
-5. The Direct Lake semantic model reads eleven meaningful consumption tables centered on `semantic_models`.
-6. The report presents five visible analysis pages, synchronized workspace/model filters, and a hidden opportunity drillthrough page.
-7. CU savings, if pursued, are measured separately with controlled before/after capacity metrics.
+5. Deterministic quality rules retain every finding while grading actionability, suppression, and implementation priority.
+6. The Direct Lake semantic model reads eleven meaningful consumption tables centered on `semantic_models`.
+7. The report presents five visible analysis pages, synchronized workspace/model filters, a top actionable recommendation queue, and a hidden opportunity drillthrough page.
+8. CU savings, if pursued, are measured separately with controlled before/after capacity metrics.
 
 ## Runtime flow
 
@@ -19,7 +20,8 @@ flowchart TD
     A[Pipeline parameters] --> B[Read-only scanner]
     B --> C[(Technical evidence)]
     B --> D[(Latest business state)]
-    D --> E[Direct Lake model]
+    D --> Q[Quality grading]
+    Q --> E[Direct Lake model]
     E --> F[Five-page report]
 ```
 

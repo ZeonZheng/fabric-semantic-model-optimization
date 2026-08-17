@@ -1,11 +1,11 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
-  "name": "optimization_kpis",
+  "name": "recommendation_quality_kpis",
   "position": {
     "x": 30,
     "y": 130,
     "z": 2000,
-    "height": 110,
+    "height": 85,
     "width": 1200,
     "tabOrder": 2000
   },
@@ -23,57 +23,12 @@
                       "Entity": "Metrics"
                     }
                   },
-                  "Property": "Models scanned"
+                  "Property": "Total recommendations"
                 }
               },
-              "queryRef": "Metrics.Models scanned",
-              "nativeQueryRef": "Models scanned",
-              "displayName": "Models scanned"
-            },
-            {
-              "field": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "Metrics"
-                    }
-                  },
-                  "Property": "Total opportunities"
-                }
-              },
-              "queryRef": "Metrics.Total opportunities",
-              "nativeQueryRef": "Opportunities",
-              "displayName": "Opportunities"
-            },
-            {
-              "field": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "Metrics"
-                    }
-                  },
-                  "Property": "Total findings"
-                }
-              },
-              "queryRef": "Metrics.Total findings",
-              "nativeQueryRef": "Findings",
-              "displayName": "Findings"
-            },
-            {
-              "field": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "Metrics"
-                    }
-                  },
-                  "Property": "High findings"
-                }
-              },
-              "queryRef": "Metrics.High findings",
-              "nativeQueryRef": "High findings",
-              "displayName": "High findings"
+              "queryRef": "Metrics.Total recommendations",
+              "nativeQueryRef": "All recommendations",
+              "displayName": "All recommendations"
             },
             {
               "field": {
@@ -117,8 +72,8 @@
                 }
               },
               "queryRef": "Metrics.Suppressed findings",
-              "nativeQueryRef": "Suppressed",
-              "displayName": "Suppressed"
+              "nativeQueryRef": "Suppressed findings",
+              "displayName": "Suppressed findings"
             }
           ]
         }
@@ -138,7 +93,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Current optimization analysis'"
+                  "Value": "'Recommendation action queue'"
                 }
               }
             },

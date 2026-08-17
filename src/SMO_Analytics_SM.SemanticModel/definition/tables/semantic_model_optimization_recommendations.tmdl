@@ -96,6 +96,69 @@ table semantic_model_optimization_recommendations
 		sourceLineageTag: affected_finding_count
 		summarizeBy: sum
 
+	column actionable_finding_count
+		dataType: int64
+		formatString: #,0
+		sourceColumn: actionable_finding_count
+		sourceLineageTag: actionable_finding_count
+		summarizeBy: sum
+
+	column suppressed_finding_count
+		dataType: int64
+		formatString: #,0
+		sourceColumn: suppressed_finding_count
+		sourceLineageTag: suppressed_finding_count
+		summarizeBy: sum
+
+	column actionability_status
+		dataType: string
+		sourceColumn: actionability_status
+		sourceLineageTag: actionability_status
+		summarizeBy: none
+
+	column actionability_reason
+		dataType: string
+		sourceColumn: actionability_reason
+		sourceLineageTag: actionability_reason
+		summarizeBy: none
+
+	column recommendation_priority_score
+		dataType: int64
+		formatString: #,0
+		sourceColumn: recommendation_priority_score
+		sourceLineageTag: recommendation_priority_score
+		summarizeBy: sum
+
+	column recommendation_priority_band
+		dataType: string
+		sourceColumn: recommendation_priority_band
+		sourceLineageTag: recommendation_priority_band
+		summarizeBy: none
+
+	column automation_eligibility
+		dataType: string
+		sourceColumn: automation_eligibility
+		sourceLineageTag: automation_eligibility
+		summarizeBy: none
+
+	column why_it_matters
+		dataType: string
+		sourceColumn: why_it_matters
+		sourceLineageTag: why_it_matters
+		summarizeBy: none
+
+	column validation_method
+		dataType: string
+		sourceColumn: validation_method
+		sourceLineageTag: validation_method
+		summarizeBy: none
+
+	column rollback_guidance
+		dataType: string
+		sourceColumn: rollback_guidance
+		sourceLineageTag: rollback_guidance
+		summarizeBy: none
+
 	column detected_at
 		dataType: dateTime
 		formatString: General Date

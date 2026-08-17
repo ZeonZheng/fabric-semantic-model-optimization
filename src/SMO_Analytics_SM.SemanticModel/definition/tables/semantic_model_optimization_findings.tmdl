@@ -137,6 +137,37 @@ table semantic_model_optimization_findings
 		sourceLineageTag: validation_required
 		summarizeBy: none
 
+	column actionability_status
+		dataType: string
+		sourceColumn: actionability_status
+		sourceLineageTag: actionability_status
+		summarizeBy: none
+
+	column actionability_reason
+		dataType: string
+		sourceColumn: actionability_reason
+		sourceLineageTag: actionability_reason
+		summarizeBy: none
+
+	column suppression_reason
+		dataType: string
+		sourceColumn: suppression_reason
+		sourceLineageTag: suppression_reason
+		summarizeBy: none
+
+	column finding_priority_score
+		dataType: int64
+		formatString: #,0
+		sourceColumn: finding_priority_score
+		sourceLineageTag: finding_priority_score
+		summarizeBy: sum
+
+	column finding_priority_band
+		dataType: string
+		sourceColumn: finding_priority_band
+		sourceLineageTag: finding_priority_band
+		summarizeBy: none
+
 	column detected_at
 		dataType: dateTime
 		formatString: General Date

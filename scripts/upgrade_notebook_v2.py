@@ -9,9 +9,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOK = ROOT / "src/SMO_Optimization_Scanner.Notebook/notebook-content.ipynb"
+QUALITY_RULES = ROOT / "scripts/quality_rules.py"
 
 
 CURATION_CELL = r'''# ---------- V2 AI-friendly current-state consumption contract ----------
+
+# __QUALITY_RULES_SOURCE__
 
 BUSINESS_SCHEMAS = (
     "analysis_control",
@@ -36,6 +39,9 @@ OPTIMIZATION_OVERVIEW_SCHEMA = T.StructType([
     T.StructField("optimization_recommendation_count", T.IntegerType()),
     T.StructField("optimization_finding_count", T.IntegerType()),
     T.StructField("high_severity_finding_count", T.IntegerType()),
+    T.StructField("actionable_recommendation_count", T.IntegerType()),
+    T.StructField("review_required_recommendation_count", T.IntegerType()),
+    T.StructField("suppressed_finding_count", T.IntegerType()),
     T.StructField("best_practice_analysis_status", T.StringType()),
     T.StructField("storage_analysis_status", T.StringType()),
     T.StructField("refresh_history_status", T.StringType()),
@@ -65,7 +71,12 @@ OPTIMIZATION_OPPORTUNITY_SCHEMA = T.StructType([
     T.StructField("estimated_saving_bytes_high", T.LongType()),
     T.StructField("change_risk", T.StringType()),
     T.StructField("opportunity_summary", T.StringType()),
+    T.StructField("actionability_status", T.StringType()),
+    T.StructField("actionable_finding_count", T.IntegerType()),
+    T.StructField("review_required_finding_count", T.IntegerType()),
+    T.StructField("suppressed_finding_count", T.IntegerType()),
     T.StructField("priority_score", T.IntegerType()),
+    T.StructField("priority_band", T.StringType()),
     T.StructField("detected_at", T.TimestampType()),
 ])
 
@@ -85,6 +96,16 @@ OPTIMIZATION_RECOMMENDATION_SCHEMA = T.StructType([
     T.StructField("estimated_saving_bytes_high", T.LongType()),
     T.StructField("finding_source", T.StringType()),
     T.StructField("affected_finding_count", T.IntegerType()),
+    T.StructField("actionable_finding_count", T.IntegerType()),
+    T.StructField("suppressed_finding_count", T.IntegerType()),
+    T.StructField("actionability_status", T.StringType()),
+    T.StructField("actionability_reason", T.StringType()),
+    T.StructField("recommendation_priority_score", T.IntegerType()),
+    T.StructField("recommendation_priority_band", T.StringType()),
+    T.StructField("automation_eligibility", T.StringType()),
+    T.StructField("why_it_matters", T.StringType()),
+    T.StructField("validation_method", T.StringType()),
+    T.StructField("rollback_guidance", T.StringType()),
     T.StructField("detected_at", T.TimestampType()),
 ])
 
@@ -111,6 +132,11 @@ OPTIMIZATION_FINDING_SCHEMA = T.StructType([
     T.StructField("estimated_saving_bytes_high", T.LongType()),
     T.StructField("change_risk", T.StringType()),
     T.StructField("validation_required", T.BooleanType()),
+    T.StructField("actionability_status", T.StringType()),
+    T.StructField("actionability_reason", T.StringType()),
+    T.StructField("suppression_reason", T.StringType()),
+    T.StructField("finding_priority_score", T.IntegerType()),
+    T.StructField("finding_priority_band", T.StringType()),
     T.StructField("detected_at", T.TimestampType()),
 ])
 
@@ -353,6 +379,7 @@ def curate_latest_model_analysis(result):
     recommendation_links = set()
 
     for finding in findings:
+        finding_quality = grade_finding(finding)
         domain = finding.get("category") or finding.get("impact_area") or "General optimization"
         source = finding.get("source") or "Unknown source"
         opportunity_id = stable_id(semantic_model_id, "OPPORTUNITY", source, domain)
@@ -410,6 +437,7 @@ def curate_latest_model_analysis(result):
             "estimated_saving_bytes_high": finding.get("estimated_saving_bytes_high"),
             "change_risk": finding.get("change_risk"),
             "validation_required": finding.get("validation_required"),
+            **finding_quality,
             "detected_at": finding.get("detected_at"),
         })
 
@@ -418,6 +446,7 @@ def curate_latest_model_analysis(result):
         grouped_findings = group["findings"]
         highest = max(grouped_findings, key=lambda row: severity_value(row.get("severity")))
         highest_risk = max(grouped_findings, key=lambda row: risk_value(row.get("change_risk")))
+        opportunity_quality = grade_opportunity(grouped_findings)
         opportunity_rows.append({
             "opportunity_id": opportunity_id,
             "analysis_id": analysis_id,
@@ -434,7 +463,7 @@ def curate_latest_model_analysis(result):
             "estimated_saving_bytes_high": sum(row.get("estimated_saving_bytes_high") or 0 for row in grouped_findings),
             "change_risk": highest_risk.get("change_risk"),
             "opportunity_summary": f"{len(grouped_findings)} finding(s) from {group['source']} require review in {group['domain']}.",
-            "priority_score": severity_value(highest.get("severity")) * 100 + min(len(grouped_findings), 99),
+            **opportunity_quality,
             "detected_at": max(row.get("detected_at") for row in grouped_findings if row.get("detected_at")),
         })
 
@@ -442,6 +471,11 @@ def curate_latest_model_analysis(result):
     for recommendation_id, group in recommendation_groups.items():
         grouped_findings = group["findings"]
         highest_risk = max(grouped_findings, key=lambda row: risk_value(row.get("change_risk")))
+        recommendation_quality = grade_recommendation(
+            grouped_findings, group["domain"], group["title"], group["action"]
+        )
+        recommendation_title = recommendation_quality.pop("recommendation_title")
+        recommended_action = recommendation_quality.pop("recommended_action")
         recommendation_rows.append({
             "recommendation_id": recommendation_id,
             "opportunity_id": group["opportunity_id"],
@@ -449,15 +483,16 @@ def curate_latest_model_analysis(result):
             "workspace_name": workspace_name,
             "semantic_model_id": semantic_model_id,
             "semantic_model_name": semantic_model_name,
-            "recommendation_title": group["title"],
+            "recommendation_title": recommendation_title,
             "optimization_domain": group["domain"],
-            "recommended_action": group["action"],
+            "recommended_action": recommended_action,
             "change_risk": highest_risk.get("change_risk"),
             "validation_required": any(row.get("validation_required") for row in grouped_findings),
             "estimated_saving_bytes_low": sum(row.get("estimated_saving_bytes_low") or 0 for row in grouped_findings),
             "estimated_saving_bytes_high": sum(row.get("estimated_saving_bytes_high") or 0 for row in grouped_findings),
             "finding_source": group["source"],
             "affected_finding_count": len(grouped_findings),
+            **recommendation_quality,
             "detected_at": max(row.get("detected_at") for row in grouped_findings if row.get("detected_at")),
         })
 
@@ -556,6 +591,9 @@ def curate_latest_model_analysis(result):
         "optimization_recommendation_count": len(recommendation_rows),
         "optimization_finding_count": len(finding_rows),
         "high_severity_finding_count": sum((row.get("severity") or "").upper() in {"HIGH", "CRITICAL", "ERROR"} for row in findings),
+        "actionable_recommendation_count": sum(row["actionability_status"] == ACTIONABLE for row in recommendation_rows),
+        "review_required_recommendation_count": sum(row["actionability_status"] == REVIEW_REQUIRED for row in recommendation_rows),
+        "suppressed_finding_count": sum(row["actionability_status"] == SUPPRESSED for row in finding_rows),
         "best_practice_analysis_status": model_row["bpa_status"],
         "storage_analysis_status": model_row["vpa_status"],
         "refresh_history_status": model_row["refresh_status"],
@@ -600,17 +638,22 @@ def main() -> None:
 
     for cell in cells:
         text = source_text(cell)
-        if "SCANNER_VERSION = \"1.2.0\"" in text:
-            set_source(cell, text.replace('SCANNER_VERSION = "1.2.0"', 'SCANNER_VERSION = "2.0.0"'))
-        if "Semantic Model Optimization Scanner — V1.2" in text:
-            set_source(cell, text.replace("Semantic Model Optimization Scanner — V1.2", "Semantic Model Optimization Scanner — V2.0"))
+        if 'SCANNER_VERSION = "1.2.0"' in text or 'SCANNER_VERSION = "2.0.0"' in text:
+            text = text.replace('SCANNER_VERSION = "1.2.0"', 'SCANNER_VERSION = "2.1.0"')
+            set_source(cell, text.replace('SCANNER_VERSION = "2.0.0"', 'SCANNER_VERSION = "2.1.0"'))
+        if "Semantic Model Optimization Scanner — V1.2" in text or "Semantic Model Optimization Scanner — V2.0" in text:
+            text = text.replace("Semantic Model Optimization Scanner — V1.2", "Semantic Model Optimization Scanner — V2.1")
+            set_source(cell, text.replace("Semantic Model Optimization Scanner — V2.0", "Semantic Model Optimization Scanner — V2.1"))
+
+    quality_rules_source = QUALITY_RULES.read_text(encoding="utf-8")
+    curation_cell = CURATION_CELL.replace("# __QUALITY_RULES_SOURCE__", quality_rules_source)
 
     existing_curation_cell = next(
         (cell for cell in cells if "V2 AI-friendly current-state consumption contract" in source_text(cell)),
         None,
     )
     if existing_curation_cell is not None:
-        set_source(existing_curation_cell, CURATION_CELL)
+        set_source(existing_curation_cell, curation_cell)
     else:
         execute_index = next(
             index for index, cell in enumerate(cells)
@@ -621,7 +664,7 @@ def main() -> None:
             "execution_count": None,
             "metadata": {},
             "outputs": [],
-            "source": CURATION_CELL.splitlines(keepends=True),
+            "source": curation_cell.splitlines(keepends=True),
         })
 
     execute_cell = next(

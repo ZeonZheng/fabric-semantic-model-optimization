@@ -12,6 +12,15 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from scripts.quality_rules import (  # noqa: E402
+    ACTIONABLE,
+    REVIEW_REQUIRED,
+    SUPPRESSED,
+    grade_finding,
+    grade_recommendation,
+)
 
 
 def fail(message: str) -> None:
@@ -58,7 +67,7 @@ def validate_scanner() -> None:
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
-        'SCANNER_VERSION = "2.0.0"',
+        'SCANNER_VERSION = "2.1.0"',
         "def ensure_curated_tables()",
         "def curate_latest_model_analysis(result)",
         '"semantic_model_optimization_overview"',
@@ -67,6 +76,9 @@ def validate_scanner() -> None:
         '"semantic_models"',
         '"semantic_model_best_practice_rule_findings"',
         '"semantic_model_table_storage"',
+        '"actionability_status"',
+        '"recommendation_priority_score"',
+        '"suppression_reason"',
     ):
         if required not in source:
             fail(f"Scanner is missing required text: {required}")
@@ -90,6 +102,13 @@ def validate_model() -> None:
     expressions = (model_root / "expressions.tmdl").read_text(encoding="utf-8")
     if "Sql.Database" not in expressions:
         fail("Direct Lake connection expression is missing.")
+    recommendations = (model_root / "tables/semantic_model_optimization_recommendations.tmdl").read_text()
+    for required_column in (
+        "actionability_status", "recommendation_priority_score", "recommendation_priority_band",
+        "why_it_matters", "validation_method", "rollback_guidance",
+    ):
+        if f"\tcolumn {required_column}" not in recommendations:
+            fail(f"Recommendation quality contract is missing {required_column}.")
 
 
 def validate_report() -> None:
@@ -106,6 +125,28 @@ def validate_report() -> None:
     visible_pages = []
     workspace_sync_count = 0
     model_sync_count = 0
+    model_tables = ROOT / "src/SMO_Analytics_SM.SemanticModel/definition/tables"
+    semantic_fields = {}
+    for table_path in model_tables.glob("*.tmdl"):
+        text = table_path.read_text(encoding="utf-8")
+        columns = set(re.findall(r"^\tcolumn ([^\n]+)$", text, re.MULTILINE))
+        measures = set(re.findall(r"^\tmeasure '([^']+)'", text, re.MULTILINE))
+        semantic_fields[table_path.stem] = columns | measures
+
+    def referenced_fields(node):
+        if isinstance(node, dict):
+            for kind in ("Column", "Measure"):
+                expression = node.get(kind)
+                if isinstance(expression, dict):
+                    entity = expression.get("Expression", {}).get("SourceRef", {}).get("Entity")
+                    prop = expression.get("Property")
+                    if entity and prop:
+                        yield entity, prop
+            for value in node.values():
+                yield from referenced_fields(value)
+        elif isinstance(node, list):
+            for value in node:
+                yield from referenced_fields(value)
     for page in pages["pageOrder"]:
         page_root = report_root / "definition/pages" / page
         if not (page_root / "page.json").exists():
@@ -118,6 +159,9 @@ def validate_report() -> None:
             fail(f"Report page {page} has no visuals.")
         for visual_path in visuals:
             visual_definition = json.loads(visual_path.read_text())
+            for entity, prop in referenced_fields(visual_definition):
+                if entity not in semantic_fields or prop not in semantic_fields[entity]:
+                    fail(f"Report field {entity}.{prop} in {visual_path.relative_to(ROOT)} is not present in TMDL.")
             sync_group = visual_definition.get("visual", {}).get("syncGroup", {}).get("groupName")
             workspace_sync_count += sync_group == "SMO_Workspace"
             model_sync_count += sync_group == "SMO_SemanticModel"
@@ -140,8 +184,52 @@ def validate_report() -> None:
         fail("Opportunity drillthrough must use the visible opportunity title from the source table.")
     if workspace_sync_count != 6 or model_sync_count != 6:
         fail("Workspace and semantic-model slicers must be synchronized across every report page.")
-    if visual_count != 36:
-        fail(f"The M6.4 report contract requires 36 visuals, found {visual_count}.")
+    if visual_count != 38:
+        fail(f"The M6.5.1 report contract requires 38 visuals, found {visual_count}.")
+    top_queue = report_root / "definition/pages/recommendations/visuals/top_actionable_recommendations/visual.json"
+    if not top_queue.exists():
+        fail("Recommendations must expose the Top actionable recommendations queue.")
+    top_queue_text = top_queue.read_text(encoding="utf-8")
+    for field in ("recommendation_priority_score", "actionability_status", "why_it_matters", "validation_method"):
+        if field not in top_queue_text:
+            fail(f"Top actionable recommendations is missing {field}.")
+    top_queue_definition = json.loads(top_queue_text)
+    top_sort = top_queue_definition["visual"]["query"].get("sortDefinition", {}).get("sort", [])
+    if not top_sort or top_sort[0].get("direction") != "Descending":
+        fail("Top actionable recommendations must be sorted by priority descending.")
+
+
+def validate_quality_rules() -> None:
+    actionable = grade_finding({
+        "finding_text": "A high-cardinality text column consumes excess storage.",
+        "technical_evidence": "Dictionary size 104857600 bytes.",
+        "recommended_action": "Remove or encode the column.",
+        "severity": "HIGH", "confidence": "HIGH", "change_risk": "LOW",
+        "estimated_saving_bytes_high": 104857600,
+    })
+    if actionable["actionability_status"] != ACTIONABLE or actionable["finding_priority_score"] < 80:
+        fail("Strong evidence with a low-risk action must enter the P1 actionable queue.")
+    without_confidence = grade_finding({
+        "finding_text": "BPA rule violation.", "technical_evidence": "Deterministic BPA evidence.",
+        "recommended_action": "Apply the documented BPA remediation.",
+        "severity": "WARNING", "change_risk": "MEDIUM",
+    })
+    if without_confidence["actionability_status"] != ACTIONABLE:
+        fail("Missing confidence must remain neutral for deterministic BPA evidence.")
+
+    generated = {
+        "finding_text": "Generated date table detected.", "technical_evidence": "LocalDateTable object.",
+        "recommended_action": "Remove it.", "severity": "HIGH", "confidence": "HIGH",
+        "change_risk": "MEDIUM", "table_name": "LocalDateTable_123",
+    }
+    suppressed = grade_finding(generated)
+    if suppressed["actionability_status"] != SUPPRESSED or suppressed["finding_priority_score"] != 0:
+        fail("Generated Auto Date/Time objects must be suppressed at finding level.")
+    consolidated = grade_recommendation([generated], "Performance", "Generated object", "Remove it")
+    if consolidated["actionability_status"] != REVIEW_REQUIRED or consolidated["recommendation_priority_score"] < 65:
+        fail("Generated date findings must roll up into one high-priority model-level review.")
+    if "explicit date dimension" not in consolidated["recommendation_title"]:
+        fail("Auto Date/Time remediation must use a meaningful model-level recommendation title.")
 
 
 def validate_no_secrets() -> None:
@@ -163,6 +251,7 @@ def main() -> int:
     validate_scanner()
     validate_model()
     validate_report()
+    validate_quality_rules()
     validate_no_secrets()
     print(f"Validation passed: {json_count} JSON/notebook/platform files checked.")
     return 0

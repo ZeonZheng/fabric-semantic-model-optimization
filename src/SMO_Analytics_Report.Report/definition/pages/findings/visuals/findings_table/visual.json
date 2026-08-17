@@ -23,6 +23,51 @@
                       "Entity": "semantic_model_optimization_findings"
                     }
                   },
+                  "Property": "finding_priority_score"
+                }
+              },
+              "queryRef": "semantic_model_optimization_findings.finding_priority_score",
+              "nativeQueryRef": "Priority score",
+              "displayName": "Priority score"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_findings"
+                    }
+                  },
+                  "Property": "finding_priority_band"
+                }
+              },
+              "queryRef": "semantic_model_optimization_findings.finding_priority_band",
+              "nativeQueryRef": "Priority band",
+              "displayName": "Priority band"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_findings"
+                    }
+                  },
+                  "Property": "actionability_status"
+                }
+              },
+              "queryRef": "semantic_model_optimization_findings.actionability_status",
+              "nativeQueryRef": "Actionability",
+              "displayName": "Actionability"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_findings"
+                    }
+                  },
                   "Property": "severity"
                 }
               },
@@ -104,9 +149,42 @@
               "queryRef": "semantic_model_optimization_findings.recommended_action",
               "nativeQueryRef": "Recommended action",
               "displayName": "Recommended action"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_findings"
+                    }
+                  },
+                  "Property": "suppression_reason"
+                }
+              },
+              "queryRef": "semantic_model_optimization_findings.suppression_reason",
+              "nativeQueryRef": "Suppression reason",
+              "displayName": "Suppression reason"
             }
           ]
         }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "semantic_model_optimization_findings"
+                  }
+                },
+                "Property": "finding_priority_score"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": false
       }
     },
     "visualContainerObjects": {
@@ -186,6 +264,13 @@
               "expr": {
                 "Literal": {
                   "Value": "true"
+                }
+              }
+            },
+            "columnAdjustment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'growToFit'"
                 }
               }
             }

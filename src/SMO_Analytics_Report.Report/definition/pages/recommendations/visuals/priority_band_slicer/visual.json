@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
-  "name": "risk_slicer",
+  "name": "priority_band_slicer",
   "position": {
-    "x": 790,
+    "x": 410,
     "y": 230,
-    "z": 2102,
+    "z": 2101,
     "height": 88,
-    "width": 440,
-    "tabOrder": 2102
+    "width": 360,
+    "tabOrder": 2101
   },
   "visual": {
     "visualType": "slicer",
@@ -23,12 +23,12 @@
                       "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
-                  "Property": "change_risk"
+                  "Property": "recommendation_priority_band"
                 }
               },
-              "queryRef": "semantic_model_optimization_recommendations.change_risk",
-              "nativeQueryRef": "Change risk",
-              "displayName": "Change risk"
+              "queryRef": "semantic_model_optimization_recommendations.recommendation_priority_band",
+              "nativeQueryRef": "Priority band",
+              "displayName": "Priority band"
             }
           ]
         }
@@ -48,7 +48,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Change risk'"
+                  "Value": "'Priority band'"
                 }
               }
             },

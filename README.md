@@ -18,7 +18,7 @@ After deployment, normal operations run only the `Load_SMO_Data` pipeline.
 | Notebook | `SMO_Optimization_Scanner` | Read-only metadata, BPA, VertiPaq, refresh, and Direct Lake checks |
 | Pipeline | `Load_SMO_Data` | Member-facing entry point with two simple parameters |
 | Semantic model | `SMO_Analytics_SM` | Direct Lake model centered on the `semantic_models` business dimension |
-| Report | `SMO_Analytics_Report` | Five visible pages with synchronized scope filters, drillthrough, risk highlighting, and storage analysis |
+| Report | `SMO_Analytics_Report` | Five visible pages with synchronized scope filters, drillthrough, actionability/priority filtering, and storage analysis |
 
 ## Deploy
 
@@ -67,4 +67,4 @@ python tests/validate_repo.py
 
 ## Current stage
 
-Version `0.3.0` completes the M6.4 consumption contract: no empty business schemas, eleven AI-friendly Direct Lake tables, a central semantic-model dimension, historical run control, table- and column-level storage, synchronized report filters, and opportunity drillthrough.
+Version `0.4.0` implements M6.5.1 recommendation quality: every finding retains its evidence while receiving an explicit actionability state and 0–100 priority score; recommendations add business impact, validation, rollback, and automation guidance; and the report exposes a highlighted **Top actionable recommendations** queue.
