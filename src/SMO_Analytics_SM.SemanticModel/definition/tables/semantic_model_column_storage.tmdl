@@ -111,4 +111,4 @@ table semantic_model_column_storage
 		source
 			entityName: semantic_model_column_storage
 			schemaName: semantic_model_vertipaq
-			expressionSource: DatabaseQuery
+			expressionSource: DirectLake_Source

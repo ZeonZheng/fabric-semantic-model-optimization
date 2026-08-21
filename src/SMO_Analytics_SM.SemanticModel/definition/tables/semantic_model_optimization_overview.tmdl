@@ -189,4 +189,4 @@ table semantic_model_optimization_overview
 		source
 			entityName: semantic_model_optimization_overview
 			schemaName: semantic_model_optimization
-			expressionSource: DatabaseQuery
+			expressionSource: DirectLake_Source

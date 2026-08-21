@@ -131,4 +131,4 @@ table semantic_model_analysis_runs
 		source
 			entityName: semantic_model_analysis_runs
 			schemaName: analysis_control
-			expressionSource: DatabaseQuery
+			expressionSource: DirectLake_Source

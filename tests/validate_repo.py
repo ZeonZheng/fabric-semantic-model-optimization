@@ -45,6 +45,19 @@ def validate_manifest() -> None:
         fail(f"Deployment order differs from configured items: {ordered_names} != {expected}")
     if config["lakehouse"]["enable_schemas"] is not True:
         fail("The V1 contract requires a schema-enabled Lakehouse.")
+    configured_branch = config["source"]["branch"]
+    deploy_notebook = json.loads(
+        (ROOT / "scripts/Deploy_SMO_Analytics.ipynb").read_text(encoding="utf-8")
+    )
+    deploy_source = "\n".join(
+        "".join(cell.get("source", [])) for cell in deploy_notebook["cells"]
+    )
+    if configured_branch != "codex/m6-4":
+        fail(f"Development deployment must use codex/m6-4, found {configured_branch}.")
+    if f'branch = "{configured_branch}"' not in deploy_source:
+        fail("Deployment notebook and manifest source branches differ.")
+    if "configured_branch != branch" not in deploy_source:
+        fail("Deployment notebook must reject a downloaded source/config branch mismatch.")
     for item in ordered_names:
         if item.endswith(".Lakehouse"):
             continue
@@ -55,6 +68,16 @@ def validate_manifest() -> None:
         fail("The deployment initializer must create the V2 curated tables before importing Direct Lake.")
     if "folder_by_item" not in deploy_core or "destination_parent" not in deploy_core:
         fail("Fabric item upgrades must address items through their configured folder paths.")
+    for required in (
+        "def _validate_direct_lake_connection(",
+        "def _refresh_and_validate_semantic_model(",
+        "DirectLakeOnOneLake",
+        "groups/{workspace_id}/datasets/{semantic_model_id}",
+    ):
+        if required not in deploy_core:
+            fail(f"Deployment engine is missing end-to-end validation: {required}")
+    if "_update_direct_lake_connection" in deploy_core:
+        fail("Deployment must not rewrite the model to a generic SQL Server datasource.")
 
 
 def validate_scanner() -> None:
@@ -71,7 +94,10 @@ def validate_scanner() -> None:
         "def ensure_curated_tables()",
         "def curate_latest_model_analysis(result)",
         "def reconcile_workspace_current_state(targets)",
+        "def validate_curated_scan_output(model_results)",
         "reconcile_workspace_current_state(targets)",
+        "validate_curated_scan_output(model_results)",
+        "Scan did not materialize the required business-layer rows",
         '"semantic_model_optimization_overview"',
         '"semantic_model_column_storage"',
         '"semantic_model_analysis_runs"',
@@ -102,8 +128,28 @@ def validate_model() -> None:
     if "smopt_" in model:
         fail("The V2 Direct Lake model must not expose deprecated smopt_* technical tables.")
     expressions = (model_root / "expressions.tmdl").read_text(encoding="utf-8")
-    if "Sql.Database" not in expressions:
-        fail("Direct Lake connection expression is missing.")
+    expected_path = (
+        "https://onelake.dfs.fabric.microsoft.com/"
+        "00000000-0000-0000-0000-000000000000/"
+        "11111111-1111-1111-1111-111111111111"
+    )
+    if "AzureStorage.DataLake" not in expressions or expected_path not in expressions:
+        fail("Direct Lake on OneLake connection expression is missing.")
+    if "Sql.Database" in expressions or '"none"' in expressions.lower():
+        fail("Semantic model must not contain a generic or invalid SQL Server datasource.")
+    if 'PBI_QueryOrder = ["DirectLake_Source"]' not in model:
+        fail("Model query order must reference the shared Direct Lake source expression.")
+    for table in refs:
+        table = table.strip("'")
+        if table == "Metrics":
+            continue
+        table_text = (model_root / "tables" / f"{table}.tmdl").read_text(encoding="utf-8")
+        if "mode: directLake" not in table_text:
+            fail(f"Table {table} is not configured for Direct Lake.")
+        if "expressionSource: DirectLake_Source" not in table_text:
+            fail(f"Table {table} does not reference the OneLake shared expression.")
+        if "schemaName:" not in table_text:
+            fail(f"Table {table} is missing its Lakehouse schema mapping.")
     recommendations = (model_root / "tables/semantic_model_optimization_recommendations.tmdl").read_text()
     for required_column in (
         "actionability_status", "recommendation_priority_score", "recommendation_priority_band",

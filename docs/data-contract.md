@@ -28,6 +28,26 @@ The five reserved business schemas are:
 
 Names use complete business entities rather than abbreviations. Columns explicitly use terms such as `semantic_model_id`, `analysis_status`, `affected_object_name`, and `data_availability_explanation` so both people and AI can infer grain and meaning.
 
+## Empty-table expectations
+
+Deployment initializes all eleven tables before importing the Direct Lake model.
+Therefore, a reserved business schema with no tables indicates an initialization
+failure and is not expected. Rows are populated only by `Load_SMO_Data`.
+
+After a successful scan, three core tables must contain rows for each successfully
+analyzed model: `semantic_model_analysis_runs`, `semantic_models`, and
+`semantic_model_optimization_overview`. The remaining tables are evidence-driven:
+
+- best-practice findings can be empty when BPA returns no violations;
+- column and table storage can be empty when VertiPaq evidence is unavailable or
+  not applicable;
+- opportunities, recommendations, findings, and their link tables can be empty
+  when the scan produces no corresponding actionable or reviewable evidence.
+
+The overview row records whether a collector succeeded, was not run, was not
+applicable, or returned zero records, so downstream AI/report consumers can
+distinguish a valid empty result from missing data.
+
 ## Current-state behavior
 
 - A successful or partially successful model analysis replaces only that semantic model's current-state slices.

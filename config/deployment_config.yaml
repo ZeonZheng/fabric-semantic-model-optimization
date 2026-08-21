@@ -1,11 +1,11 @@
 solution:
   name: Semantic Model Optimization Analytics
-  version: 0.4.1
+  version: 0.5.0
 
 source:
   repository_owner: ZeonZheng
   repository_name: fabric-semantic-model-optimization
-  branch: main
+  branch: codex/m6-4
   solution_root: ""
 
 items:

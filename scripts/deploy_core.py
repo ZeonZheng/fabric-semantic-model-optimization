@@ -149,53 +149,121 @@ def _make_initialization_notebook(root: Path, output_schema: str) -> None:
     raise ValueError("Delta table contract cell not found in scanner notebook.")
 
 
-def _wait_for_lakehouse(workspace_name: str, lakehouse_name: str) -> tuple[str, str]:
+def _get_sql_endpoint_id(workspace_name: str, lakehouse_name: str) -> str | None:
+    """Return the Lakehouse SQL endpoint ID when Fabric has provisioned it."""
     lakehouse_qualified = (
         lakehouse_name
         if lakehouse_name.endswith(".Lakehouse")
         else f"{lakehouse_name}.Lakehouse"
     )
-    for attempt in range(30):
-        endpoint_id = run_fab(
-            f"get /{workspace_name}.Workspace/{lakehouse_qualified} "
-            "-q properties.sqlEndpointProperties.id",
-            allow_failure=True,
-        )
-        connection = run_fab(
-            f"get /{workspace_name}.Workspace/{lakehouse_qualified} "
-            "-q properties.sqlEndpointProperties.connectionString",
-            allow_failure=True,
-        )
-        endpoint_id = endpoint_id.strip()
-        connection = connection.strip()
-        endpoint_is_valid = bool(
-            re.fullmatch(r"[0-9a-fA-F-]{36}", endpoint_id)
-        )
-        connection_is_valid = bool(
-            connection
-            and "invalidpath" not in connection.lower()
-            and not connection.lower().startswith("x get:")
-        )
-        if endpoint_is_valid and connection_is_valid:
-            return endpoint_id, connection
-        time.sleep(min(5 + attempt, 15))
-    raise TimeoutError("Lakehouse SQL analytics endpoint was not provisioned in time.")
+    endpoint_id = run_fab(
+        f"get /{workspace_name}.Workspace/{lakehouse_qualified} "
+        "-q properties.sqlEndpointProperties.id",
+        allow_failure=True,
+    ).strip()
+    return endpoint_id if re.fullmatch(r"[0-9a-fA-F-]{36}", endpoint_id) else None
 
 
-def _update_direct_lake_connection(
-    item_root: Path, endpoint_id: str, connection_string: str
+def _validate_direct_lake_connection(
+    item_root: Path, workspace_id: str, lakehouse_id: str
 ) -> None:
+    """Fail before import unless TMDL targets the deployed Lakehouse in OneLake."""
     expressions = item_root / "definition" / "expressions.tmdl"
     content = expressions.read_text(encoding="utf-8")
-    updated, count = re.subn(
-        r'Sql\.Database\("[^"]+",\s*"[^"]+"\)',
-        f'Sql.Database("{connection_string}", "{endpoint_id}")',
-        content,
-        count=1,
+    expected_path = (
+        "https://onelake.dfs.fabric.microsoft.com/"
+        f"{workspace_id}/{lakehouse_id}"
     )
-    if count != 1:
-        raise ValueError("Unable to locate the Direct Lake Sql.Database expression.")
-    expressions.write_text(updated, encoding="utf-8")
+    if "AzureStorage.DataLake" not in content or expected_path not in content:
+        raise ValueError(
+            "Direct Lake on OneLake expression does not target the deployed "
+            f"Lakehouse: {expected_path}"
+        )
+    invalid_tokens = (
+        WORKSPACE_PLACEHOLDER,
+        "11111111-1111-1111-1111-111111111111",
+        "Sql.Database(",
+        '"server":"none"',
+        '"database":"none"',
+    )
+    if any(token.lower() in content.lower() for token in invalid_tokens):
+        raise ValueError("Direct Lake expression still contains a placeholder or invalid SQL source.")
+
+
+def _refresh_history(workspace_id: str, semantic_model_id: str) -> list[dict]:
+    payload = _api_json(
+        "api -A powerbi -X get "
+        f"groups/{workspace_id}/datasets/{semantic_model_id}/refreshes?$top=10"
+    )
+    return payload.get("value", [])
+
+
+def _refresh_key(refresh: dict) -> str:
+    return str(
+        refresh.get("requestId")
+        or refresh.get("id")
+        or f"{refresh.get('startTime')}|{refresh.get('refreshType')}"
+    )
+
+
+def _validate_semantic_model_datasource(
+    workspace_id: str, semantic_model_id: str
+) -> None:
+    payload = _api_json(
+        "api -A powerbi -X get "
+        f"groups/{workspace_id}/datasets/{semantic_model_id}/datasources"
+    )
+    normalized = json.dumps(payload, separators=(",", ":")).lower()
+    if '"server":"none"' in normalized or '"database":"none"' in normalized:
+        raise RuntimeError(
+            "Semantic model was published with an invalid server/database datasource."
+        )
+
+
+def _refresh_and_validate_semantic_model(
+    workspace_id: str, semantic_model_id: str
+) -> None:
+    """Reframe Direct Lake and fail deployment when the model cannot read its source."""
+    _validate_semantic_model_datasource(workspace_id, semantic_model_id)
+    previous_refreshes = {
+        _refresh_key(refresh)
+        for refresh in _refresh_history(workspace_id, semantic_model_id)
+    }
+    run_fab(
+        "api -A powerbi -X post "
+        f"groups/{workspace_id}/datasets/{semantic_model_id}/refreshes "
+        "-i '{\"retryCount\":3}'",
+        timeout=120,
+    )
+
+    deadline = time.monotonic() + 900
+    last_status = None
+    while time.monotonic() < deadline:
+        current = next(
+            (
+                refresh
+                for refresh in _refresh_history(workspace_id, semantic_model_id)
+                if _refresh_key(refresh) not in previous_refreshes
+            ),
+            None,
+        )
+        if current is None:
+            time.sleep(10)
+            continue
+        status = current.get("status")
+        if status != last_status:
+            print(f"Semantic model refresh status: {status}")
+            last_status = status
+        if status == "Completed":
+            _validate_semantic_model_datasource(workspace_id, semantic_model_id)
+            return
+        if status in {"Failed", "Cancelled", "Disabled"}:
+            raise RuntimeError(
+                "Semantic model refresh failed: "
+                + json.dumps(current, default=str, ensure_ascii=False)
+            )
+        time.sleep(10)
+    raise TimeoutError("Semantic model refresh did not complete within 900 seconds.")
 
 
 def _workspace_context() -> tuple[str, str]:
@@ -362,7 +430,7 @@ def deploy_solution(repo_root: str | Path) -> dict:
     initialized = False
     deployed = []
     endpoint_id = None
-    endpoint_connection = None
+    lakehouse_id = None
 
     for item in order:
         qualified_name = item["name"]
@@ -377,13 +445,11 @@ def deploy_solution(repo_root: str | Path) -> dict:
                 allow_failure=True,
             )
             target_id = _resolve_item_id(workspace_name, qualified_name)
+            lakehouse_id = target_id
             if not any(m["source_id"] == item["source_id"] for m in mappings):
                 mappings.append(
                     {"source_id": item["source_id"], "target_id": target_id}
                 )
-            endpoint_id, endpoint_connection = _wait_for_lakehouse(
-                workspace_name, qualified_name
-            )
             deployed.append({"name": qualified_name, "id": target_id})
             continue
 
@@ -400,10 +466,10 @@ def deploy_solution(repo_root: str | Path) -> dict:
                     target_path, str(config["lakehouse"]["output_schema"])
                 )
             if item_type == "SemanticModel":
-                if not endpoint_id or not endpoint_connection:
-                    raise RuntimeError("Lakehouse SQL endpoint is unavailable.")
-                _update_direct_lake_connection(
-                    target_path, endpoint_id, endpoint_connection
+                if not lakehouse_id:
+                    raise RuntimeError("Lakehouse item ID is unavailable.")
+                _validate_direct_lake_connection(
+                    target_path, workspace_id, lakehouse_id
                 )
             format_argument = " --format .ipynb" if item_type == "Notebook" else ""
             folder_name = folder_by_item.get(qualified_name)
@@ -431,7 +497,14 @@ def deploy_solution(repo_root: str | Path) -> dict:
                 target_id,
                 folder_by_item.get(scanner_qualified),
             )
-            _refresh_sql_endpoint(workspace_id, endpoint_id)
+            endpoint_id = _get_sql_endpoint_id(workspace_name, lakehouse_qualified)
+            if endpoint_id:
+                _refresh_sql_endpoint(workspace_id, endpoint_id)
+            else:
+                print(
+                    "Lakehouse SQL endpoint metadata is not ready yet; "
+                    "Direct Lake on OneLake deployment can continue without it."
+                )
             with tempfile.TemporaryDirectory() as temporary:
                 restore_path = Path(temporary) / qualified_name
                 shutil.copytree(source_path, restore_path)
@@ -450,17 +523,17 @@ def deploy_solution(repo_root: str | Path) -> dict:
         config["items"]["semantic_model"],
         folder_by_item.get(config["items"]["semantic_model"]),
     )
-    run_fab(
-        f"api -A powerbi -X post datasets/{semantic_model_id}/refreshes "
-        "-i '{\"retryCount\":\"3\"}'",
-        allow_failure=True,
-    )
+    _refresh_and_validate_semantic_model(workspace_id, semantic_model_id)
 
     result = {
         "status": "SUCCEEDED",
         "solution_version": config["solution"]["version"],
         "workspace_id": workspace_id,
         "workspace_name": workspace_name,
+        "semantic_model_source": {
+            "mode": "DirectLakeOnOneLake",
+            "lakehouse_id": lakehouse_id,
+        },
         "items": deployed,
     }
     print(json.dumps(result, indent=2))

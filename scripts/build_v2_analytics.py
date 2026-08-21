@@ -184,7 +184,7 @@ def tmdl_table(table_name: str, definition: dict) -> str:
         "\t\tsource",
         f"\t\t\tentityName: {definition['entity']}",
         f"\t\t\tschemaName: {definition['schema']}",
-        "\t\t\texpressionSource: DatabaseQuery",
+        "\t\t\texpressionSource: DirectLake_Source",
         "",
     ])
     return "\n".join(lines)
@@ -343,7 +343,7 @@ def write_model() -> None:
         "\t\treturnErrorValuesAsNull",
         "",
         "annotation __PBI_TimeIntelligenceEnabled = 0",
-        "annotation PBI_QueryOrder = [\"DatabaseQuery\"]",
+        "annotation PBI_QueryOrder = [\"DirectLake_Source\"]",
         "annotation PBI_ProTooling = [\"WebModelingEdit\",\"RemoteModeling\"]",
         "",
         *refs,

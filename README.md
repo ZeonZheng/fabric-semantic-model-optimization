@@ -29,6 +29,10 @@ After deployment, normal operations run only the `Load_SMO_Data` pipeline.
 
 The notebook is idempotent by item name. Re-running it updates the deployed code while preserving Lakehouse data.
 
+The checked-in bootstrap is pinned to `codex/m6-4`. It also verifies that the
+downloaded deployment manifest declares the same branch, so a branch mismatch
+fails before any Fabric item is changed.
+
 > The default bootstrap downloads this repository without credentials. If the repository is private, pass a short-lived GitHub token at runtime in `github_token_optional`; never save the token in the notebook.
 
 ## Run data collection
@@ -41,6 +45,21 @@ Open `Load_SMO_Data`, select **Run**, and enter:
 | `model_ids_optional` | No | Blank scans all eligible models in the listed workspaces |
 
 The pipeline runs under the identity of its last modifying user. During the user-authentication POC, that identity must be allowed to open the target semantic models through XMLA.
+
+After deployment and before the first scan, the eleven business tables exist but
+are empty by design. After a successful scan, the following core tables must
+contain rows for every successfully analyzed model:
+
+- `analysis_control.semantic_model_analysis_runs`
+- `semantic_model_metadata.semantic_models`
+- `semantic_model_optimization.semantic_model_optimization_overview`
+
+Evidence tables can legitimately contain zero rows when their corresponding
+collector returns no evidence. For example, a model with no BPA violations has no
+best-practice finding rows, and a model without available VertiPaq evidence has no
+column/table storage rows. A reserved business schema with no tables is never
+expected after a successful deployment; rerun the deployment notebook and inspect
+the initialization failure.
 
 ## Guardrails
 
@@ -67,4 +86,8 @@ python tests/validate_repo.py
 
 ## Current stage
 
-Version `0.4.1` implements M6.5.1 recommendation quality and current-state reconciliation: every finding retains its evidence while receiving an explicit actionability state and 0–100 priority score; recommendations add business impact, validation, rollback, and automation guidance; the report exposes a highlighted **Top actionable recommendations** queue; and a full workspace scan removes report-facing rows for models that are no longer eligible in that workspace scope.
+Version `0.5.0` fixes the deployment foundation: the bootstrap is branch-pinned
+and branch-validated; the semantic model binds directly to the deployed Lakehouse
+through Direct Lake on OneLake instead of a generic SQL Server/gateway source; and
+deployment now fails if the model source or refresh is invalid. Report redesign is
+intentionally outside this release.

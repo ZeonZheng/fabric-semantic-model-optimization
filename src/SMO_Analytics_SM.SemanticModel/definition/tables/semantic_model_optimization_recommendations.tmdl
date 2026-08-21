@@ -171,4 +171,4 @@ table semantic_model_optimization_recommendations
 		source
 			entityName: semantic_model_optimization_recommendations
 			schemaName: semantic_model_optimization
-			expressionSource: DatabaseQuery
+			expressionSource: DirectLake_Source

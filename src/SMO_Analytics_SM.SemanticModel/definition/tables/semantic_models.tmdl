@@ -82,4 +82,4 @@ table semantic_models
 		source
 			entityName: semantic_models
 			schemaName: semantic_model_metadata
-			expressionSource: DatabaseQuery
+			expressionSource: DirectLake_Source

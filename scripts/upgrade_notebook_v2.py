@@ -334,6 +334,41 @@ def reconcile_workspace_current_state(targets):
     )
 
 
+def validate_curated_scan_output(model_results):
+    """Reject a false-success scan that did not materialize its core contract."""
+    analyzed_model_ids = sorted({
+        row["model_id"]
+        for row in model_results
+        if row["overall_status"] in {"SUCCEEDED", "PARTIAL"}
+    })
+    if not analyzed_model_ids:
+        return
+
+    quoted_ids = ", ".join(
+        "'" + model_id.replace("'", "''") + "'"
+        for model_id in analyzed_model_ids
+    )
+    missing_by_table = {}
+    for logical_name in ("analysis_runs", "semantic_models", "overview"):
+        present_ids = {
+            row["semantic_model_id"]
+            for row in spark.sql(
+                f"SELECT DISTINCT semantic_model_id "
+                f"FROM {curated_table_name(logical_name)} "
+                f"WHERE semantic_model_id IN ({quoted_ids})"
+            ).collect()
+        }
+        missing_ids = sorted(set(analyzed_model_ids) - present_ids)
+        if missing_ids:
+            missing_by_table[curated_table_name(logical_name)] = missing_ids
+
+    if missing_by_table:
+        raise RuntimeError(
+            "Scan did not materialize the required business-layer rows: "
+            + json.dumps(missing_by_table, ensure_ascii=False)
+        )
+
+
 def upsert_curated_history(logical_name, rows, keys):
     if not rows:
         return
@@ -748,6 +783,21 @@ def main() -> None:
             "                curate_latest_model_analysis(result)\n",
             "                curate_latest_model_analysis(result)\n"
             "            reconcile_workspace_current_state(targets)\n",
+        )
+    if "No eligible semantic models were resolved" not in execute:
+        execute = execute.replace(
+            "            targets = resolve_targets()\n",
+            "            targets = resolve_targets()\n"
+            "            if not targets:\n"
+            "                raise RuntimeError(\n"
+            "                    \"No eligible semantic models were resolved for the requested scan scope.\"\n"
+            "                )\n",
+        )
+    if "validate_curated_scan_output(model_results)" not in execute:
+        execute = execute.replace(
+            "            reconcile_workspace_current_state(targets)\n",
+            "            reconcile_workspace_current_state(targets)\n"
+            "            validate_curated_scan_output(model_results)\n",
         )
     set_source(execute_cell, execute)
 
