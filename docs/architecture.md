@@ -5,13 +5,14 @@
 The solution separates deployment, recurring discovery, and benefit validation:
 
 1. `Deploy_SMO_Analytics.ipynb` creates or updates all Fabric items.
-2. The scanner initializes the technical evidence and V2 business contracts once.
-3. `Load_SMO_Data` runs the scanner for an explicit workspace/model scope.
-4. The scanner preserves technical history and refreshes each model's latest usable business state.
-5. Deterministic quality rules retain every finding while grading actionability, suppression, and implementation priority.
-6. The Direct Lake semantic model uses one shared OneLake expression, dynamically bound to the deployed workspace and Lakehouse IDs, to read eleven meaningful consumption tables centered on `semantic_models`.
-7. The report presents five visible analysis pages, synchronized workspace/model filters, a top actionable recommendation queue, and a hidden opportunity drillthrough page.
-8. CU savings, if pursued, are measured separately with controlled before/after capacity metrics.
+2. A published Fabric Environment supplies the scanner's pinned Semantic Link dependencies without per-run installation.
+3. The scanner initializes the technical evidence and V2 business contracts once.
+4. `Load_SMO_Data` runs the scanner for an explicit workspace/model scope.
+5. The scanner preserves technical history and refreshes each model's latest usable business state.
+6. Deterministic quality rules retain every finding while grading actionability, suppression, and implementation priority.
+7. The Direct Lake semantic model uses one shared OneLake expression, dynamically bound to the deployed workspace and Lakehouse IDs, to read eleven meaningful consumption tables centered on `semantic_models`.
+8. The report presents five visible analysis pages, synchronized workspace/model filters, a top actionable recommendation queue, and a hidden opportunity drillthrough page.
+9. CU savings, if pursued, are measured separately with controlled before/after capacity metrics.
 
 ## Runtime flow
 
@@ -30,12 +31,18 @@ flowchart TD
 ```mermaid
 flowchart TD
     A[Deployment notebook] --> B[Create schema-enabled Lakehouse]
-    B --> C[Import scanner and pipeline]
-    C --> D[Initialize V2 tables]
-    D --> E[Bind OneLake source and import model]
-    E --> F[Validate model refresh]
-    F --> G[Import and bind report]
+    B --> C[Publish scanner Environment]
+    C --> D[Import scanner and pipeline]
+    D --> E[Initialize V2 tables]
+    E --> F[Bind OneLake source and import model]
+    F --> G[Validate model refresh]
+    G --> H[Import and bind report]
 ```
+
+The scanner Notebook contains no `%pip` cell. Both standard and High Concurrency
+Pipeline sessions use the attached `SMO_Scanner_Environment`; deployment waits for
+its publish state and verifies the required public-library versions before the
+scanner is imported.
 
 ## Identity
 

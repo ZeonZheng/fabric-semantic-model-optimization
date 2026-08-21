@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Environment",
+    "displayName": "SMO_Scanner_Environment",
+    "description": "Published Spark environment with pinned Semantic Link dependencies for pipeline scanner runs."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "66666666-6666-6666-6666-666666666666"
+  }
+}

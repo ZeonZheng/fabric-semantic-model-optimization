@@ -24,6 +24,10 @@ import yaml
 
 FABRIC_API = "https://api.fabric.microsoft.com"
 WORKSPACE_PLACEHOLDER = "00000000-0000-0000-0000-000000000000"
+SCANNER_ENVIRONMENT_PACKAGES = {
+    "semantic-link-sempy": "0.14.2",
+    "semantic-link-labs": "0.15.2",
+}
 
 
 def run_fab(command: str, *, timeout: int = 600, allow_failure: bool = False) -> str:
@@ -162,6 +166,84 @@ def _get_sql_endpoint_id(workspace_name: str, lakehouse_name: str) -> str | None
         allow_failure=True,
     ).strip()
     return endpoint_id if re.fullmatch(r"[0-9a-fA-F-]{36}", endpoint_id) else None
+
+
+def _environment_publish_details(workspace_id: str, environment_id: str) -> dict:
+    payload = _api_json(
+        "api -A fabric -X get "
+        f"workspaces/{workspace_id}/environments/{environment_id}"
+    )
+    return payload.get("properties", {}).get("publishDetails", {})
+
+
+def _wait_for_environment_publish(
+    workspace_id: str, environment_id: str, *, timeout_seconds: int = 1800
+) -> None:
+    deadline = time.monotonic() + timeout_seconds
+    last_state = None
+    while time.monotonic() < deadline:
+        details = _environment_publish_details(workspace_id, environment_id)
+        state = details.get("state")
+        if state != last_state:
+            print(f"Scanner environment publish status: {state or 'UNKNOWN'}")
+            last_state = state
+        if state == "Success":
+            return
+        if state in {"Failed", "Cancelled"}:
+            raise RuntimeError(
+                "Scanner environment publish failed: "
+                + json.dumps(details, default=str, ensure_ascii=False)
+            )
+        time.sleep(15)
+    raise TimeoutError(
+        f"Scanner environment publish did not complete within {timeout_seconds} seconds."
+    )
+
+
+def _validate_environment_libraries(
+    workspace_id: str, environment_id: str
+) -> None:
+    payload = _api_json(
+        "api -A fabric -X get "
+        f"workspaces/{workspace_id}/environments/{environment_id}/libraries?beta=False"
+    )
+    published = {
+        re.sub(r"[-_.]+", "-", str(library.get("name", "")).lower()): str(
+            library.get("version", "")
+        )
+        for library in payload.get("libraries", [])
+        if str(library.get("libraryType", "")).lower() == "external"
+    }
+    missing_or_wrong = {
+        name: {"expected": expected, "published": published.get(name)}
+        for name, expected in SCANNER_ENVIRONMENT_PACKAGES.items()
+        if published.get(name) != expected
+    }
+    if missing_or_wrong:
+        raise RuntimeError(
+            "Scanner environment libraries are not published as required: "
+            + json.dumps(missing_or_wrong, ensure_ascii=False)
+        )
+
+
+def _publish_and_validate_environment(
+    workspace_id: str, environment_id: str
+) -> None:
+    """Publish pinned scanner libraries before any notebook can reference them."""
+    details = _environment_publish_details(workspace_id, environment_id)
+    if details.get("state") in {"Running", "Waiting", "Cancelling"}:
+        _wait_for_environment_publish(workspace_id, environment_id)
+
+    run_fab(
+        "api -A fabric -X post "
+        f"workspaces/{workspace_id}/environments/{environment_id}/staging/"
+        "publish?beta=False -i {}",
+        timeout=120,
+        allow_failure=True,
+    )
+    time.sleep(5)
+    _wait_for_environment_publish(workspace_id, environment_id)
+    _validate_environment_libraries(workspace_id, environment_id)
 
 
 def _validate_direct_lake_connection(
@@ -488,6 +570,9 @@ def deploy_solution(repo_root: str | Path) -> dict:
         if not any(m["source_id"] == item["source_id"] for m in mappings):
             mappings.append({"source_id": item["source_id"], "target_id": target_id})
         deployed.append({"name": qualified_name, "id": target_id})
+
+        if item_type == "Environment":
+            _publish_and_validate_environment(workspace_id, target_id)
 
         if qualified_name == scanner_qualified and not initialized:
             _initialize_tables(

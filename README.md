@@ -3,6 +3,7 @@
 An FUAM-style Microsoft Fabric solution for read-only semantic-model analysis. One deployment notebook creates or updates the complete solution in a Fabric workspace:
 
 - schema-enabled Lakehouse
+- published Fabric Environment with pinned scanner libraries
 - semantic-model scanner notebook
 - parameterized ingestion pipeline
 - Direct Lake semantic model
@@ -15,6 +16,7 @@ After deployment, normal operations run only the `Load_SMO_Data` pipeline.
 | Item | Fabric name | Purpose |
 | --- | --- | --- |
 | Lakehouse | `SMO_Analytics_Lakehouse` | Raw technical history plus eleven AI-friendly business tables across meaningful schemas |
+| Environment | `SMO_Scanner_Environment` | Published, pinned Semantic Link dependencies for standard and High Concurrency sessions |
 | Notebook | `SMO_Optimization_Scanner` | Read-only metadata, BPA, VertiPaq, refresh, and Direct Lake checks |
 | Pipeline | `Load_SMO_Data` | Member-facing entry point with two simple parameters |
 | Semantic model | `SMO_Analytics_SM` | Direct Lake model centered on the `semantic_models` business dimension |
@@ -28,6 +30,11 @@ After deployment, normal operations run only the `Load_SMO_Data` pipeline.
 4. Run all cells.
 
 The notebook is idempotent by item name. Re-running it updates the deployed code while preserving Lakehouse data.
+
+Deployment publishes `SMO_Scanner_Environment` before importing the scanner.
+Normal pipeline runs never execute `%pip`; the scanner validates the attached
+environment and its pinned package versions before scanning. This makes the
+pipeline compatible with Fabric High Concurrency sessions.
 
 The checked-in bootstrap is pinned to `codex/m6-4`. It also verifies that the
 downloaded deployment manifest declares the same branch, so a branch mismatch
@@ -86,8 +93,8 @@ python tests/validate_repo.py
 
 ## Current stage
 
-Version `0.5.0` fixes the deployment foundation: the bootstrap is branch-pinned
-and branch-validated; the semantic model binds directly to the deployed Lakehouse
-through Direct Lake on OneLake instead of a generic SQL Server/gateway source; and
-deployment now fails if the model source or refresh is invalid. Report redesign is
-intentionally outside this release.
+Version `0.5.1` fixes pipeline dependency execution by deploying and publishing a
+pinned Fabric Environment, attaching it to the scanner, and removing session-level
+`%pip` installation. It retains the `0.5.0` branch guard, Direct Lake on OneLake
+binding, and fail-fast model validation. Report redesign remains outside this
+release.

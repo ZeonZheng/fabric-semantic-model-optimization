@@ -45,6 +45,10 @@ def validate_manifest() -> None:
         fail(f"Deployment order differs from configured items: {ordered_names} != {expected}")
     if config["lakehouse"]["enable_schemas"] is not True:
         fail("The V1 contract requires a schema-enabled Lakehouse.")
+    if ordered_names.index(config["items"]["scanner_environment"]) > ordered_names.index(
+        config["items"]["scanner_notebook"]
+    ):
+        fail("The scanner Environment must be deployed before the scanner Notebook.")
     configured_branch = config["source"]["branch"]
     deploy_notebook = json.loads(
         (ROOT / "scripts/Deploy_SMO_Analytics.ipynb").read_text(encoding="utf-8")
@@ -71,6 +75,8 @@ def validate_manifest() -> None:
     for required in (
         "def _validate_direct_lake_connection(",
         "def _refresh_and_validate_semantic_model(",
+        "def _publish_and_validate_environment(",
+        "Scanner environment libraries are not published as required",
         "DirectLakeOnOneLake",
         "groups/{workspace_id}/datasets/{semantic_model_id}",
     ):
@@ -83,6 +89,9 @@ def validate_manifest() -> None:
 def validate_scanner() -> None:
     path = ROOT / "src/SMO_Optimization_Scanner.Notebook/notebook-content.ipynb"
     notebook = json.loads(path.read_text(encoding="utf-8"))
+    for index, cell in enumerate(notebook["cells"]):
+        if cell.get("cell_type") == "code":
+            compile("".join(cell.get("source", [])), f"{path.name}:cell-{index}", "exec")
     source = "\n".join("".join(cell.get("source", [])) for cell in notebook["cells"])
     for required in (
         'output_schema = "smopt"',
@@ -90,7 +99,8 @@ def validate_scanner() -> None:
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
-        'SCANNER_VERSION = "2.1.1"',
+        'SCANNER_VERSION = "2.1.2"',
+        "Scanner environment dependencies validated.",
         "def ensure_curated_tables()",
         "def curate_latest_model_analysis(result)",
         "def reconcile_workspace_current_state(targets)",
@@ -113,6 +123,32 @@ def validate_scanner() -> None:
     dependency = notebook["metadata"]["dependencies"]["lakehouse"]
     if dependency["default_lakehouse"] != "11111111-1111-1111-1111-111111111111":
         fail("Scanner Lakehouse placeholder does not match the deployment manifest.")
+    environment_dependency = notebook["metadata"]["dependencies"]["environment"]
+    if environment_dependency != {
+        "environmentId": "66666666-6666-6666-6666-666666666666",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+    }:
+        fail("Scanner Environment dependency does not match the deployment manifest.")
+    if "%pip" in source or "_inlineInstallationEnabled" in source:
+        fail("Pipeline scanner must not use session-scoped package installation.")
+
+    pipeline = (
+        ROOT / "src/Load_SMO_Data.DataPipeline/pipeline-content.json"
+    ).read_text(encoding="utf-8")
+    if "_inlineInstallationEnabled" in pipeline:
+        fail("Pipeline must not pass the removed inline-install parameter.")
+
+    environment_root = ROOT / "src/SMO_Scanner_Environment.Environment"
+    environment_yml = yaml.safe_load(
+        (environment_root / "Libraries/PublicLibraries/environment.yml").read_text()
+    )
+    pip_packages = environment_yml["dependencies"][0]["pip"]
+    expected_packages = {
+        "semantic-link-sempy==0.14.2",
+        "semantic-link-labs==0.15.2",
+    }
+    if set(pip_packages) != expected_packages:
+        fail(f"Scanner Environment packages differ from the pinned contract: {pip_packages}")
 
 
 def validate_model() -> None:
