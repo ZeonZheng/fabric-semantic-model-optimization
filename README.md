@@ -96,14 +96,18 @@ python tests/validate_repo.py
 
 ## Current stage
 
-Version `0.5.4` keeps the intended Lakehouse → SQL analytics endpoint → Direct
-Lake semantic-model lineage and removes exact Semantic Link version gates. The
-Environment supplies unpinned Semantic Link Labs while SemPy comes from Fabric
-Runtime; the scanner validates callable capabilities for the selected run instead.
-Deployment waits for the endpoint, refreshes and
-validates all eleven source tables before importing the model, and fails with
-table-level evidence when metadata is not ready. A `NotRun` result is accepted only
-when Fabric also returns `lastSuccessfulSyncDateTime`, proving that the table was
-already synchronized. Scanner `2.1.4` also fails the
-pipeline when every core analysis fails and returns the component errors in its
-summary. Report redesign remains outside this release.
+Version `0.5.5` is the M6.4 Production Stabilization release. It keeps the intended
+Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage and the
+unpinned Semantic Link environment introduced in `0.5.4`. Scanner `2.1.5` now
+defaults to a `workspace_user` profile that uses the current identity and
+workspace-scoped APIs only; it does not enumerate tenant workspaces, workspace
+members, or items through Fabric Admin APIs. SPN validation is likewise an
+effective-access check against only the explicitly approved workspace scope.
+
+Capacity labels, model-size metadata, and the optional governance item-access
+snapshot are enrichment evidence. Their absence is recorded as a warning and no
+longer changes an otherwise successful core scan to `PARTIAL` or `FAILED`. The
+`governance_admin` profile is explicit and is the only path that invokes a Fabric
+Admin API. Report redesign remains outside this release; M6.5.1 recommendation
+quality work remains in the codebase but requires acceptance after M6.4 production
+validation.

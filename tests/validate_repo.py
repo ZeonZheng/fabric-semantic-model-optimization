@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 import sys
@@ -100,13 +101,23 @@ def validate_scanner() -> None:
         if cell.get("cell_type") == "code":
             compile("".join(cell.get("source", [])), f"{path.name}:cell-{index}", "exec")
     source = "\n".join("".join(cell.get("source", [])) for cell in notebook["cells"])
+    code_source = "\n".join(
+        "".join(cell.get("source", []))
+        for cell in notebook["cells"]
+        if cell.get("cell_type") == "code"
+    )
     for required in (
         'output_schema = "smopt"',
         "workspace_ids = \"\"",
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
-        'SCANNER_VERSION = "2.1.4"',
+        'SCANNER_VERSION = "2.1.5"',
+        'scan_profile = "workspace_user"',
+        'if SCAN_PROFILE == "governance_admin":\n    import sempy.fabric.admin as admin',
+        'statuses["access_snapshot"] = "NOT_APPLICABLE_WORKSPACE_USER_PROFILE"',
+        'error_details["optional_enrichment_warnings"] = optional_enrichment_warnings',
+        "def classify_model_status(statuses)",
         "Scanner runtime modules discovered; callable capability validation follows.",
         "def module_available(module_name)",
         "def validate_runtime_capabilities()",
@@ -143,10 +154,49 @@ def validate_scanner() -> None:
         "workspaceId": "00000000-0000-0000-0000-000000000000",
     }:
         fail("Scanner Environment dependency does not match the deployment manifest.")
-    if notebook["metadata"].get("scanner_version") != "2.1.4":
+    if notebook["metadata"].get("scanner_version") != "2.1.5":
         fail("Scanner metadata version must match the executable scanner version.")
     if "%pip" in source or "_inlineInstallationEnabled" in source:
         fail("Pipeline scanner must not use session-scoped package installation.")
+    for forbidden in (
+        "admin.list_workspace_access_details",
+        "admin.list_workspaces",
+        "admin.list_items",
+        "spn_object_id",
+        "required_workspace_roles",
+    ):
+        if forbidden in source:
+            fail(f"Workspace-scoped scanner must not depend on tenant-admin discovery: {forbidden}")
+    if source.count("admin.list_item_access_details") != 1:
+        fail("The optional governance profile must be the only Admin API consumer.")
+
+    scanner_tree = ast.parse(code_source)
+    status_nodes = [
+        node
+        for node in scanner_tree.body
+        if (
+            isinstance(node, ast.Assign)
+            and any(isinstance(target, ast.Name) and target.id == "ANALYSIS_STATUS_KEYS" for target in node.targets)
+        )
+        or (isinstance(node, ast.FunctionDef) and node.name == "classify_model_status")
+    ]
+    status_namespace = {"run_bpa": True, "run_vertipaq": True}
+    exec(compile(ast.fix_missing_locations(ast.Module(body=status_nodes, type_ignores=[])), "status-policy", "exec"), status_namespace)
+    classify = status_namespace["classify_model_status"]
+    base = {
+        "bpa": "SUCCEEDED",
+        "vpa": "SUCCEEDED",
+        "refresh": "SUCCEEDED",
+        "usage": "NOT_RUN",
+        "direct_lake": "NOT_APPLICABLE",
+        "access_snapshot": "FAILED",
+    }
+    if classify(base) != "SUCCEEDED":
+        fail("Optional governance evidence must not downgrade a successful core scan.")
+    if classify({**base, "vpa": "FAILED"}) != "PARTIAL":
+        fail("A partial core-analysis failure must remain visible as PARTIAL.")
+    if classify({**base, "bpa": "FAILED", "vpa": "FAILED"}) != "FAILED":
+        fail("Failure of every enabled core analysis must remain FAILED.")
 
     pipeline = (
         ROOT / "src/Load_SMO_Data.DataPipeline/pipeline-content.json"

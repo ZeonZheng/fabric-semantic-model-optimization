@@ -59,6 +59,8 @@ distinguish a valid empty result from missing data.
 - A failed model analysis preserves the last usable current state.
 - Re-running a scan does not duplicate report counts.
 - The overview row records `NOT_RUN`, `NOT_APPLICABLE`, successful zero-record results, and a plain-language explanation.
+- The default `workspace_user` profile records item-access evidence as `NOT_APPLICABLE_WORKSPACE_USER_PROFILE`; only the explicit `governance_admin` profile attempts that optional snapshot.
+- Capacity labels, model-size metadata, and governance access snapshots are optional enrichment. Failures are retained under `optional_enrichment_warnings` and do not downgrade the core analysis status.
 - High-severity counts return zero rather than blank.
 
 ## Actionability and priority

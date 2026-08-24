@@ -48,9 +48,24 @@ so a compatible Fabric Runtime is not rejected merely because its version differ
 
 ## Identity
 
-The current POC defaults to the signed-in Fabric user (`auth_mode = "user"`). A pipeline-triggered notebook runs under the identity of the pipeline's last modifying user, which must have target-workspace and XMLA access.
+The current POC defaults to the signed-in Fabric user (`auth_mode = "user"`) and
+the `workspace_user` scan profile. A pipeline-triggered notebook runs under the
+identity of the pipeline's last modifying user, which must have target-workspace
+and XMLA access. This default profile uses `sempy.fabric` workspace/model APIs and
+the semantic-model XMLA surface only. It does not call Fabric Admin APIs and does
+not require a Fabric or tenant administrator role.
 
-Service-principal modes remain available for later unattended operation. Secrets must come from Key Vault and must never be committed.
+Service-principal modes remain available for later unattended operation. Their
+precheck proves effective access by resolving only the configured workspace and
+listing semantic models inside that workspace; it does not enumerate tenant
+workspaces, principals, or roles. Secrets must come from Key Vault and must never
+be committed.
+
+The optional `governance_admin` profile adds an item-access snapshot through
+`list_item_access_details`. That is the only Fabric Admin API path. It is isolated
+from core discovery and optimization status: a denied or unavailable governance
+snapshot is retained as an enrichment warning and cannot downgrade a successful
+BPA/VertiPaq analysis.
 
 ## Lakehouse organization
 
@@ -64,4 +79,11 @@ table result (`Success`, or `NotRun` with a prior successful sync), binds the en
 by GUID, and treats a failed semantic-model refresh
 as a failed deployment.
 
-Optional evidence is explicit rather than silently blank. For example, Import models record Direct Lake checks as `NOT_APPLICABLE`; the standard profile records object-usage analysis as `NOT_RUN`; and a successful refresh-history call with no observations records a zero count plus a plain-language explanation.
+Optional evidence is explicit rather than silently blank. For example, Import
+models record Direct Lake checks as `NOT_APPLICABLE`; the standard profile records
+object-usage analysis as `NOT_RUN`; the `workspace_user` profile records item
+access as `NOT_APPLICABLE_WORKSPACE_USER_PROFILE`; and a successful refresh-history
+call with no observations records a zero count plus a plain-language explanation.
+Unavailable capacity labels and model-size metadata are written under
+`optional_enrichment_warnings` in the analysis error payload without changing the
+core analysis status.
