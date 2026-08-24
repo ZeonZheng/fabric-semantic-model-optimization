@@ -3,7 +3,7 @@
   "metadata": {
     "type": "Environment",
     "displayName": "SMO_Scanner_Environment",
-    "description": "Published Spark environment with pinned Semantic Link dependencies for pipeline scanner runs."
+    "description": "Published Spark environment with the Semantic Link Labs extension; compatibility is validated by runtime capabilities."
   },
   "config": {
     "version": "2.0",

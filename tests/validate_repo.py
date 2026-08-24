@@ -79,7 +79,8 @@ def validate_manifest() -> None:
         "def _refresh_and_validate_sql_endpoint(",
         "def _refresh_and_validate_semantic_model(",
         "def _publish_and_validate_environment(",
-        "Scanner environment libraries are not published as required",
+        "Scanner environment libraries are not published",
+        "will determine compatibility",
         "SQL endpoint metadata validated:",
         'status == "notrun" and row.get("lastSuccessfulSyncDateTime")',
         "already current",
@@ -105,8 +106,12 @@ def validate_scanner() -> None:
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
-        'SCANNER_VERSION = "2.1.3"',
-        "Scanner environment dependencies validated.",
+        'SCANNER_VERSION = "2.1.4"',
+        "Scanner runtime modules discovered; callable capability validation follows.",
+        "def module_available(module_name)",
+        "def validate_runtime_capabilities()",
+        "runtime capabilities validated",
+        'getattr(fabric, "set_service_principal", None)',
         "fail_pipeline_if_any_model_fails = True",
         '"component_errors": row["error_json"]',
         "Model analysis failures:",
@@ -138,7 +143,7 @@ def validate_scanner() -> None:
         "workspaceId": "00000000-0000-0000-0000-000000000000",
     }:
         fail("Scanner Environment dependency does not match the deployment manifest.")
-    if notebook["metadata"].get("scanner_version") != "2.1.3":
+    if notebook["metadata"].get("scanner_version") != "2.1.4":
         fail("Scanner metadata version must match the executable scanner version.")
     if "%pip" in source or "_inlineInstallationEnabled" in source:
         fail("Pipeline scanner must not use session-scoped package installation.")
@@ -154,12 +159,10 @@ def validate_scanner() -> None:
         (environment_root / "Libraries/PublicLibraries/environment.yml").read_text()
     )
     pip_packages = environment_yml["dependencies"][0]["pip"]
-    expected_packages = {
-        "semantic-link-sempy==0.14.2",
-        "semantic-link-labs==0.15.2",
-    }
-    if set(pip_packages) != expected_packages:
-        fail(f"Scanner Environment packages differ from the pinned contract: {pip_packages}")
+    if pip_packages != ["semantic-link-labs"]:
+        fail(f"Scanner Environment must contain only unpinned Semantic Link Labs: {pip_packages}")
+    if any("==" in package for package in pip_packages):
+        fail(f"Scanner Environment packages must not use exact version pins: {pip_packages}")
 
 
 def validate_model() -> None:

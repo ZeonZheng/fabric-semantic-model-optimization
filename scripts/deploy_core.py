@@ -27,10 +27,7 @@ import yaml
 
 FABRIC_API = "https://api.fabric.microsoft.com"
 WORKSPACE_PLACEHOLDER = "00000000-0000-0000-0000-000000000000"
-SCANNER_ENVIRONMENT_PACKAGES = {
-    "semantic-link-sempy": "0.14.2",
-    "semantic-link-labs": "0.15.2",
-}
+SCANNER_ENVIRONMENT_PACKAGES = {"semantic-link-labs"}
 
 
 def run_fab(command: str, *, timeout: int = 600, allow_failure: bool = False) -> str:
@@ -359,22 +356,24 @@ def _validate_environment_libraries(
         for library in payload.get("libraries", [])
         if str(library.get("libraryType", "")).lower() == "external"
     }
-    missing_or_wrong = {
-        name: {"expected": expected, "published": published.get(name)}
-        for name, expected in SCANNER_ENVIRONMENT_PACKAGES.items()
-        if published.get(name) != expected
-    }
-    if missing_or_wrong:
+    missing = sorted(SCANNER_ENVIRONMENT_PACKAGES - set(published))
+    if missing:
         raise RuntimeError(
-            "Scanner environment libraries are not published as required: "
-            + json.dumps(missing_or_wrong, ensure_ascii=False)
+            "Scanner environment libraries are not published: "
+            + json.dumps({"missing": missing, "published": published}, ensure_ascii=False)
         )
+    versions = {name: published[name] for name in sorted(SCANNER_ENVIRONMENT_PACKAGES)}
+    print(
+        "Scanner environment libraries published; runtime capability validation "
+        "will determine compatibility: "
+        + json.dumps(versions, ensure_ascii=False)
+    )
 
 
 def _publish_and_validate_environment(
     workspace_id: str, environment_id: str
 ) -> None:
-    """Publish pinned scanner libraries before any notebook can reference them."""
+    """Publish scanner extensions before any notebook can reference them."""
     details = _environment_publish_details(workspace_id, environment_id)
     if details.get("state") in {"Running", "Waiting", "Cancelling"}:
         _wait_for_environment_publish(workspace_id, environment_id)

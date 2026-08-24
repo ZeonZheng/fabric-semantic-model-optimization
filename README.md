@@ -3,7 +3,7 @@
 An FUAM-style Microsoft Fabric solution for read-only semantic-model analysis. One deployment notebook creates or updates the complete solution in a Fabric workspace:
 
 - schema-enabled Lakehouse
-- published Fabric Environment with pinned scanner libraries
+- published Fabric Environment with the scanner extension library
 - semantic-model scanner notebook
 - parameterized ingestion pipeline
 - Direct Lake semantic model
@@ -16,7 +16,7 @@ After deployment, normal operations run only the `Load_SMO_Data` pipeline.
 | Item | Fabric name | Purpose |
 | --- | --- | --- |
 | Lakehouse | `SMO_Analytics_Lakehouse` | Raw technical history plus eleven AI-friendly business tables across meaningful schemas |
-| Environment | `SMO_Scanner_Environment` | Published, pinned Semantic Link dependencies for standard and High Concurrency sessions |
+| Environment | `SMO_Scanner_Environment` | Publishes Semantic Link Labs; the scanner uses Fabric Runtime SemPy and validates required APIs at runtime |
 | Notebook | `SMO_Optimization_Scanner` | Read-only metadata, BPA, VertiPaq, refresh, and Direct Lake checks |
 | Pipeline | `Load_SMO_Data` | Member-facing entry point with two simple parameters |
 | Semantic model | `SMO_Analytics_SM` | Direct Lake on SQL model centered on the `semantic_models` business dimension |
@@ -33,8 +33,11 @@ The notebook is idempotent by item name. Re-running it updates the deployed code
 
 Deployment publishes `SMO_Scanner_Environment` before importing the scanner.
 Normal pipeline runs never execute `%pip`; the scanner validates the attached
-environment and its pinned package versions before scanning. This makes the
-pipeline compatible with Fabric High Concurrency sessions.
+environment by importing the required modules and checking the APIs needed by the
+selected authentication mode and analysis options. Package versions are logged for
+diagnostics but are not exact-match deployment gates. This keeps the pipeline
+compatible with Fabric High Concurrency sessions and avoids fighting the SemPy
+version supplied by the selected Fabric Runtime.
 
 The checked-in bootstrap is pinned to `codex/m6-4`. It also verifies that the
 downloaded deployment manifest declares the same branch, so a branch mismatch
@@ -93,11 +96,14 @@ python tests/validate_repo.py
 
 ## Current stage
 
-Version `0.5.3` restores the intended Lakehouse → SQL analytics endpoint → Direct
-Lake semantic-model lineage. Deployment now waits for the endpoint, refreshes and
+Version `0.5.4` keeps the intended Lakehouse → SQL analytics endpoint → Direct
+Lake semantic-model lineage and removes exact Semantic Link version gates. The
+Environment supplies unpinned Semantic Link Labs while SemPy comes from Fabric
+Runtime; the scanner validates callable capabilities for the selected run instead.
+Deployment waits for the endpoint, refreshes and
 validates all eleven source tables before importing the model, and fails with
 table-level evidence when metadata is not ready. A `NotRun` result is accepted only
 when Fabric also returns `lastSuccessfulSyncDateTime`, proving that the table was
-already synchronized. Scanner `2.1.3` also fails the
+already synchronized. Scanner `2.1.4` also fails the
 pipeline when every core analysis fails and returns the component errors in its
 summary. Report redesign remains outside this release.

@@ -5,7 +5,7 @@
 The solution separates deployment, recurring discovery, and benefit validation:
 
 1. `Deploy_SMO_Analytics.ipynb` creates or updates all Fabric items.
-2. A published Fabric Environment supplies the scanner's pinned Semantic Link dependencies without per-run installation.
+2. A published Fabric Environment supplies the Semantic Link Labs extension without per-run installation; SemPy comes from the selected Fabric Runtime.
 3. The scanner initializes the technical evidence and V2 business contracts once.
 4. `Load_SMO_Data` runs the scanner for an explicit workspace/model scope.
 5. The scanner preserves technical history and refreshes each model's latest usable business state.
@@ -41,8 +41,10 @@ flowchart TD
 
 The scanner Notebook contains no `%pip` cell. Both standard and High Concurrency
 Pipeline sessions use the attached `SMO_Scanner_Environment`; deployment waits for
-its publish state and verifies the required public-library versions before the
-scanner is imported.
+its publish state and verifies that the required extension is present before the
+scanner is imported. Exact package versions are diagnostic only. The scanner checks
+the callable APIs required by its selected authentication mode and enabled analyses,
+so a compatible Fabric Runtime is not rejected merely because its version differs.
 
 ## Identity
 
