@@ -75,11 +75,14 @@ def validate_manifest() -> None:
     for required in (
         "def _wait_for_sql_endpoint(",
         "def _update_and_validate_direct_lake_sql_connection(",
+        "def _sql_endpoint_table_readiness(",
         "def _refresh_and_validate_sql_endpoint(",
         "def _refresh_and_validate_semantic_model(",
         "def _publish_and_validate_environment(",
         "Scanner environment libraries are not published as required",
         "SQL endpoint metadata validated:",
+        'status == "notrun" and row.get("lastSuccessfulSyncDateTime")',
+        "already current",
         "DirectLakeOnSqlEndpoint",
         "groups/{workspace_id}/datasets/{semantic_model_id}",
     ):

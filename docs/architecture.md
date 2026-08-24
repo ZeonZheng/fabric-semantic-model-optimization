@@ -58,7 +58,8 @@ Direct Lake uses the deployed Lakehouse's SQL analytics endpoint for table
 discovery, permission checks, and lineage; data remains in OneLake and no
 on-premises data gateway is required. The deployment engine waits for the endpoint,
 performs a selective metadata sync for all eleven source tables, validates every
-table result, binds the endpoint by GUID, and treats a failed semantic-model refresh
+table result (`Success`, or `NotRun` with a prior successful sync), binds the endpoint
+by GUID, and treats a failed semantic-model refresh
 as a failed deployment.
 
 Optional evidence is explicit rather than silently blank. For example, Import models record Direct Lake checks as `NOT_APPLICABLE`; the standard profile records object-usage analysis as `NOT_RUN`; and a successful refresh-history call with no observations records a zero count plus a plain-language explanation.

@@ -93,9 +93,11 @@ python tests/validate_repo.py
 
 ## Current stage
 
-Version `0.5.2` restores the intended Lakehouse → SQL analytics endpoint → Direct
+Version `0.5.3` restores the intended Lakehouse → SQL analytics endpoint → Direct
 Lake semantic-model lineage. Deployment now waits for the endpoint, refreshes and
 validates all eleven source tables before importing the model, and fails with
-table-level evidence when metadata is not ready. Scanner `2.1.3` also fails the
+table-level evidence when metadata is not ready. A `NotRun` result is accepted only
+when Fabric also returns `lastSuccessfulSyncDateTime`, proving that the table was
+already synchronized. Scanner `2.1.3` also fails the
 pipeline when every core analysis fails and returns the component errors in its
 summary. Report redesign remains outside this release.

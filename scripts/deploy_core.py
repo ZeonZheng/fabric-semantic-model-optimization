@@ -559,6 +559,16 @@ def _resolve_item_id(
     return item_id
 
 
+def _sql_endpoint_table_readiness(row: dict) -> str | None:
+    """Classify a table sync result without rejecting an already-synced table."""
+    status = str(row.get("status", "")).strip().lower()
+    if status == "success":
+        return "REFRESHED"
+    if status == "notrun" and row.get("lastSuccessfulSyncDateTime"):
+        return "ALREADY_CURRENT"
+    return None
+
+
 def _refresh_and_validate_sql_endpoint(
     workspace_id: str,
     endpoint_id: str,
@@ -601,10 +611,14 @@ def _refresh_and_validate_sql_endpoint(
         for table in names
     }
     missing = sorted(expected - set(actual))
+    readiness = {
+        name: _sql_endpoint_table_readiness(actual[name])
+        for name in sorted(expected & set(actual))
+    }
     failed = {
         name: actual[name]
-        for name in sorted(expected & set(actual))
-        if str(actual[name].get("status", "")).lower() != "success"
+        for name, state in readiness.items()
+        if state is None
     }
     if missing or failed:
         raise RuntimeError(
@@ -615,9 +629,12 @@ def _refresh_and_validate_sql_endpoint(
                 ensure_ascii=False,
             )
         )
+    refreshed_count = sum(state == "REFRESHED" for state in readiness.values())
+    current_count = sum(state == "ALREADY_CURRENT" for state in readiness.values())
     print(
         f"SQL endpoint metadata validated: {len(expected)}/{len(expected)} "
-        "semantic-model source tables ready."
+        f"semantic-model source tables ready ({refreshed_count} refreshed, "
+        f"{current_count} already current)."
     )
 
 
