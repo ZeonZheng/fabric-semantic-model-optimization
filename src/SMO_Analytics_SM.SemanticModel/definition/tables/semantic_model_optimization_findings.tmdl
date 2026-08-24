@@ -180,4 +180,4 @@ table semantic_model_optimization_findings
 		source
 			entityName: semantic_model_optimization_findings
 			schemaName: semantic_model_optimization
-			expressionSource: DirectLake_Source
+			expressionSource: DatabaseQuery

@@ -93,4 +93,4 @@ table semantic_model_table_storage
 		source
 			entityName: semantic_model_table_storage
 			schemaName: semantic_model_vertipaq
-			expressionSource: DirectLake_Source
+			expressionSource: DatabaseQuery

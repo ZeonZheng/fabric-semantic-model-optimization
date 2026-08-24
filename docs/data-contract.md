@@ -2,7 +2,7 @@
 
 V2 separates append-only technical evidence from a meaningful, AI-friendly consumption layer. The report and downstream AI experiences use only the eleven business tables below.
 
-## Direct Lake consumption tables
+## Direct Lake on SQL consumption tables
 
 | Schema and table | Grain / key | Business meaning |
 | --- | --- | --- |
@@ -31,6 +31,9 @@ Names use complete business entities rather than abbreviations. Columns explicit
 ## Empty-table expectations
 
 Deployment initializes all eleven tables before importing the Direct Lake model.
+It then synchronizes those schema-qualified tables to the Lakehouse SQL analytics
+endpoint and refuses to import the model until every table reports a successful
+metadata refresh.
 Therefore, a reserved business schema with no tables indicates an initialization
 failure and is not expected. Rows are populated only by `Load_SMO_Data`.
 

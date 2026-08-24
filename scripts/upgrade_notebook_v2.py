@@ -717,18 +717,23 @@ def set_source(cell: dict, text: str) -> None:
 def main() -> None:
     notebook = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
     cells = notebook["cells"]
+    notebook.setdefault("metadata", {})["scanner_version"] = "2.1.3"
 
     for cell in cells:
         text = source_text(cell)
-        for previous_version in ("1.2.0", "2.0.0", "2.1.0", "2.1.1"):
+        for previous_version in ("1.2.0", "2.0.0", "2.1.0", "2.1.1", "2.1.2"):
             text = text.replace(
                 f'SCANNER_VERSION = "{previous_version}"',
-                'SCANNER_VERSION = "2.1.2"',
+                'SCANNER_VERSION = "2.1.3"',
             )
         text = re.sub(
             r"Semantic Model Optimization Scanner — V(?:1\.2|2\.0|2\.1(?:\.\d+)*)",
-            "Semantic Model Optimization Scanner — V2.1.2",
+            "Semantic Model Optimization Scanner — V2.1.3",
             text,
+        )
+        text = text.replace(
+            "fail_pipeline_if_any_model_fails = False",
+            "fail_pipeline_if_any_model_fails = True",
         )
         set_source(cell, text)
 
@@ -759,6 +764,44 @@ def main() -> None:
         if "# ---------- Execute scan and persist each model immediately ----------" in source_text(cell)
     )
     execute = source_text(execute_cell)
+    if "model_failure_details = [" not in execute:
+        execute = execute.replace(
+            'skipped_count = sum(row["overall_status"] == "SKIPPED_PERMISSION" for row in model_results)\n',
+            'skipped_count = sum(row["overall_status"] == "SKIPPED_PERMISSION" for row in model_results)\n'
+            'model_failure_details = [\n'
+            '    f"{row[\'workspace_name\']} / {row[\'model_name\']}: {row.get(\'error_json\') or \'core analyses failed without a captured component error\'}"\n'
+            '    for row in model_results\n'
+            '    if row["overall_status"] == "FAILED"\n'
+            ']\n'
+            'model_failure_error = (\n'
+            '    clean_string("Model analysis failures: " + " | ".join(model_failure_details), 4000)\n'
+            '    if model_failure_details\n'
+            '    else None\n'
+            ')\n',
+        )
+        execute = execute.replace(
+            '        if run_error\n        else "AUTHORIZATION"',
+            '        if run_error\n        else "MODEL_ANALYSIS"\n        if model_failure_error\n        else "AUTHORIZATION"',
+        )
+        execute = execute.replace(
+            '        if run_error\n        else f"{skipped_count} model(s) skipped',
+            '        if run_error\n        else model_failure_error\n        if model_failure_error\n        else f"{skipped_count} model(s) skipped',
+        )
+        execute = execute.replace(
+            '            "scanner_workspace_role": row["scanner_workspace_role"],\n'
+            '            "finding_count": row["finding_count"],',
+            '            "scanner_workspace_role": row["scanner_workspace_role"],\n'
+            '            "best_practice_analysis_status": row["bpa_status"],\n'
+            '            "storage_analysis_status": row["vpa_status"],\n'
+            '            "refresh_history_status": row["refresh_status"],\n'
+            '            "direct_lake_analysis_status": row["direct_lake_status"],\n'
+            '            "finding_count": row["finding_count"],\n'
+            '            "component_errors": row["error_json"],',
+        )
+        execute = execute.replace(
+            '    "error": truncate_error(run_error) if run_error else None,',
+            '    "error": truncate_error(run_error) if run_error else model_failure_error,',
+        )
     execute = execute.replace(
         "    ensure_tables()\n    if initialize_only:\n        init_summary = {\"status\": \"INITIALIZED\", \"schema\": output_schema, \"table_count\": len(TABLES)}\n        print(json.dumps(init_summary, indent=2))\n        notebookutils.notebook.exit(json.dumps(init_summary))\n    with authentication_context():",
         "    ensure_tables()\n    ensure_curated_tables()\n    if initialize_only:\n        init_summary = {\"status\": \"INITIALIZED\", \"raw_table_count\": len(TABLES), \"curated_table_count\": len(CURATED_TABLES)}\n        print(json.dumps(init_summary, indent=2))\n    else:\n        with authentication_context():",

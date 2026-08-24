@@ -73,17 +73,20 @@ def validate_manifest() -> None:
     if "folder_by_item" not in deploy_core or "destination_parent" not in deploy_core:
         fail("Fabric item upgrades must address items through their configured folder paths.")
     for required in (
-        "def _validate_direct_lake_connection(",
+        "def _wait_for_sql_endpoint(",
+        "def _update_and_validate_direct_lake_sql_connection(",
+        "def _refresh_and_validate_sql_endpoint(",
         "def _refresh_and_validate_semantic_model(",
         "def _publish_and_validate_environment(",
         "Scanner environment libraries are not published as required",
-        "DirectLakeOnOneLake",
+        "SQL endpoint metadata validated:",
+        "DirectLakeOnSqlEndpoint",
         "groups/{workspace_id}/datasets/{semantic_model_id}",
     ):
         if required not in deploy_core:
             fail(f"Deployment engine is missing end-to-end validation: {required}")
-    if "_update_direct_lake_connection" in deploy_core:
-        fail("Deployment must not rewrite the model to a generic SQL Server datasource.")
+    if "def _validate_direct_lake_connection(" in deploy_core:
+        fail("Deployment must not use the retired OneLake-only binding path.")
 
 
 def validate_scanner() -> None:
@@ -99,8 +102,11 @@ def validate_scanner() -> None:
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
-        'SCANNER_VERSION = "2.1.2"',
+        'SCANNER_VERSION = "2.1.3"',
         "Scanner environment dependencies validated.",
+        "fail_pipeline_if_any_model_fails = True",
+        '"component_errors": row["error_json"]',
+        "Model analysis failures:",
         "def ensure_curated_tables()",
         "def curate_latest_model_analysis(result)",
         "def reconcile_workspace_current_state(targets)",
@@ -129,6 +135,8 @@ def validate_scanner() -> None:
         "workspaceId": "00000000-0000-0000-0000-000000000000",
     }:
         fail("Scanner Environment dependency does not match the deployment manifest.")
+    if notebook["metadata"].get("scanner_version") != "2.1.3":
+        fail("Scanner metadata version must match the executable scanner version.")
     if "%pip" in source or "_inlineInstallationEnabled" in source:
         fail("Pipeline scanner must not use session-scoped package installation.")
 
@@ -164,17 +172,14 @@ def validate_model() -> None:
     if "smopt_" in model:
         fail("The V2 Direct Lake model must not expose deprecated smopt_* technical tables.")
     expressions = (model_root / "expressions.tmdl").read_text(encoding="utf-8")
-    expected_path = (
-        "https://onelake.dfs.fabric.microsoft.com/"
-        "00000000-0000-0000-0000-000000000000/"
-        "11111111-1111-1111-1111-111111111111"
+    expected_source = (
+        'Sql.Database("placeholder.datawarehouse.fabric.microsoft.com", '
+        '"77777777-7777-7777-7777-777777777777")'
     )
-    if "AzureStorage.DataLake" not in expressions or expected_path not in expressions:
-        fail("Direct Lake on OneLake connection expression is missing.")
-    if "Sql.Database" in expressions or '"none"' in expressions.lower():
-        fail("Semantic model must not contain a generic or invalid SQL Server datasource.")
-    if 'PBI_QueryOrder = ["DirectLake_Source"]' not in model:
-        fail("Model query order must reference the shared Direct Lake source expression.")
+    if expected_source not in expressions or "AzureStorage.DataLake" in expressions:
+        fail("Direct Lake SQL analytics endpoint template is missing or invalid.")
+    if 'PBI_QueryOrder = ["DatabaseQuery"]' not in model:
+        fail("Model query order must reference the SQL endpoint source expression.")
     for table in refs:
         table = table.strip("'")
         if table == "Metrics":
@@ -182,8 +187,8 @@ def validate_model() -> None:
         table_text = (model_root / "tables" / f"{table}.tmdl").read_text(encoding="utf-8")
         if "mode: directLake" not in table_text:
             fail(f"Table {table} is not configured for Direct Lake.")
-        if "expressionSource: DirectLake_Source" not in table_text:
-            fail(f"Table {table} does not reference the OneLake shared expression.")
+        if "expressionSource: DatabaseQuery" not in table_text:
+            fail(f"Table {table} does not reference the SQL endpoint expression.")
         if "schemaName:" not in table_text:
             fail(f"Table {table} is missing its Lakehouse schema mapping.")
     recommendations = (model_root / "tables/semantic_model_optimization_recommendations.tmdl").read_text()

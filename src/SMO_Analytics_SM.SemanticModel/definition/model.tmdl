@@ -9,7 +9,7 @@ model Model
 		returnErrorValuesAsNull
 
 annotation __PBI_TimeIntelligenceEnabled = 0
-annotation PBI_QueryOrder = ["DirectLake_Source"]
+annotation PBI_QueryOrder = ["DatabaseQuery"]
 annotation PBI_ProTooling = ["WebModelingEdit","RemoteModeling"]
 
 ref table semantic_models

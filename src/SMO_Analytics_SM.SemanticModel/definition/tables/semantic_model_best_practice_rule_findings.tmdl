@@ -111,4 +111,4 @@ table semantic_model_best_practice_rule_findings
 		source
 			entityName: semantic_model_best_practice_rule_findings
 			schemaName: semantic_model_best_practice
-			expressionSource: DirectLake_Source
+			expressionSource: DatabaseQuery

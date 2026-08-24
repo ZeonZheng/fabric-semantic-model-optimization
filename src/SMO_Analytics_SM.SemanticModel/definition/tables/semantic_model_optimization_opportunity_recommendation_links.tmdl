@@ -31,4 +31,4 @@ table semantic_model_optimization_opportunity_recommendation_links
 		source
 			entityName: semantic_model_optimization_opportunity_recommendation_links
 			schemaName: semantic_model_optimization
-			expressionSource: DirectLake_Source
+			expressionSource: DatabaseQuery

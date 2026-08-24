@@ -16,6 +16,9 @@ import sysconfig
 import tempfile
 import time
 from pathlib import Path
+from urllib.error import HTTPError
+from urllib.parse import urljoin
+from urllib.request import Request, urlopen
 
 import sempy.fabric as fabric
 import notebookutils
@@ -153,19 +156,161 @@ def _make_initialization_notebook(root: Path, output_schema: str) -> None:
     raise ValueError("Delta table contract cell not found in scanner notebook.")
 
 
-def _get_sql_endpoint_id(workspace_name: str, lakehouse_name: str) -> str | None:
-    """Return the Lakehouse SQL endpoint ID when Fabric has provisioned it."""
+def _wait_for_sql_endpoint(
+    workspace_name: str, lakehouse_name: str, *, timeout_seconds: int = 600
+) -> tuple[str, str]:
+    """Wait until Fabric exposes both the endpoint ID and TDS connection string."""
     lakehouse_qualified = (
         lakehouse_name
         if lakehouse_name.endswith(".Lakehouse")
         else f"{lakehouse_name}.Lakehouse"
     )
-    endpoint_id = run_fab(
-        f"get /{workspace_name}.Workspace/{lakehouse_qualified} "
-        "-q properties.sqlEndpointProperties.id",
-        allow_failure=True,
-    ).strip()
-    return endpoint_id if re.fullmatch(r"[0-9a-fA-F-]{36}", endpoint_id) else None
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        endpoint_id = run_fab(
+            f"get /{workspace_name}.Workspace/{lakehouse_qualified} "
+            "-q properties.sqlEndpointProperties.id",
+            allow_failure=True,
+        ).strip()
+        connection = run_fab(
+            f"get /{workspace_name}.Workspace/{lakehouse_qualified} "
+            "-q properties.sqlEndpointProperties.connectionString",
+            allow_failure=True,
+        ).strip()
+        endpoint_ready = bool(re.fullmatch(r"[0-9a-fA-F-]{36}", endpoint_id))
+        connection_ready = bool(
+            connection
+            and ".datawarehouse.fabric.microsoft.com" in connection.lower()
+            and "invalidpath" not in connection.lower()
+            and not connection.lower().startswith("x get:")
+        )
+        if endpoint_ready and connection_ready:
+            return endpoint_id, connection
+        time.sleep(10)
+    raise TimeoutError(
+        "Lakehouse SQL analytics endpoint did not expose a valid ID and "
+        f"connection string within {timeout_seconds} seconds."
+    )
+
+
+def _response_json(status_code: int, content: bytes) -> dict:
+    if not content:
+        return {}
+    try:
+        payload = json.loads(content.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(
+            f"Fabric API returned non-JSON content ({status_code}): "
+            f"{content[:2000]!r}"
+        ) from exc
+    return payload if isinstance(payload, dict) else {"value": payload}
+
+
+def _http_request(
+    method: str,
+    url: str,
+    token: str,
+    *,
+    body: dict | None = None,
+    timeout_seconds: int = 120,
+) -> tuple[int, object, bytes]:
+    encoded = json.dumps(body).encode("utf-8") if body is not None else None
+    request = Request(
+        url,
+        data=encoded,
+        method=method,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        },
+    )
+    try:
+        with urlopen(request, timeout=timeout_seconds) as response:
+            return response.getcode(), response.headers, response.read()
+    except HTTPError as exc:
+        return exc.code, exc.headers, exc.read()
+
+
+def _fabric_request_json(
+    method: str,
+    path: str,
+    *,
+    body: dict | None = None,
+    timeout_seconds: int = 1200,
+) -> dict:
+    """Call a Fabric API and fully resolve its standard LRO contract."""
+    token = os.environ.get("FAB_TOKEN")
+    if not token:
+        raise RuntimeError("FAB_TOKEN is unavailable for the Fabric API request.")
+    url = urljoin(f"{FABRIC_API}/v1/", path.lstrip("/"))
+    status_code, response_headers, content = _http_request(
+        method,
+        url,
+        token,
+        body=body,
+        timeout_seconds=min(timeout_seconds, 120),
+    )
+    if status_code not in {200, 201, 202}:
+        raise RuntimeError(
+            f"Fabric API {method} {path} failed ({status_code}): "
+            f"{content[:4000]!r}"
+        )
+    if status_code != 202:
+        return _response_json(status_code, content)
+
+    operation_id = response_headers.get("x-ms-operation-id")
+    poll_url = response_headers.get("Location")
+    if not poll_url and operation_id:
+        poll_url = f"{FABRIC_API}/v1/operations/{operation_id}"
+    if not poll_url:
+        raise RuntimeError("Fabric LRO response omitted Location and x-ms-operation-id.")
+    poll_url = urljoin(f"{FABRIC_API}/v1/", poll_url)
+
+    deadline = time.monotonic() + timeout_seconds
+    retry_after = int(response_headers.get("Retry-After", "5"))
+    while time.monotonic() < deadline:
+        time.sleep(max(1, min(retry_after, 30)))
+        status_code, response_headers, content = _http_request(
+            "GET", poll_url, token, timeout_seconds=120
+        )
+        if status_code not in {200, 202}:
+            raise RuntimeError(
+                f"Fabric LRO polling failed ({status_code}): {content[:4000]!r}"
+            )
+        retry_after = int(response_headers.get("Retry-After", "5"))
+        poll_url = urljoin(
+            f"{FABRIC_API}/v1/", response_headers.get("Location", poll_url)
+        )
+        if status_code == 202:
+            continue
+        operation = _response_json(status_code, content)
+        status = str(operation.get("status", "")).lower()
+        if status in {"failed", "cancelled"}:
+            raise RuntimeError(
+                "Fabric LRO failed: "
+                + json.dumps(operation, default=str, ensure_ascii=False)
+            )
+        if status and status != "succeeded":
+            continue
+
+        if operation_id:
+            result_status, _, result_content = _http_request(
+                "GET",
+                f"{FABRIC_API}/v1/operations/{operation_id}/result",
+                token,
+                timeout_seconds=120,
+            )
+            if result_status == 200:
+                return _response_json(result_status, result_content)
+            if result_status not in {204, 404}:
+                raise RuntimeError(
+                    "Fabric LRO result retrieval failed "
+                    f"({result_status}): {result_content[:4000]!r}"
+                )
+        return operation
+    raise TimeoutError(
+        f"Fabric API operation did not complete within {timeout_seconds} seconds."
+    )
 
 
 def _environment_publish_details(workspace_id: str, environment_id: str) -> dict:
@@ -246,30 +391,52 @@ def _publish_and_validate_environment(
     _validate_environment_libraries(workspace_id, environment_id)
 
 
-def _validate_direct_lake_connection(
-    item_root: Path, workspace_id: str, lakehouse_id: str
+def _update_and_validate_direct_lake_sql_connection(
+    item_root: Path, endpoint_id: str, connection_string: str
 ) -> None:
-    """Fail before import unless TMDL targets the deployed Lakehouse in OneLake."""
+    """Bind Direct Lake to this Lakehouse's SQL analytics endpoint by GUID."""
     expressions = item_root / "definition" / "expressions.tmdl"
     content = expressions.read_text(encoding="utf-8")
-    expected_path = (
-        "https://onelake.dfs.fabric.microsoft.com/"
-        f"{workspace_id}/{lakehouse_id}"
+    updated, count = re.subn(
+        r'Sql\.Database\("[^"]+",\s*"[^"]+"\)',
+        f'Sql.Database("{connection_string}", "{endpoint_id}")',
+        content,
+        count=1,
     )
-    if "AzureStorage.DataLake" not in content or expected_path not in content:
+    if count != 1:
         raise ValueError(
-            "Direct Lake on OneLake expression does not target the deployed "
-            f"Lakehouse: {expected_path}"
+            "Unable to locate the Direct Lake Sql.Database connection expression."
         )
+    expressions.write_text(updated, encoding="utf-8")
     invalid_tokens = (
-        WORKSPACE_PLACEHOLDER,
-        "11111111-1111-1111-1111-111111111111",
-        "Sql.Database(",
+        "placeholder.datawarehouse.fabric.microsoft.com",
+        "77777777-7777-7777-7777-777777777777",
+        "AzureStorage.DataLake(",
         '"server":"none"',
         '"database":"none"',
     )
-    if any(token.lower() in content.lower() for token in invalid_tokens):
-        raise ValueError("Direct Lake expression still contains a placeholder or invalid SQL source.")
+    if any(token.lower() in updated.lower() for token in invalid_tokens):
+        raise ValueError(
+            "Direct Lake SQL endpoint expression still contains a placeholder "
+            "or invalid source."
+        )
+    expected = f'Sql.Database("{connection_string}", "{endpoint_id}")'
+    if expected not in updated:
+        raise ValueError("Direct Lake SQL endpoint expression was not bound as expected.")
+
+
+def _semantic_model_source_tables(item_root: Path) -> dict[str, list[str]]:
+    """Read the schema/entity pairs used by Direct Lake partitions."""
+    grouped: dict[str, list[str]] = {}
+    for table_path in sorted((item_root / "definition" / "tables").glob("*.tmdl")):
+        content = table_path.read_text(encoding="utf-8")
+        entity = re.search(r"^\s*entityName:\s*(.+?)\s*$", content, re.MULTILINE)
+        schema = re.search(r"^\s*schemaName:\s*(.+?)\s*$", content, re.MULTILINE)
+        if entity and schema:
+            grouped.setdefault(schema.group(1), []).append(entity.group(1))
+    if not grouped:
+        raise ValueError("No schema/entity Direct Lake partitions were found in TMDL.")
+    return grouped
 
 
 def _refresh_history(workspace_id: str, semantic_model_id: str) -> list[dict]:
@@ -289,7 +456,10 @@ def _refresh_key(refresh: dict) -> str:
 
 
 def _validate_semantic_model_datasource(
-    workspace_id: str, semantic_model_id: str
+    workspace_id: str,
+    semantic_model_id: str,
+    endpoint_id: str,
+    connection_string: str,
 ) -> None:
     payload = _api_json(
         "api -A powerbi -X get "
@@ -300,13 +470,23 @@ def _validate_semantic_model_datasource(
         raise RuntimeError(
             "Semantic model was published with an invalid server/database datasource."
         )
+    if endpoint_id.lower() not in normalized or connection_string.lower() not in normalized:
+        raise RuntimeError(
+            "Semantic model datasource does not match the deployed Lakehouse SQL "
+            f"analytics endpoint {endpoint_id}."
+        )
 
 
 def _refresh_and_validate_semantic_model(
-    workspace_id: str, semantic_model_id: str
+    workspace_id: str,
+    semantic_model_id: str,
+    endpoint_id: str,
+    connection_string: str,
 ) -> None:
     """Reframe Direct Lake and fail deployment when the model cannot read its source."""
-    _validate_semantic_model_datasource(workspace_id, semantic_model_id)
+    _validate_semantic_model_datasource(
+        workspace_id, semantic_model_id, endpoint_id, connection_string
+    )
     previous_refreshes = {
         _refresh_key(refresh)
         for refresh in _refresh_history(workspace_id, semantic_model_id)
@@ -337,7 +517,9 @@ def _refresh_and_validate_semantic_model(
             print(f"Semantic model refresh status: {status}")
             last_status = status
         if status == "Completed":
-            _validate_semantic_model_datasource(workspace_id, semantic_model_id)
+            _validate_semantic_model_datasource(
+                workspace_id, semantic_model_id, endpoint_id, connection_string
+            )
             return
         if status in {"Failed", "Cancelled", "Disabled"}:
             raise RuntimeError(
@@ -377,13 +559,65 @@ def _resolve_item_id(
     return item_id
 
 
-def _refresh_sql_endpoint(workspace_id: str, endpoint_id: str) -> None:
-    run_fab(
-        "api -A fabric -X post "
-        f"workspaces/{workspace_id}/sqlEndpoints/{endpoint_id}/refreshMetadata?preview=True "
-        "-i {}",
-        timeout=900,
-        allow_failure=True,
+def _refresh_and_validate_sql_endpoint(
+    workspace_id: str,
+    endpoint_id: str,
+    source_tables: dict[str, list[str]],
+) -> None:
+    """Synchronize and verify every table before importing the semantic model."""
+    table_count = sum(len(names) for names in source_tables.values())
+    if table_count > 25:
+        raise ValueError(
+            "SQL endpoint metadata refresh supports at most 25 selective tables; "
+            f"the semantic model declares {table_count}."
+        )
+    body = {
+        "tables": [
+            {"schema": schema, "tableNames": names}
+            for schema, names in sorted(source_tables.items())
+        ],
+        "timeout": {"value": 15, "timeUnit": "Minutes"},
+    }
+    payload = _fabric_request_json(
+        "POST",
+        f"workspaces/{workspace_id}/sqlEndpoints/{endpoint_id}/refreshMetadata",
+        body=body,
+        timeout_seconds=1200,
+    )
+    statuses = payload.get("value", [])
+    if not statuses:
+        raise RuntimeError(
+            "SQL endpoint metadata refresh completed without table-level results; "
+            "deployment cannot prove that the semantic-model source is ready."
+        )
+
+    actual = {
+        str(row.get("tableName", "")).lower(): row
+        for row in statuses
+    }
+    expected = {
+        f"{schema}.{table}".lower()
+        for schema, names in source_tables.items()
+        for table in names
+    }
+    missing = sorted(expected - set(actual))
+    failed = {
+        name: actual[name]
+        for name in sorted(expected & set(actual))
+        if str(actual[name].get("status", "")).lower() != "success"
+    }
+    if missing or failed:
+        raise RuntimeError(
+            "Lakehouse tables are not ready in the SQL analytics endpoint: "
+            + json.dumps(
+                {"missing": missing, "failed": failed},
+                default=str,
+                ensure_ascii=False,
+            )
+        )
+    print(
+        f"SQL endpoint metadata validated: {len(expected)}/{len(expected)} "
+        "semantic-model source tables ready."
     )
 
 
@@ -509,9 +743,14 @@ def deploy_solution(repo_root: str | Path) -> dict:
     lakehouse_qualified = config["items"]["lakehouse"]
     lakehouse_name = _item_display_name(lakehouse_qualified)
     scanner_qualified = config["items"]["scanner_notebook"]
+    semantic_model_qualified = config["items"]["semantic_model"]
+    semantic_model_source_tables = _semantic_model_source_tables(
+        repo_root / "src" / semantic_model_qualified
+    )
     initialized = False
     deployed = []
     endpoint_id = None
+    endpoint_connection = None
     lakehouse_id = None
 
     for item in order:
@@ -528,6 +767,9 @@ def deploy_solution(repo_root: str | Path) -> dict:
             )
             target_id = _resolve_item_id(workspace_name, qualified_name)
             lakehouse_id = target_id
+            endpoint_id, endpoint_connection = _wait_for_sql_endpoint(
+                workspace_name, qualified_name
+            )
             if not any(m["source_id"] == item["source_id"] for m in mappings):
                 mappings.append(
                     {"source_id": item["source_id"], "target_id": target_id}
@@ -548,10 +790,10 @@ def deploy_solution(repo_root: str | Path) -> dict:
                     target_path, str(config["lakehouse"]["output_schema"])
                 )
             if item_type == "SemanticModel":
-                if not lakehouse_id:
-                    raise RuntimeError("Lakehouse item ID is unavailable.")
-                _validate_direct_lake_connection(
-                    target_path, workspace_id, lakehouse_id
+                if not endpoint_id or not endpoint_connection:
+                    raise RuntimeError("Lakehouse SQL analytics endpoint is unavailable.")
+                _update_and_validate_direct_lake_sql_connection(
+                    target_path, endpoint_id, endpoint_connection
                 )
             format_argument = " --format .ipynb" if item_type == "Notebook" else ""
             folder_name = folder_by_item.get(qualified_name)
@@ -582,14 +824,13 @@ def deploy_solution(repo_root: str | Path) -> dict:
                 target_id,
                 folder_by_item.get(scanner_qualified),
             )
-            endpoint_id = _get_sql_endpoint_id(workspace_name, lakehouse_qualified)
-            if endpoint_id:
-                _refresh_sql_endpoint(workspace_id, endpoint_id)
-            else:
-                print(
-                    "Lakehouse SQL endpoint metadata is not ready yet; "
-                    "Direct Lake on OneLake deployment can continue without it."
-                )
+            if not endpoint_id:
+                raise RuntimeError("Lakehouse SQL analytics endpoint ID is unavailable.")
+            _refresh_and_validate_sql_endpoint(
+                workspace_id,
+                endpoint_id,
+                semantic_model_source_tables,
+            )
             with tempfile.TemporaryDirectory() as temporary:
                 restore_path = Path(temporary) / qualified_name
                 shutil.copytree(source_path, restore_path)
@@ -608,7 +849,14 @@ def deploy_solution(repo_root: str | Path) -> dict:
         config["items"]["semantic_model"],
         folder_by_item.get(config["items"]["semantic_model"]),
     )
-    _refresh_and_validate_semantic_model(workspace_id, semantic_model_id)
+    if not endpoint_id or not endpoint_connection:
+        raise RuntimeError("Lakehouse SQL analytics endpoint binding is unavailable.")
+    _refresh_and_validate_semantic_model(
+        workspace_id,
+        semantic_model_id,
+        endpoint_id,
+        endpoint_connection,
+    )
 
     result = {
         "status": "SUCCEEDED",
@@ -616,8 +864,9 @@ def deploy_solution(repo_root: str | Path) -> dict:
         "workspace_id": workspace_id,
         "workspace_name": workspace_name,
         "semantic_model_source": {
-            "mode": "DirectLakeOnOneLake",
+            "mode": "DirectLakeOnSqlEndpoint",
             "lakehouse_id": lakehouse_id,
+            "sql_endpoint_id": endpoint_id,
         },
         "items": deployed,
     }

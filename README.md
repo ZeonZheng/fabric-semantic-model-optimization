@@ -19,7 +19,7 @@ After deployment, normal operations run only the `Load_SMO_Data` pipeline.
 | Environment | `SMO_Scanner_Environment` | Published, pinned Semantic Link dependencies for standard and High Concurrency sessions |
 | Notebook | `SMO_Optimization_Scanner` | Read-only metadata, BPA, VertiPaq, refresh, and Direct Lake checks |
 | Pipeline | `Load_SMO_Data` | Member-facing entry point with two simple parameters |
-| Semantic model | `SMO_Analytics_SM` | Direct Lake model centered on the `semantic_models` business dimension |
+| Semantic model | `SMO_Analytics_SM` | Direct Lake on SQL model centered on the `semantic_models` business dimension |
 | Report | `SMO_Analytics_Report` | Five visible pages with synchronized scope filters, drillthrough, actionability/priority filtering, and storage analysis |
 
 ## Deploy
@@ -93,8 +93,9 @@ python tests/validate_repo.py
 
 ## Current stage
 
-Version `0.5.1` fixes pipeline dependency execution by deploying and publishing a
-pinned Fabric Environment, attaching it to the scanner, and removing session-level
-`%pip` installation. It retains the `0.5.0` branch guard, Direct Lake on OneLake
-binding, and fail-fast model validation. Report redesign remains outside this
-release.
+Version `0.5.2` restores the intended Lakehouse → SQL analytics endpoint → Direct
+Lake semantic-model lineage. Deployment now waits for the endpoint, refreshes and
+validates all eleven source tables before importing the model, and fails with
+table-level evidence when metadata is not ready. Scanner `2.1.3` also fails the
+pipeline when every core analysis fails and returns the component errors in its
+summary. Report redesign remains outside this release.
