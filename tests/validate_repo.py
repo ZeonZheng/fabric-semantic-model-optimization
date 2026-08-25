@@ -17,10 +17,12 @@ sys.path.insert(0, str(ROOT))
 
 from scripts.quality_rules import (  # noqa: E402
     ACTIONABLE,
+    INFORMATIONAL,
     REVIEW_REQUIRED,
     SUPPRESSED,
     grade_finding,
     grade_recommendation,
+    summarize_opportunity,
 )
 
 
@@ -112,7 +114,7 @@ def validate_scanner() -> None:
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
-        'SCANNER_VERSION = "2.1.5"',
+        'SCANNER_VERSION = "2.2.0"',
         'scan_profile = "workspace_user"',
         'if SCAN_PROFILE == "governance_admin":\n    import sempy.fabric.admin as admin',
         'statuses["access_snapshot"] = "NOT_APPLICABLE_WORKSPACE_USER_PROFILE"',
@@ -133,6 +135,13 @@ def validate_scanner() -> None:
         "reconcile_workspace_current_state(targets)",
         "validate_curated_scan_output(model_results)",
         "Scan did not materialize the required business-layer rows",
+        "Business-layer quality validation failed",
+        "invalid_opportunity_rollups",
+        "invalid_recommendation_links",
+        '"RECOMMENDATION",\n            opportunity_id,',
+        "Best-practice analysis: completed with no rule violations.",
+        "Storage analysis: completed with no column or table storage records.",
+        "Item access snapshot: not applicable to the normal workspace-user profile.",
         '"semantic_model_optimization_overview"',
         '"semantic_model_column_storage"',
         '"semantic_model_analysis_runs"',
@@ -154,7 +163,7 @@ def validate_scanner() -> None:
         "workspaceId": "00000000-0000-0000-0000-000000000000",
     }:
         fail("Scanner Environment dependency does not match the deployment manifest.")
-    if notebook["metadata"].get("scanner_version") != "2.1.5":
+    if notebook["metadata"].get("scanner_version") != "2.2.0":
         fail("Scanner metadata version must match the executable scanner version.")
     if "%pip" in source or "_inlineInstallationEnabled" in source:
         fail("Pipeline scanner must not use session-scoped package installation.")
@@ -362,6 +371,14 @@ def validate_quality_rules() -> None:
     if without_confidence["actionability_status"] != ACTIONABLE:
         fail("Missing confidence must remain neutral for deterministic BPA evidence.")
 
+    missing_evidence = grade_finding({
+        "finding_text": "A potential issue was described.",
+        "recommended_action": "Change the model.",
+        "severity": "HIGH", "confidence": "HIGH", "change_risk": "LOW",
+    })
+    if missing_evidence["actionability_status"] != REVIEW_REQUIRED:
+        fail("A finding without technical evidence must require confirmation, not become actionable.")
+
     generated = {
         "finding_text": "Generated date table detected.", "technical_evidence": "LocalDateTable object.",
         "recommended_action": "Remove it.", "severity": "HIGH", "confidence": "HIGH",
@@ -375,6 +392,38 @@ def validate_quality_rules() -> None:
         fail("Generated date findings must roll up into one high-priority model-level review.")
     if "explicit date dimension" not in consolidated["recommendation_title"]:
         fail("Auto Date/Time remediation must use a meaningful model-level recommendation title.")
+
+    informational = grade_recommendation([{
+        "finding_text": "Context only.", "technical_evidence": "Observed metadata.",
+        "severity": "LOW", "confidence": "HIGH", "change_risk": "LOW",
+    }], "Formatting", "Context", None)
+    if informational["actionability_status"] != INFORMATIONAL:
+        fail("Low-severity context without an action must remain informational.")
+    if informational["automation_eligibility"] != "NOT_ELIGIBLE":
+        fail("Informational recommendations must never be offered as automation candidates.")
+
+    review_only = grade_recommendation([{
+        "finding_text": "Potential formatting issue.",
+        "technical_evidence": "Evidence requires confirmation.",
+        "recommended_action": "Review and standardize the format.",
+        "severity": "HIGH", "confidence": "LOW", "change_risk": "LOW",
+    }], "Formatting", "Review formatting", "Review and standardize the format.")
+    if review_only["automation_eligibility"] != "MANUAL_REVIEW":
+        fail("Review-required recommendations must not be promoted to script candidates.")
+
+    summary = summarize_opportunity([
+        {
+            "finding_text": "Actionable.", "technical_evidence": "Evidence.",
+            "recommended_action": "Fix it.", "severity": "HIGH",
+            "confidence": "HIGH", "change_risk": "LOW",
+        },
+        {
+            "finding_text": "Context.", "technical_evidence": "Evidence.",
+            "severity": "LOW", "confidence": "HIGH", "change_risk": "LOW",
+        },
+    ], "BPA", "Performance")
+    if "1 actionable" not in summary or "1 informational" not in summary:
+        fail("Opportunity summaries must expose the actionability mix in plain language.")
 
 
 def validate_no_secrets() -> None:

@@ -52,6 +52,9 @@ def grade_finding(finding):
         status = SUPPRESSED
         reason = "System-generated Auto Date/Time object; remediate the model-level root cause instead of editing the generated object."
         suppression_reason = reason
+    elif not evidence:
+        status = REVIEW_REQUIRED
+        reason = "A description is available, but technical evidence is missing; confirm the condition before implementation."
     elif not action:
         status = INFORMATIONAL
         reason = "Evidence is retained, but the scanner did not supply a concrete remediation action."
@@ -157,7 +160,11 @@ def grade_recommendation(findings, domain, title, action):
         key=lambda value: {"HIGH": 3, "MEDIUM": 2, "LOW": 1}.get(value, 0),
         default="",
     )
-    if highest_risk == "HIGH":
+    if status in {INFORMATIONAL, SUPPRESSED}:
+        automation = "NOT_ELIGIBLE"
+    elif status == REVIEW_REQUIRED:
+        automation = "MANUAL_REVIEW"
+    elif highest_risk == "HIGH":
         automation = "MANUAL_ONLY"
     elif "FORMAT" in _normalized(domain) and highest_risk in {"LOW", "MEDIUM"}:
         automation = "SCRIPT_CANDIDATE"
@@ -178,6 +185,26 @@ def grade_recommendation(findings, domain, title, action):
         "actionable_finding_count": statuses.count(ACTIONABLE),
         "suppressed_finding_count": statuses.count(SUPPRESSED),
     }
+
+
+def summarize_opportunity(findings, source, domain):
+    """Build an explicit, AI-readable summary of an opportunity's finding mix."""
+    grades = [grade_finding(row) for row in findings]
+    counts = {
+        ACTIONABLE: 0,
+        REVIEW_REQUIRED: 0,
+        INFORMATIONAL: 0,
+        SUPPRESSED: 0,
+    }
+    for grade in grades:
+        counts[grade["actionability_status"]] += 1
+    return (
+        f"{len(findings)} finding(s) from {source} in {domain}: "
+        f"{counts[ACTIONABLE]} actionable, "
+        f"{counts[REVIEW_REQUIRED]} review required, "
+        f"{counts[INFORMATIONAL]} informational, and "
+        f"{counts[SUPPRESSED]} suppressed."
+    )
 
 
 def grade_opportunity(findings):

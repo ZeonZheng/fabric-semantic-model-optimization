@@ -59,6 +59,8 @@ distinguish a valid empty result from missing data.
 - A failed model analysis preserves the last usable current state.
 - Re-running a scan does not duplicate report counts.
 - The overview row records `NOT_RUN`, `NOT_APPLICABLE`, successful zero-record results, and a plain-language explanation.
+- Successful scans validate that overview counts equal their current-state detail tables, that the model dimension points to the same latest analysis, and that opportunity/finding/recommendation links have no missing or orphaned rows.
+- Actionability values, 0–100 priority scores, priority bands, automation eligibility, and implementation guidance are validated before the Pipeline can report success.
 - The default `workspace_user` profile records item-access evidence as `NOT_APPLICABLE_WORKSPACE_USER_PROFILE`; only the explicit `governance_admin` profile attempts that optional snapshot.
 - Capacity labels, model-size metadata, and governance access snapshots are optional enrichment. Failures are retained under `optional_enrichment_warnings` and do not downgrade the core analysis status.
 - High-severity counts return zero rather than blank.

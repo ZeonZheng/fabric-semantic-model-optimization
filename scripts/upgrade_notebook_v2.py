@@ -335,7 +335,7 @@ def reconcile_workspace_current_state(targets):
 
 
 def validate_curated_scan_output(model_results):
-    """Reject a false-success scan that did not materialize its core contract."""
+    """Reject false-success and internally inconsistent business-layer output."""
     analyzed_model_ids = sorted({
         row["model_id"]
         for row in model_results
@@ -343,6 +343,11 @@ def validate_curated_scan_output(model_results):
     })
     if not analyzed_model_ids:
         return
+    expected_result_by_model = {
+        row["model_id"]: row
+        for row in model_results
+        if row["overall_status"] in {"SUCCEEDED", "PARTIAL"}
+    }
 
     quoted_ids = ", ".join(
         "'" + model_id.replace("'", "''") + "'"
@@ -366,6 +371,232 @@ def validate_curated_scan_output(model_results):
         raise RuntimeError(
             "Scan did not materialize the required business-layer rows: "
             + json.dumps(missing_by_table, ensure_ascii=False)
+        )
+
+    def grouped_counts(logical_name, extra_expressions=()):
+        expressions = ["COUNT(*) AS row_count", *extra_expressions]
+        rows = spark.sql(
+            "SELECT semantic_model_id, "
+            + ", ".join(expressions)
+            + f" FROM {curated_table_name(logical_name)}"
+            + f" WHERE semantic_model_id IN ({quoted_ids})"
+            + " GROUP BY semantic_model_id"
+        ).collect()
+        return {row["semantic_model_id"]: row.asDict(recursive=True) for row in rows}
+
+    overview_by_model = {
+        row["semantic_model_id"]: row.asDict(recursive=True)
+        for row in spark.sql(
+            "SELECT * FROM " + curated_table_name("overview")
+            + f" WHERE semantic_model_id IN ({quoted_ids})"
+        ).collect()
+    }
+    dimension_by_model = {
+        row["semantic_model_id"]: row.asDict(recursive=True)
+        for row in spark.sql(
+            "SELECT semantic_model_id, latest_analysis_id, latest_analysis_status "
+            "FROM " + curated_table_name("semantic_models")
+            + f" WHERE semantic_model_id IN ({quoted_ids})"
+        ).collect()
+    }
+    analysis_history_pairs = {
+        (row["semantic_model_id"], row["analysis_id"])
+        for row in spark.sql(
+            "SELECT semantic_model_id, analysis_id FROM "
+            + curated_table_name("analysis_runs")
+            + f" WHERE semantic_model_id IN ({quoted_ids})"
+        ).collect()
+    }
+    opportunity_counts = grouped_counts("opportunities")
+    recommendation_counts = grouped_counts("recommendations", (
+        "SUM(CASE WHEN actionability_status = 'ACTIONABLE' THEN 1 ELSE 0 END) AS actionable_count",
+        "SUM(CASE WHEN actionability_status = 'REVIEW_REQUIRED' THEN 1 ELSE 0 END) AS review_required_count",
+    ))
+    finding_counts = grouped_counts("findings", (
+        "SUM(CASE WHEN actionability_status = 'SUPPRESSED' THEN 1 ELSE 0 END) AS suppressed_count",
+    ))
+    recommendation_link_counts = grouped_counts("opportunity_recommendation_links")
+    finding_link_counts = grouped_counts("opportunity_finding_links")
+
+    consistency_issues = []
+    for semantic_model_id in analyzed_model_ids:
+        overview = overview_by_model[semantic_model_id]
+        dimension = dimension_by_model[semantic_model_id]
+        expected_result = expected_result_by_model[semantic_model_id]
+        expected_counts = {
+            "optimization_opportunity_count": opportunity_counts.get(semantic_model_id, {}).get("row_count", 0),
+            "optimization_recommendation_count": recommendation_counts.get(semantic_model_id, {}).get("row_count", 0),
+            "optimization_finding_count": finding_counts.get(semantic_model_id, {}).get("row_count", 0),
+            "actionable_recommendation_count": recommendation_counts.get(semantic_model_id, {}).get("actionable_count", 0),
+            "review_required_recommendation_count": recommendation_counts.get(semantic_model_id, {}).get("review_required_count", 0),
+            "suppressed_finding_count": finding_counts.get(semantic_model_id, {}).get("suppressed_count", 0),
+        }
+        mismatches = {
+            name: {"overview": overview.get(name), "detail": expected}
+            for name, expected in expected_counts.items()
+            if overview.get(name) != expected
+        }
+        if dimension.get("latest_analysis_id") != overview.get("analysis_id"):
+            mismatches["latest_analysis_id"] = {
+                "semantic_models": dimension.get("latest_analysis_id"),
+                "overview": overview.get("analysis_id"),
+            }
+        if overview.get("analysis_id") != expected_result.get("scan_id"):
+            mismatches["current_scan_analysis_id"] = {
+                "expected": expected_result.get("scan_id"),
+                "overview": overview.get("analysis_id"),
+            }
+        if (semantic_model_id, expected_result.get("scan_id")) not in analysis_history_pairs:
+            mismatches["analysis_history"] = {
+                "semantic_model_id": semantic_model_id,
+                "analysis_id": expected_result.get("scan_id"),
+                "status": "missing",
+            }
+        if dimension.get("latest_analysis_status") != overview.get("analysis_status"):
+            mismatches["latest_analysis_status"] = {
+                "semantic_models": dimension.get("latest_analysis_status"),
+                "overview": overview.get("analysis_status"),
+            }
+        if overview.get("analysis_status") != expected_result.get("overall_status"):
+            mismatches["current_scan_analysis_status"] = {
+                "expected": expected_result.get("overall_status"),
+                "overview": overview.get("analysis_status"),
+            }
+        if not str(overview.get("data_availability_explanation") or "").strip():
+            mismatches["data_availability_explanation"] = "missing"
+        recommendation_row_count = recommendation_counts.get(semantic_model_id, {}).get("row_count", 0)
+        recommendation_link_count = recommendation_link_counts.get(semantic_model_id, {}).get("row_count", 0)
+        if recommendation_link_count != recommendation_row_count:
+            mismatches["opportunity_recommendation_link_count"] = {
+                "links": recommendation_link_count,
+                "recommendations": recommendation_row_count,
+            }
+        finding_row_count = finding_counts.get(semantic_model_id, {}).get("row_count", 0)
+        finding_link_count = finding_link_counts.get(semantic_model_id, {}).get("row_count", 0)
+        if finding_link_count != finding_row_count:
+            mismatches["opportunity_finding_link_count"] = {
+                "links": finding_link_count,
+                "findings": finding_row_count,
+            }
+        if mismatches:
+            consistency_issues.append({"semantic_model_id": semantic_model_id, "mismatches": mismatches})
+
+    quality_checks = {
+        "invalid_findings": f"""
+            SELECT COUNT(*) AS issue_count
+            FROM {curated_table_name('findings')}
+            WHERE semantic_model_id IN ({quoted_ids}) AND (
+                actionability_status NOT IN ('ACTIONABLE', 'REVIEW_REQUIRED', 'INFORMATIONAL', 'SUPPRESSED')
+                OR finding_priority_score IS NULL OR finding_priority_score < 0 OR finding_priority_score > 100
+                OR finding_priority_band <> CASE
+                    WHEN finding_priority_score >= 80 THEN 'P1_CRITICAL'
+                    WHEN finding_priority_score >= 65 THEN 'P2_HIGH'
+                    WHEN finding_priority_score >= 40 THEN 'P3_MEDIUM'
+                    ELSE 'P4_LOW' END
+                OR TRIM(COALESCE(actionability_reason, '')) = ''
+                OR (actionability_status = 'SUPPRESSED' AND TRIM(COALESCE(suppression_reason, '')) = '')
+            )
+        """,
+        "invalid_recommendations": f"""
+            SELECT COUNT(*) AS issue_count
+            FROM {curated_table_name('recommendations')}
+            WHERE semantic_model_id IN ({quoted_ids}) AND (
+                actionability_status NOT IN ('ACTIONABLE', 'REVIEW_REQUIRED', 'INFORMATIONAL', 'SUPPRESSED')
+                OR recommendation_priority_score IS NULL OR recommendation_priority_score < 0 OR recommendation_priority_score > 100
+                OR recommendation_priority_band <> CASE
+                    WHEN recommendation_priority_score >= 80 THEN 'P1_CRITICAL'
+                    WHEN recommendation_priority_score >= 65 THEN 'P2_HIGH'
+                    WHEN recommendation_priority_score >= 40 THEN 'P3_MEDIUM'
+                    ELSE 'P4_LOW' END
+                OR automation_eligibility NOT IN ('SCRIPT_CANDIDATE', 'MANUAL_ONLY', 'MANUAL_REVIEW', 'NOT_ELIGIBLE')
+                OR TRIM(COALESCE(recommendation_title, '')) = ''
+                OR TRIM(COALESCE(actionability_reason, '')) = ''
+                OR TRIM(COALESCE(why_it_matters, '')) = ''
+                OR TRIM(COALESCE(validation_method, '')) = ''
+                OR TRIM(COALESCE(rollback_guidance, '')) = ''
+                OR (actionability_status IN ('ACTIONABLE', 'REVIEW_REQUIRED') AND TRIM(COALESCE(recommended_action, '')) = '')
+                OR (actionability_status IN ('INFORMATIONAL', 'SUPPRESSED') AND automation_eligibility <> 'NOT_ELIGIBLE')
+                OR (actionability_status = 'REVIEW_REQUIRED' AND automation_eligibility <> 'MANUAL_REVIEW')
+            )
+        """,
+        "invalid_opportunities": f"""
+            SELECT COUNT(*) AS issue_count
+            FROM {curated_table_name('opportunities')}
+            WHERE semantic_model_id IN ({quoted_ids}) AND (
+                actionability_status NOT IN ('ACTIONABLE', 'REVIEW_REQUIRED', 'INFORMATIONAL', 'SUPPRESSED')
+                OR priority_score IS NULL OR priority_score < 0 OR priority_score > 100
+                OR priority_band <> CASE
+                    WHEN priority_score >= 80 THEN 'P1_CRITICAL'
+                    WHEN priority_score >= 65 THEN 'P2_HIGH'
+                    WHEN priority_score >= 40 THEN 'P3_MEDIUM'
+                    ELSE 'P4_LOW' END
+                OR TRIM(COALESCE(opportunity_title, '')) = ''
+                OR TRIM(COALESCE(opportunity_summary, '')) = ''
+            )
+        """,
+        "invalid_opportunity_rollups": f"""
+            SELECT COUNT(*) AS issue_count
+            FROM {curated_table_name('opportunities')} o
+            LEFT JOIN (
+                SELECT semantic_model_id, opportunity_id, COUNT(*) AS finding_count
+                FROM {curated_table_name('findings')}
+                GROUP BY semantic_model_id, opportunity_id
+            ) f ON o.semantic_model_id = f.semantic_model_id AND o.opportunity_id = f.opportunity_id
+            LEFT JOIN (
+                SELECT semantic_model_id, opportunity_id, COUNT(*) AS recommendation_count
+                FROM {curated_table_name('recommendations')}
+                GROUP BY semantic_model_id, opportunity_id
+            ) r ON o.semantic_model_id = r.semantic_model_id AND o.opportunity_id = r.opportunity_id
+            WHERE o.semantic_model_id IN ({quoted_ids}) AND (
+                o.finding_count <> COALESCE(f.finding_count, 0)
+                OR o.recommendation_count <> COALESCE(r.recommendation_count, 0)
+            )
+        """,
+        "orphan_recommendations": f"""
+            SELECT COUNT(*) AS issue_count
+            FROM {curated_table_name('recommendations')} r
+            LEFT ANTI JOIN {curated_table_name('opportunities')} o
+              ON r.semantic_model_id = o.semantic_model_id AND r.opportunity_id = o.opportunity_id
+            WHERE r.semantic_model_id IN ({quoted_ids})
+        """,
+        "orphan_findings": f"""
+            SELECT COUNT(*) AS issue_count
+            FROM {curated_table_name('findings')} f
+            LEFT ANTI JOIN {curated_table_name('opportunities')} o
+              ON f.semantic_model_id = o.semantic_model_id AND f.opportunity_id = o.opportunity_id
+            WHERE f.semantic_model_id IN ({quoted_ids})
+        """,
+        "invalid_recommendation_links": f"""
+            SELECT COUNT(*) AS issue_count
+            FROM {curated_table_name('opportunity_recommendation_links')} l
+            LEFT ANTI JOIN {curated_table_name('recommendations')} r
+              ON l.semantic_model_id = r.semantic_model_id
+             AND l.opportunity_id = r.opportunity_id
+             AND l.related_entity_id = r.recommendation_id
+            WHERE l.semantic_model_id IN ({quoted_ids})
+        """,
+        "invalid_finding_links": f"""
+            SELECT COUNT(*) AS issue_count
+            FROM {curated_table_name('opportunity_finding_links')} l
+            LEFT ANTI JOIN {curated_table_name('findings')} f
+              ON l.semantic_model_id = f.semantic_model_id
+             AND l.opportunity_id = f.opportunity_id
+             AND l.related_entity_id = f.finding_id
+            WHERE l.semantic_model_id IN ({quoted_ids})
+        """,
+    }
+    failed_quality_checks = {}
+    for name, query in quality_checks.items():
+        issue_count = spark.sql(query).first()["issue_count"]
+        if issue_count:
+            failed_quality_checks[name] = issue_count
+    if consistency_issues or failed_quality_checks:
+        raise RuntimeError(
+            "Business-layer quality validation failed: "
+            + json.dumps({
+                "consistency_issues": consistency_issues,
+                "failed_quality_checks": failed_quality_checks,
+            }, ensure_ascii=False)
         )
 
 
@@ -403,20 +634,54 @@ def risk_value(value):
 
 def availability_explanations(model_row, result):
     notes = []
+    bpa_findings = [
+        row for row in result["findings"]
+        if (row.get("source") or "").upper() == "BPA"
+    ]
+    if model_row["bpa_status"] == "SUCCEEDED" and not bpa_findings:
+        notes.append("Best-practice analysis: completed with no rule violations.")
+    elif model_row["bpa_status"] == "NOT_RUN":
+        notes.append("Best-practice analysis: not requested by this analysis profile.")
+    elif model_row["bpa_status"] == "FAILED":
+        notes.append("Best-practice analysis: failed; see analysis run error details.")
+    if model_row["vpa_status"] == "SUCCEEDED" and not result["vpa_columns"] and not result["vpa_tables"]:
+        notes.append("Storage analysis: completed with no column or table storage records.")
+    elif model_row["vpa_status"] == "NOT_RUN":
+        notes.append("Storage analysis: not requested by this analysis profile.")
+    elif model_row["vpa_status"] == "FAILED":
+        notes.append("Storage analysis: failed; see analysis run error details.")
     if model_row["refresh_status"] == "SUCCEEDED" and not result["refresh_rows"]:
         notes.append("Refresh history: no records were returned for the selected history window.")
     elif model_row["refresh_status"] == "NOT_RUN":
         notes.append("Refresh history: not requested by this analysis profile.")
+    elif model_row["refresh_status"] == "FAILED":
+        notes.append("Refresh history: failed; see analysis run error details.")
     if model_row["usage_status"] == "NOT_RUN":
         notes.append("Object usage: not run in the standard profile; use the deep profile to collect usage evidence.")
     elif model_row["usage_status"] == "SUCCEEDED" and not result["usage_rows"]:
         notes.append("Object usage: analysis completed and returned no observations.")
+    elif model_row["usage_status"] == "FAILED":
+        notes.append("Object usage: failed; see analysis run error details.")
     if model_row["direct_lake_status"] == "NOT_APPLICABLE":
-        notes.append("Direct Lake checks: not applicable because this semantic model uses Import storage.")
+        notes.append(
+            "Direct Lake checks: not applicable to storage mode "
+            + str(model_row.get("storage_mode") or "UNKNOWN")
+            + "."
+        )
     elif model_row["direct_lake_status"] == "SUCCEEDED" and not result["direct_lake_rows"]:
         notes.append("Direct Lake checks: completed with no fallback observations.")
+    elif model_row["direct_lake_status"] == "NOT_RUN":
+        notes.append("Direct Lake checks: not requested by this analysis profile.")
+    elif model_row["direct_lake_status"] == "FAILED":
+        notes.append("Direct Lake checks: failed; see analysis run error details.")
     if model_row["access_snapshot_status"] == "SUCCEEDED" and not result["access_rows"]:
         notes.append("Item access snapshot: completed and returned no explicit access records.")
+    elif model_row["access_snapshot_status"] == "NOT_APPLICABLE_WORKSPACE_USER_PROFILE":
+        notes.append("Item access snapshot: not applicable to the normal workspace-user profile.")
+    elif model_row["access_snapshot_status"] == "NOT_RUN":
+        notes.append("Item access snapshot: not requested by this analysis profile.")
+    elif model_row["access_snapshot_status"] == "FAILED":
+        notes.append("Item access snapshot: failed optional governance enrichment; see analysis run error details.")
     return " ".join(notes) or "All requested evidence sources returned data or an explicit status."
 
 
@@ -476,6 +741,7 @@ def curate_latest_model_analysis(result):
         recommendation_id = stable_id(
             semantic_model_id,
             "RECOMMENDATION",
+            opportunity_id,
             finding.get("rule_id") or finding.get("rule_name"),
             finding.get("recommended_action"),
         )
@@ -544,7 +810,9 @@ def curate_latest_model_analysis(result):
             "estimated_saving_bytes_low": sum(row.get("estimated_saving_bytes_low") or 0 for row in grouped_findings),
             "estimated_saving_bytes_high": sum(row.get("estimated_saving_bytes_high") or 0 for row in grouped_findings),
             "change_risk": highest_risk.get("change_risk"),
-            "opportunity_summary": f"{len(grouped_findings)} finding(s) from {group['source']} require review in {group['domain']}.",
+            "opportunity_summary": summarize_opportunity(
+                grouped_findings, group["source"], group["domain"]
+            ),
             **opportunity_quality,
             "detected_at": max(row.get("detected_at") for row in grouped_findings if row.get("detected_at")),
         })
@@ -717,18 +985,18 @@ def set_source(cell: dict, text: str) -> None:
 def main() -> None:
     notebook = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
     cells = notebook["cells"]
-    notebook.setdefault("metadata", {})["scanner_version"] = "2.1.5"
+    notebook.setdefault("metadata", {})["scanner_version"] = "2.2.0"
 
     for cell in cells:
         text = source_text(cell)
-        for previous_version in ("1.2.0", "2.0.0", "2.1.0", "2.1.1", "2.1.2", "2.1.3", "2.1.4"):
+        for previous_version in ("1.2.0", "2.0.0", "2.1.0", "2.1.1", "2.1.2", "2.1.3", "2.1.4", "2.1.5"):
             text = text.replace(
                 f'SCANNER_VERSION = "{previous_version}"',
-                'SCANNER_VERSION = "2.1.5"',
+                'SCANNER_VERSION = "2.2.0"',
             )
         text = re.sub(
-            r"Semantic Model Optimization Scanner — V(?:1\.2|2\.0|2\.1(?:\.\d+)*)",
-            "Semantic Model Optimization Scanner — V2.1.5",
+            r"Semantic Model Optimization Scanner — V(?:1\.2|2\.\d+(?:\.\d+)*)",
+            "Semantic Model Optimization Scanner — V2.2.0",
             text,
         )
         text = text.replace(

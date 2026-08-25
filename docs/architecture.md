@@ -10,9 +10,10 @@ The solution separates deployment, recurring discovery, and benefit validation:
 4. `Load_SMO_Data` runs the scanner for an explicit workspace/model scope.
 5. The scanner preserves technical history and refreshes each model's latest usable business state.
 6. Deterministic quality rules retain every finding while grading actionability, suppression, and implementation priority.
-7. The Direct Lake semantic model uses one shared SQL endpoint expression, dynamically bound to the deployed Lakehouse SQL analytics endpoint ID and TDS connection string, to read eleven meaningful consumption tables centered on `semantic_models`.
-8. The report presents five visible analysis pages, synchronized workspace/model filters, a top actionable recommendation queue, and a hidden opportunity drillthrough page.
-9. CU savings, if pursued, are measured separately with controlled before/after capacity metrics.
+7. A post-scan quality gate validates required rows, overview/detail counts, latest-analysis consistency, opportunity rollups, link integrity, priority bands, and implementation guidance before the Pipeline can report success.
+8. The Direct Lake semantic model uses one shared SQL endpoint expression, dynamically bound to the deployed Lakehouse SQL analytics endpoint ID and TDS connection string, to read eleven meaningful consumption tables centered on `semantic_models`.
+9. The report presents five visible analysis pages, synchronized workspace/model filters, a top actionable recommendation queue, and a hidden opportunity drillthrough page.
+10. CU savings, if pursued, are measured separately with controlled before/after capacity metrics.
 
 ## Runtime flow
 
@@ -22,9 +23,14 @@ flowchart TD
     B --> C[(Technical evidence)]
     B --> D[(Latest business state)]
     D --> Q[Quality grading]
-    Q --> E[Direct Lake model]
+    Q --> V[Contract validation]
+    V --> E[Direct Lake model]
     E --> F[Five-page report]
 ```
+
+The current implementation and acceptance baseline is the TEST tenant. PROD
+Private Link and XMLA network reachability are tracked as an external environment
+dependency and do not weaken the scanner's data-quality contract.
 
 ## Deployment flow
 
