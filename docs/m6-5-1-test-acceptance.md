@@ -78,3 +78,29 @@ M6.5.1 passes when deployment and scanning succeed in both TEST workspaces, the
 notebook's business-layer quality gate passes, valid empty evidence is explicitly
 explained, and no normal-user run invokes a Fabric Admin API.
 
+## Recorded TEST result — 2026-08-25
+
+| Check | `SMO Analytics - Dev` | TEST `ANG_FabricPOC` |
+| --- | --- | --- |
+| Deployment | `SUCCEEDED`, solution `0.6.0` | upgraded `0.5.5` → `0.6.0`, `SUCCEEDED` |
+| Semantic-model source | `DirectLakeOnSqlEndpoint` | `DirectLakeOnSqlEndpoint` |
+| SQL endpoint readiness | 11/11 source tables ready | 11/11 source tables ready |
+| Pipeline run ID | `17d1af66-e22f-49dc-ada8-6915edbd32e2` | `aed4493d-4058-4d08-899c-b8007b3ed43b` |
+| Scanner run ID | `59dd33e3-5c08-486c-b6ee-4e403f156d98` | `080e6b90-68d4-4a50-8d31-76af7346a66a` |
+| Result | 1 succeeded, 0 partial/failed/skipped | 1 succeeded, 0 partial/failed/skipped |
+| Findings | 938 | 938 |
+| Runtime | Semantic Link `0.11.2`; Labs `0.17.0` | Semantic Link `0.11.2`; Labs `0.17.0` |
+| Profile | `workspace_user` | `workspace_user` |
+
+Both runs completed after `validate_curated_scan_output`, so overview/detail
+counts, latest-analysis consistency, opportunity rollups, link integrity,
+actionability, priority, guidance, automation eligibility, and orphan checks all
+passed. Both runs reported `NOT_CHECKED_USER_MODE`, no component errors, and did
+not enter the `governance_admin` branch.
+
+The TEST login identity used for these runs is also a tenant administrator. The
+evidence therefore proves that the default code path is workspace-scoped and does
+not invoke Fabric Admin APIs; it does not by itself prove identity-role parity with
+a non-admin user. The existing PROD non-admin validation remains blocked by the
+tenant Private Link/XMLA network dependency and is intentionally outside this
+release gate.
