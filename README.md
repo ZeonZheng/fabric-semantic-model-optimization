@@ -101,11 +101,13 @@ anti-pattern coverage gate. Precision and root-cause grouping are documented in
 [`docs/m6-5-3-precision-calibration.md`](docs/m6-5-3-precision-calibration.md).
 Normal-model false-positive calibration is documented in
 [`docs/m6-5-4-control-model-calibration.md`](docs/m6-5-4-control-model-calibration.md).
+Priority and remediation-queue calibration is documented in
+[`docs/m6-5-5-actionability-calibration.md`](docs/m6-5-5-actionability-calibration.md).
 
 ## Current stage
 
-Version `0.6.3` completes M6.5.4 Control-model Calibration on the validated
-TEST-tenant baseline. Scanner `2.5.0` retains the M6.4 production-stabilization
+Version `0.6.4` begins M6.5.5 Actionability Calibration on the validated
+TEST-tenant baseline. Scanner `2.6.0` retains the M6.4 production-stabilization
 contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
 current identity and workspace-scoped APIs only. It does not enumerate tenant
@@ -146,3 +148,9 @@ do not require a numeric format string. The adverse-model 30/30 coverage gate re
 mandatory so precision improvements cannot silently reduce anti-pattern recall. The
 live TEST gate passed: the adverse model retained 30/30 rules, while the control model
 fell from 143 to 138 findings by removing exactly the five targeted false positives.
+
+M6.5.5 calibrates operational priority independently from finding volume. P1 is
+reserved for explicitly critical or quantified evidence, high-risk unquantified
+changes require review, and broad categories no longer imply automation eligibility.
+Only explicitly allowlisted deterministic metadata operations enter the future
+approval-controlled script queue.

@@ -76,7 +76,9 @@ Raw findings are never deleted by quality grading. Each finding receives one of 
 | `INFORMATIONAL` | Useful context that does not yet form an executable change |
 | `SUPPRESSED` | Retained for audit but removed from the action queue, for example a generated Auto Date/Time object or missing evidence |
 
-`finding_priority_score` and `recommendation_priority_score` use a deterministic 0–100 scale. The corresponding bands are `P1_CRITICAL`, `P2_HIGH`, `P3_MEDIUM`, and `P4_LOW`. Generated Auto Date/Time objects are suppressed individually and consolidated into one model-level recommendation to replace them with an explicit date dimension.
+`finding_priority_score` and `recommendation_priority_score` use a deterministic 0–100 scale. The corresponding bands are `P1_CRITICAL`, `P2_HIGH`, `P3_MEDIUM`, and `P4_LOW`. P1 requires explicitly critical evidence or quantified impact; repeated occurrences do not promote a recommendation into a higher band because breadth is exposed separately through finding counts. High-risk, unquantified design changes remain review-required. Generated Auto Date/Time objects are suppressed individually and consolidated into one model-level recommendation to replace them with an explicit date dimension.
+
+`SCRIPT_CANDIDATE` is assigned only to an explicit allowlist of deterministic metadata operations whose target state is known, such as hiding foreign keys or disabling implicit summarization. A broad category such as Formatting is never sufficient by itself. Recommendations that require a business choice, data-type redesign, or dependency analysis remain `MANUAL_REVIEW`.
 
 ## Technical evidence compatibility
 

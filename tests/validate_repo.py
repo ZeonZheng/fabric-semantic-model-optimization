@@ -21,6 +21,7 @@ from scripts.quality_rules import (  # noqa: E402
     REVIEW_REQUIRED,
     SUPPRESSED,
     grade_finding,
+    grade_opportunity,
     grade_recommendation,
     summarize_opportunity,
 )
@@ -115,7 +116,7 @@ def validate_scanner() -> None:
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
-        'SCANNER_VERSION = "2.5.0"',
+        'SCANNER_VERSION = "2.6.0"',
         "run_model_metadata_checks = True",
         "semantic-model metadata inspection",
         "def analyze_model_bim(",
@@ -168,7 +169,7 @@ def validate_scanner() -> None:
         "workspaceId": "00000000-0000-0000-0000-000000000000",
     }:
         fail("Scanner Environment dependency does not match the deployment manifest.")
-    if notebook["metadata"].get("scanner_version") != "2.5.0":
+    if notebook["metadata"].get("scanner_version") != "2.6.0":
         fail("Scanner metadata version must match the executable scanner version.")
     if "%pip" in source or "_inlineInstallationEnabled" in source:
         fail("Pipeline scanner must not use session-scoped package installation.")
@@ -418,6 +419,53 @@ def validate_quality_rules() -> None:
     }], "Formatting", "Review formatting", "Review and standardize the format.")
     if review_only["automation_eligibility"] != "MANUAL_REVIEW":
         fail("Review-required recommendations must not be promoted to script candidates.")
+
+    bulk_hygiene = grade_recommendation([{
+        "finding_text": "A visible object has no description.",
+        "technical_evidence": "Deterministic BPA rule violation.",
+        "recommended_action": "Add a business description.",
+        "severity": "WARNING", "confidence": "HIGH", "change_risk": "MEDIUM",
+    }] * 50, "Maintenance", "Visible objects with no description", "Add descriptions.")
+    if bulk_hygiene["recommendation_priority_band"] in {"P1_CRITICAL", "P2_HIGH"}:
+        fail("Finding volume must not promote maintenance hygiene into P1/P2 priority.")
+
+    high_risk_unquantified = grade_recommendation([{
+        "finding_text": "A structural model issue requires redesign.",
+        "technical_evidence": "Deterministic model metadata evidence.",
+        "recommended_action": "Redesign and regression-test the model.",
+        "severity": "ERROR", "confidence": "HIGH", "change_risk": "HIGH",
+    }], "Model structure", "Structural redesign", "Redesign the model.")
+    if high_risk_unquantified["actionability_status"] != REVIEW_REQUIRED:
+        fail("High-risk structural changes must require review.")
+    if high_risk_unquantified["recommendation_priority_band"] != "P2_HIGH":
+        fail("Unquantified high-risk design findings must not enter P1.")
+
+    safe_script = grade_recommendation([{
+        "finding_text": "A foreign key is visible.",
+        "technical_evidence": "The key column is not hidden.",
+        "recommended_action": "Hide the foreign key.",
+        "severity": "WARNING", "confidence": "HIGH", "change_risk": "MEDIUM",
+    }], "Formatting", "Hide foreign keys", "Hide the foreign key.")
+    if safe_script["automation_eligibility"] != "SCRIPT_CANDIDATE":
+        fail("Explicitly allowlisted metadata changes must remain script candidates.")
+
+    ambiguous_formatting = grade_recommendation([{
+        "finding_text": "A column has no data category.",
+        "technical_evidence": "The Data Category property is empty.",
+        "recommended_action": "Select an appropriate data category.",
+        "severity": "WARNING", "confidence": "HIGH", "change_risk": "MEDIUM",
+    }], "Formatting", "Add data category for columns", "Select a data category.")
+    if ambiguous_formatting["automation_eligibility"] != "MANUAL_REVIEW":
+        fail("A broad Formatting category must not imply script eligibility.")
+
+    bulk_opportunity = grade_opportunity([{
+        "finding_text": "A visible object has no description.",
+        "technical_evidence": "Deterministic BPA rule violation.",
+        "recommended_action": "Add a business description.",
+        "severity": "WARNING", "confidence": "HIGH", "change_risk": "MEDIUM",
+    }] * 50)
+    if bulk_opportunity["priority_band"] in {"P1_CRITICAL", "P2_HIGH"}:
+        fail("Opportunity priority must remain evidence-based when finding volume is high.")
 
     summary = summarize_opportunity([
         {

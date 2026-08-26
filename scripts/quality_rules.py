@@ -10,6 +10,19 @@ INFORMATIONAL = "INFORMATIONAL"
 SUPPRESSED = "SUPPRESSED"
 
 
+# Only recommendations with a deterministic metadata operation belong in the
+# approval-controlled script queue.  A broad domain such as "Formatting" is not
+# sufficient: it also contains semantic decisions (data category, data type,
+# business format selection) that cannot be generated safely without user input.
+SCRIPT_CANDIDATE_RULE_FRAGMENTS = (
+    "DO NOT SUMMARIZE NUMERIC COLUMNS",
+    "HIDE FOREIGN KEYS",
+    "MARK PRIMARY KEYS",
+    "WHOLE NUMBERS SHOULD BE FORMATTED WITH THOUSANDS SEPARATORS AND NO DECIMALS",
+    "FORMAT FLAG COLUMNS AS YES/NO VALUE STRINGS",
+)
+
+
 def _normalized(value):
     return str(value or "").strip().upper()
 
@@ -32,6 +45,11 @@ def priority_band(score):
     if score >= 40:
         return "P3_MEDIUM"
     return "P4_LOW"
+
+
+def _is_script_candidate(title):
+    normalized = _normalized(title)
+    return any(fragment in normalized for fragment in SCRIPT_CANDIDATE_RULE_FRAGMENTS)
 
 
 def grade_finding(finding):
@@ -72,24 +90,33 @@ def grade_finding(finding):
         reason = "The finding has evidence, a concrete action, sufficient confidence, and acceptable change risk."
 
     severity_points = {
-        "CRITICAL": 60, "ERROR": 60, "HIGH": 55, "WARNING": 40,
-        "MEDIUM": 35, "INFO": 15, "LOW": 5,
+        "CRITICAL": 70, "ERROR": 50, "HIGH": 45, "WARNING": 30,
+        "MEDIUM": 25, "INFO": 10, "LOW": 5,
     }.get(severity, 0)
-    # Existing BPA evidence does not publish confidence. Treat absence as
-    # neutral/medium rather than silently emptying the actionable queue.
-    confidence_points = {"HIGH": 15, "MEDIUM": 8, "LOW": 0, "UNKNOWN": 0}.get(confidence, 8)
-    risk_points = {"LOW": 10, "MEDIUM": 5, "HIGH": -5}.get(risk, 0)
+    # Treat absent confidence as neutral/medium rather than silently emptying
+    # the actionable queue for collectors that do not publish this attribute.
+    confidence_points = {"HIGH": 10, "MEDIUM": 5, "LOW": 0, "UNKNOWN": 0}.get(confidence, 5)
+    risk_points = {"LOW": 5, "MEDIUM": 0, "HIGH": -10}.get(risk, 0)
     saving = max(
         int(finding.get("estimated_saving_bytes_low") or 0),
         int(finding.get("estimated_saving_bytes_high") or 0),
+        int(finding.get("reclaimable_upper_bound_bytes") or 0),
     )
     score = severity_points + confidence_points + risk_points
+    score += 5 if evidence else 0
     score += 10 if action else 0
-    score += 10 if saving > 0 else 0
+    score += 5 if any(token in _normalized(finding.get("impact_area")) for token in (
+        "PERFORMANCE", "MODEL_SIZE", "REFRESH", "QUERY", "CAPACITY",
+    )) else 0
+    score += 15 if saving > 0 else 0
     if status == SUPPRESSED:
         score = 0
     elif status == INFORMATIONAL:
         score = min(score, 39)
+    elif severity != "CRITICAL" and saving <= 0:
+        # P1 is reserved for explicitly critical evidence or quantified impact.
+        # Finding volume is exposed separately and must not manufacture urgency.
+        score = min(score, 79)
     score = max(0, min(100, score))
 
     return {
@@ -151,9 +178,10 @@ def grade_recommendation(findings, domain, title, action):
         else:
             status = SUPPRESSED
             reason = "All linked findings are suppressed from the action queue while remaining available for audit."
+        # Finding count is an impact/breadth dimension, not evidence of criticality.
+        # Keep it in affected_finding_count instead of allowing volume to promote a
+        # recommendation into a higher operational priority band.
         score = max((grade["finding_priority_score"] for grade in grades), default=0)
-        score += min(statuses.count(ACTIONABLE) + statuses.count(REVIEW_REQUIRED), 10)
-        score = max(0, min(100, score))
 
     highest_risk = max(
         (_normalized(row.get("change_risk")) for row in findings),
@@ -166,7 +194,7 @@ def grade_recommendation(findings, domain, title, action):
         automation = "MANUAL_REVIEW"
     elif highest_risk == "HIGH":
         automation = "MANUAL_ONLY"
-    elif "FORMAT" in _normalized(domain) and highest_risk in {"LOW", "MEDIUM"}:
+    elif _is_script_candidate(title) and highest_risk in {"LOW", "MEDIUM"}:
         automation = "SCRIPT_CANDIDATE"
     else:
         automation = "MANUAL_REVIEW"
@@ -222,7 +250,9 @@ def grade_opportunity(findings):
         status, score = INFORMATIONAL, max(grade["finding_priority_score"] for grade in grades)
     else:
         status, score = SUPPRESSED, 0
-    score = max(0, min(100, score + min(statuses.count(ACTIONABLE), 10)))
+    # Breadth remains available as actionable_finding_count and does not inflate
+    # the opportunity's evidence-based priority.
+    score = max(0, min(100, score))
     return {
         "actionability_status": status,
         "actionable_finding_count": statuses.count(ACTIONABLE),
