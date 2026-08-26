@@ -11,11 +11,41 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOK = ROOT / "src/SMO_Optimization_Scanner.Notebook/notebook-content.ipynb"
 QUALITY_RULES = ROOT / "scripts/quality_rules.py"
+MODEL_QUALITY_RULES = ROOT / "scripts/model_quality_rules.py"
 
 
 CURATION_CELL = r'''# ---------- V2 AI-friendly current-state consumption contract ----------
 
 # __QUALITY_RULES_SOURCE__
+
+# __MODEL_QUALITY_RULES_SOURCE__
+
+
+def normalize_model_metadata(target, model_bim, vpa_columns, vpa_tables):
+    findings = []
+    for issue in analyze_model_bim(model_bim, vpa_columns, vpa_tables):
+        rule_name = f"{issue['rule_code']}: {issue['rule_name']}"
+        finding = finding_base(
+            target,
+            issue.get("source") or "MODEL_METADATA_HEURISTIC",
+            rule_name,
+            issue.get("object_type"),
+            issue.get("table_name"),
+            issue.get("object_name"),
+        )
+        finding.update({
+            "category": issue.get("category"),
+            "severity": issue.get("severity") or "INFO",
+            "confidence": issue.get("confidence") or "HIGH",
+            "impact_area": issue.get("impact_area") or "MODEL_QUALITY",
+            "finding_text": issue.get("finding_text"),
+            "recommended_action": issue.get("recommended_action"),
+            "technical_evidence": issue.get("technical_evidence"),
+            "evidence_json": issue.get("evidence_json"),
+            "change_risk": issue.get("change_risk") or "MEDIUM",
+        })
+        findings.append(finding)
+    return findings
 
 BUSINESS_SCHEMAS = (
     "analysis_control",
@@ -985,20 +1015,79 @@ def set_source(cell: dict, text: str) -> None:
 def main() -> None:
     notebook = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
     cells = notebook["cells"]
-    notebook.setdefault("metadata", {})["scanner_version"] = "2.2.0"
+    notebook.setdefault("metadata", {})["scanner_version"] = "2.3.0"
 
     for cell in cells:
         text = source_text(cell)
-        for previous_version in ("1.2.0", "2.0.0", "2.1.0", "2.1.1", "2.1.2", "2.1.3", "2.1.4", "2.1.5"):
+        for previous_version in ("1.2.0", "2.0.0", "2.1.0", "2.1.1", "2.1.2", "2.1.3", "2.1.4", "2.1.5", "2.2.0"):
             text = text.replace(
                 f'SCANNER_VERSION = "{previous_version}"',
-                'SCANNER_VERSION = "2.2.0"',
+                'SCANNER_VERSION = "2.3.0"',
             )
         text = re.sub(
             r"Semantic Model Optimization Scanner — V(?:1\.2|2\.\d+(?:\.\d+)*)",
-            "Semantic Model Optimization Scanner — V2.2.0",
+            "Semantic Model Optimization Scanner — V2.3.0",
             text,
         )
+        if "bpa_extended = False" in text and "run_model_metadata_checks" not in text:
+            text = text.replace(
+                "bpa_extended = False\n",
+                "bpa_extended = False\nrun_model_metadata_checks = True\n",
+            )
+        if "def validate_runtime_capabilities" in text and "semantic-model metadata inspection" not in text:
+            text = text.replace(
+                "    if run_bpa:\n        required.append((labs, \"run_model_bpa\", \"best-practice analysis\"))\n",
+                "    if run_bpa:\n        required.append((labs, \"run_model_bpa\", \"best-practice analysis\"))\n"
+                "    if run_model_metadata_checks:\n"
+                "        required.append((labs, \"get_semantic_model_bim\", \"semantic-model metadata inspection\"))\n",
+            )
+        if "def safe_parameters_hash" in text and '"run_model_metadata_checks"' not in text:
+            text = text.replace(
+                '        "bpa_extended": bpa_extended,\n',
+                '        "bpa_extended": bpa_extended,\n'
+                '        "run_model_metadata_checks": run_model_metadata_checks,\n',
+            )
+        if "ANALYSIS_STATUS_KEYS" in text:
+            text = text.replace(
+                'ANALYSIS_STATUS_KEYS = ("bpa", "vpa", "refresh", "usage", "direct_lake")',
+                'ANALYSIS_STATUS_KEYS = ("bpa", "vpa", "metadata", "refresh", "usage", "direct_lake")',
+            )
+            text = text.replace(
+                '        "vpa": "NOT_RUN",\n        "refresh": "NOT_RUN",',
+                '        "vpa": "NOT_RUN",\n        "metadata": "NOT_RUN",\n        "refresh": "NOT_RUN",',
+            )
+            text = text.replace(
+                '        "vpa_status": gated_status if run_vertipaq else "NOT_RUN",\n        "refresh_status":',
+                '        "vpa_status": gated_status if run_vertipaq else "NOT_RUN",\n'
+                '        "metadata_status": gated_status if run_model_metadata_checks else "NOT_RUN",\n'
+                '        "refresh_status":',
+            )
+            text = text.replace(
+                '        "vpa_status": statuses["vpa"],\n        "refresh_status":',
+                '        "vpa_status": statuses["vpa"],\n'
+                '        "metadata_status": statuses["metadata"],\n'
+                '        "refresh_status":',
+            )
+            if "model_metadata_bim" not in text:
+                metadata_block = '''    if run_model_metadata_checks:
+        try:
+            model_metadata_bim = with_retry(
+                "model_metadata",
+                lambda: labs.get_semantic_model_bim(
+                    dataset=target["model_id"],
+                    workspace=target["workspace_id"],
+                ),
+            )
+            findings.extend(normalize_model_metadata(target, model_metadata_bim, vpa_columns, vpa_tables))
+            statuses["metadata"] = "SUCCEEDED"
+        except Exception as exc:
+            statuses["metadata"] = "FAILED"
+            analysis_errors["model_metadata"] = truncate_error(exc)
+    else:
+        statuses["metadata"] = "NOT_RUN"
+
+'''
+                text = text.replace("    if run_refresh_history:\n", metadata_block + "    if run_refresh_history:\n")
         text = text.replace(
             "fail_pipeline_if_any_model_fails = False",
             "fail_pipeline_if_any_model_fails = True",
@@ -1006,7 +1095,14 @@ def main() -> None:
         set_source(cell, text)
 
     quality_rules_source = QUALITY_RULES.read_text(encoding="utf-8")
-    curation_cell = CURATION_CELL.replace("# __QUALITY_RULES_SOURCE__", quality_rules_source)
+    model_quality_rules_source = MODEL_QUALITY_RULES.read_text(encoding="utf-8").replace(
+        "from __future__ import annotations\n", ""
+    )
+    curation_cell = (
+        CURATION_CELL
+        .replace("# __QUALITY_RULES_SOURCE__", quality_rules_source)
+        .replace("# __MODEL_QUALITY_RULES_SOURCE__", model_quality_rules_source)
+    )
 
     existing_curation_cell = next(
         (cell for cell in cells if "V2 AI-friendly current-state consumption contract" in source_text(cell)),
@@ -1061,6 +1157,7 @@ def main() -> None:
             '            "scanner_workspace_role": row["scanner_workspace_role"],\n'
             '            "best_practice_analysis_status": row["bpa_status"],\n'
             '            "storage_analysis_status": row["vpa_status"],\n'
+            '            "model_metadata_analysis_status": row.get("metadata_status"),\n'
             '            "refresh_history_status": row["refresh_status"],\n'
             '            "direct_lake_analysis_status": row["direct_lake_status"],\n'
             '            "finding_count": row["finding_count"],\n'
@@ -1069,6 +1166,12 @@ def main() -> None:
         execute = execute.replace(
             '    "error": truncate_error(run_error) if run_error else None,',
             '    "error": truncate_error(run_error) if run_error else model_failure_error,',
+        )
+    if '"model_metadata_analysis_status"' not in execute:
+        execute = execute.replace(
+            '            "storage_analysis_status": row["vpa_status"],\n',
+            '            "storage_analysis_status": row["vpa_status"],\n'
+            '            "model_metadata_analysis_status": row.get("metadata_status"),\n',
         )
     execute = execute.replace(
         "    ensure_tables()\n    if initialize_only:\n        init_summary = {\"status\": \"INITIALIZED\", \"schema\": output_schema, \"table_count\": len(TABLES)}\n        print(json.dumps(init_summary, indent=2))\n        notebookutils.notebook.exit(json.dumps(init_summary))\n    with authentication_context():",

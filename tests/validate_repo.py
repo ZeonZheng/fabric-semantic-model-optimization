@@ -24,6 +24,7 @@ from scripts.quality_rules import (  # noqa: E402
     grade_recommendation,
     summarize_opportunity,
 )
+from scripts.model_quality_rules import analyze_model_bim  # noqa: E402
 
 
 def fail(message: str) -> None:
@@ -114,7 +115,11 @@ def validate_scanner() -> None:
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
-        'SCANNER_VERSION = "2.2.0"',
+        'SCANNER_VERSION = "2.3.0"',
+        "run_model_metadata_checks = True",
+        "semantic-model metadata inspection",
+        "def analyze_model_bim(",
+        'statuses["metadata"] = "SUCCEEDED"',
         'scan_profile = "workspace_user"',
         'if SCAN_PROFILE == "governance_admin":\n    import sempy.fabric.admin as admin',
         'statuses["access_snapshot"] = "NOT_APPLICABLE_WORKSPACE_USER_PROFILE"',
@@ -163,7 +168,7 @@ def validate_scanner() -> None:
         "workspaceId": "00000000-0000-0000-0000-000000000000",
     }:
         fail("Scanner Environment dependency does not match the deployment manifest.")
-    if notebook["metadata"].get("scanner_version") != "2.2.0":
+    if notebook["metadata"].get("scanner_version") != "2.3.0":
         fail("Scanner metadata version must match the executable scanner version.")
     if "%pip" in source or "_inlineInstallationEnabled" in source:
         fail("Pipeline scanner must not use session-scoped package installation.")
@@ -195,6 +200,7 @@ def validate_scanner() -> None:
     base = {
         "bpa": "SUCCEEDED",
         "vpa": "SUCCEEDED",
+        "metadata": "SUCCEEDED",
         "refresh": "SUCCEEDED",
         "usage": "NOT_RUN",
         "direct_lake": "NOT_APPLICABLE",
@@ -206,6 +212,8 @@ def validate_scanner() -> None:
         fail("A partial core-analysis failure must remain visible as PARTIAL.")
     if classify({**base, "bpa": "FAILED", "vpa": "FAILED"}) != "FAILED":
         fail("Failure of every enabled core analysis must remain FAILED.")
+    if classify({**base, "metadata": "FAILED"}) != "PARTIAL":
+        fail("Metadata-quality analysis failure must remain visible as PARTIAL.")
 
     pipeline = (
         ROOT / "src/Load_SMO_Data.DataPipeline/pipeline-content.json"
@@ -426,6 +434,86 @@ def validate_quality_rules() -> None:
         fail("Opportunity summaries must expose the actionability mix in plain language.")
 
 
+def validate_model_quality_rules() -> None:
+    def column(name, data_type="string", **extra):
+        return {"name": name, "dataType": data_type, **extra}
+
+    customer_columns = [column("CustomerKey", "int64"), column("Name"), column("YearlyIncome", "decimal")]
+    wide_columns = [column(f"Number{i}", "int64") for i in range(25)] + [
+        column("Product Name"), column("Product Color"), column("Customer Name"),
+        column("Sales Territory"), column("Currency"),
+    ]
+    model_bim = {
+        "model": {
+            "discourageImplicitMeasures": False,
+            "roles": [],
+            "perspectives": [],
+            "tables": [
+                {"name": "vw_AllSales", "columns": wide_columns},
+                {"name": "DimCustomer", "columns": customer_columns + [
+                    column("YearlyIncomeText", expression='FORMAT([YearlyIncome], "#,##0")'),
+                ]},
+                {"name": "DimCustomerCopy", "columns": customer_columns, "partitions": [
+                    {"source": {"expression": "DimCustomer"}},
+                ]},
+                {"name": "FactOrphanEmpty", "columns": [column("Orphan ID", "int64"), column("Orphan Status")]},
+                {"name": "STG_TestLoad", "columns": [column("Load ID", "int64")]},
+                {"name": "TEMP_Calc", "columns": [column("Value", "int64")]},
+                {"name": "Dim_Calendar2", "columns": [column("Date", "dateTime")]},
+                {"name": "FactInternetSales", "columns": [
+                    column("OrderDateText", expression='FORMAT(DATEVALUE([OrderDateKey]), "dd/MM/yyyy")'),
+                    column("SalesAmount_CalcCol", "decimal", expression="[ExtendedAmount] * (1 - [UnitPriceDiscountPct])"),
+                    column("ProductName", expression="RELATED(DimProduct[EnglishProductName])"),
+                    column("CarrierTrackingNumber"),
+                    column("UnitPriceDiscountPct", "double"),
+                    column("SalesOrderLineNumber", "int64", summarizeBy="sum"),
+                ], "measures": [
+                    {"name": "Total Sales Alias", "expression": "[Total Sales Amount]"},
+                    {"name": "Sales 2013 Only", "expression": "CALCULATE(SUM(FactInternetSales[SalesAmount]), DimDate[CalendarYear] = 2013)", "formatString": "#,0"},
+                    {"name": "Sales All Products", "expression": "CALCULATE(SUM(FactInternetSales[SalesAmount]), FILTER(ALL(DimProduct), DimProduct[ProductKey] >= 0))", "formatString": "#,0"},
+                    {"name": "Money Total", "expression": "SUM(FactInternetSales[ExtendedAmount])"},
+                ]},
+                {"name": "FactResellerSales", "columns": [column("SalesAmount", "decimal")], "measures": [
+                    {"name": "Total Sales Amount (2)", "expression": "SUM(FactInternetSales[SalesAmount])", "formatString": "#,0"},
+                ]},
+                {"name": "DimProduct", "columns": [
+                    column("Name", expression="[EnglishProductName]"),
+                    column("RandomRank", "double", expression="RAND()"),
+                    column("ProductAttributes", expression="CONCATENATE([Style], [Class])"),
+                    column("zz_Info", expression='"n/a"'),
+                    column("Column9", expression="[ProductKey] + 0"),
+                ], "measures": [
+                    {"name": "Total Sales Amount", "expression": "SUM(FactInternetSales[SalesAmount])", "formatString": "#,0"},
+                ]},
+                {"name": "DimDate", "columns": [
+                    column("CalendarYear", "int64", summarizeBy="sum"),
+                    column("EnglishMonthName"),
+                    column("MonthFullName", expression="[EnglishMonthName]"),
+                ]},
+                {"name": "LocalDateTable_1", "isHidden": True, "columns": [column("Date", "dateTime")]},
+            ],
+            "relationships": [
+                {"fromTable": "FactInternetSales", "fromColumn": "OrderDateText", "toTable": "LocalDateTable_1", "toColumn": "Date", "isActive": True},
+                {"fromTable": "FactInternetSales", "fromColumn": "OrderDateText", "toTable": "DimDate", "toColumn": "CalendarYear", "isActive": False},
+            ],
+        }
+    }
+    vpa_columns = [{
+        "table_name": "FactInternetSales", "column_name": "CarrierTrackingNumber",
+        "data_type": "String", "cardinality": 18484, "total_size_bytes": 2000000,
+    }]
+    findings = analyze_model_bim(model_bim, vpa_columns, [])
+    detected = {row["rule_code"] for row in findings}
+    expected = {f"MQ{number:03d}" for number in range(1, 31)}
+    missing = sorted(expected - detected)
+    if missing:
+        fail(f"Deterministic model-quality fixture missed rules: {missing}")
+    if sum(row["rule_code"] == "MQ028" for row in findings) != 1:
+        fail("Missing descriptions must be consolidated into one model-level root-cause finding.")
+    if sum(row["rule_code"] == "MQ020" for row in findings) != 1:
+        fail("Auto Date/Time tables must be consolidated into one model-level root-cause finding.")
+
+
 def validate_no_secrets() -> None:
     suspicious = re.compile(r"(?i)(client_secret|github_token)\s*=\s*[\"'][^\"']{8,}[\"']")
     for path in ROOT.rglob("*"):
@@ -446,6 +534,7 @@ def main() -> int:
     validate_model()
     validate_report()
     validate_quality_rules()
+    validate_model_quality_rules()
     validate_no_secrets()
     print(f"Validation passed: {json_count} JSON/notebook/platform files checked.")
     return 0

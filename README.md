@@ -95,12 +95,14 @@ python tests/validate_repo.py
 ```
 
 Use [`docs/m6-5-1-test-acceptance.md`](docs/m6-5-1-test-acceptance.md) for the
-TEST-tenant deployment and scan acceptance checklist.
+validated platform baseline and
+[`docs/m6-5-2-analysis-quality.md`](docs/m6-5-2-analysis-quality.md) for the
+anti-pattern coverage gate.
 
 ## Current stage
 
-Version `0.6.0` begins M6.5.1 Recommendation Quality Acceptance on the validated
-TEST-tenant baseline. Scanner `2.2.0` retains the M6.4 production-stabilization
+Version `0.6.1` begins M6.5.2 Analysis Quality Calibration on the validated
+TEST-tenant baseline. Scanner `2.3.0` retains the M6.4 production-stabilization
 contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
 current identity and workspace-scoped APIs only. It does not enumerate tenant
@@ -114,9 +116,15 @@ longer changes an otherwise successful core scan to `PARTIAL` or `FAILED`. The
 `governance_admin` profile is explicit and is the only path that invokes a Fabric
 Admin API.
 
-M6.5.1 adds a post-scan business-layer quality gate. It verifies overview/detail
+M6.5.1 added a post-scan business-layer quality gate. It verifies overview/detail
 counts, latest-analysis consistency, opportunity rollups, link-table referential
 integrity, actionability values, priority scores/bands, recommendation guidance,
 and automation eligibility. Empty evidence remains valid when the overview gives
-an explicit collector-specific explanation. Report redesign and PROD Private Link
-network remediation remain outside this release.
+an explicit collector-specific explanation.
+
+M6.5.2 adds read-only Model.bim inspection and 30 deterministic metadata rules for
+the 29-item `SMO_Optimization1` anti-pattern benchmark. Generated Auto Date/Time,
+technical table prefixes, and missing descriptions are consolidated into model-level
+root causes to reduce noise. A metadata-analysis failure makes the scan `PARTIAL`
+instead of silently publishing BPA/VertiPaq-only results. Report redesign and PROD
+Private Link network remediation remain outside this release.
