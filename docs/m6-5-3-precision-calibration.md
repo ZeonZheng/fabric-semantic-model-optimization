@@ -49,4 +49,37 @@ all column-level relationship references retained in technical evidence.
 6. Confirm 30/30 rule coverage and compare deterministic counts against the
    Scanner 2.3.0 baseline above.
 
+## TEST acceptance result
+
+Scanner `2.4.0` / solution `0.6.2` passed the acceptance gate in
+`SMO Analytics - Dev` against the same `SMO_Optimization1` semantic model.
+
+- deployment initialization job: `6960e4bf-74b5-4534-b8e3-529eef704e20`;
+- pipeline run: `20668881-7913-43e3-982c-ff2f72d0848f`;
+- notebook run: `f206d17c-64be-497d-99a7-a05c40babf59`;
+- scan ID: `a2e08de7-66b0-4c5a-8502-52a5e4a0467a`;
+- result: `SUCCEEDED`, with best-practice, storage, and model-metadata analysis
+  all `SUCCEEDED`;
+- total findings: 1,022, down from 1,063;
+- metadata-heuristic findings: 84, down from 125 (41 fewer, 32.8%);
+- rule coverage: 30/30 (`MQ001` through `MQ030`).
+
+The three precision targets changed as follows:
+
+| Rule | Scanner 2.3.0 | Scanner 2.4.0 | Result |
+|---|---:|---:|---|
+| `MQ009` | 59 | 32 | Root-cause and generated/copy-column repetitions removed |
+| `MQ011` | 13 | 1 | Only the exposed injected `YearlyIncomeText` issue remains |
+| `MQ030` | 7 | 5 | Seven inactive relationships retained in five table-pair groups |
+
+The `MQ009` evidence for the injected `Name` conflict is now exactly
+`DimCustomer[Name], DimProduct[Name]`; `DimCustomerCopy[Name]` is no longer
+repeated. `MQ030` retains all seven intentionally inactive relationships from
+AP-30 in grouped technical evidence, which is expected because the benchmark
+model deliberately contains no matching `USERELATIONSHIP` measures.
+
+The acceptance result establishes M6.5.3 as complete. A clean-model/control
+benchmark is still required before treating the heuristic set as generally
+calibrated beyond this deliberately adverse model.
+
 Report redesign and PROD Private Link remediation remain deferred.
