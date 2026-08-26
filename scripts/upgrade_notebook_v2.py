@@ -1015,18 +1015,18 @@ def set_source(cell: dict, text: str) -> None:
 def main() -> None:
     notebook = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
     cells = notebook["cells"]
-    notebook.setdefault("metadata", {})["scanner_version"] = "2.4.0"
+    notebook.setdefault("metadata", {})["scanner_version"] = "2.5.0"
 
     for cell in cells:
         text = source_text(cell)
-        for previous_version in ("1.2.0", "2.0.0", "2.1.0", "2.1.1", "2.1.2", "2.1.3", "2.1.4", "2.1.5", "2.2.0", "2.3.0"):
+        for previous_version in ("1.2.0", "2.0.0", "2.1.0", "2.1.1", "2.1.2", "2.1.3", "2.1.4", "2.1.5", "2.2.0", "2.3.0", "2.4.0"):
             text = text.replace(
                 f'SCANNER_VERSION = "{previous_version}"',
-                'SCANNER_VERSION = "2.4.0"',
+                'SCANNER_VERSION = "2.5.0"',
             )
         text = re.sub(
             r"Semantic Model Optimization Scanner — V(?:1\.2|2\.\d+(?:\.\d+)*)",
-            "Semantic Model Optimization Scanner — V2.4.0",
+            "Semantic Model Optimization Scanner — V2.5.0",
             text,
         )
         if "bpa_extended = False" in text and "run_model_metadata_checks" not in text:

@@ -90,6 +90,47 @@ def _column_ref_variants(table_name, column_name):
     }
 
 
+def _is_generated_table_name(table_name):
+    return _text(table_name).lower().startswith(("localdatetable_", "datetabletemplate_"))
+
+
+def _is_numeric_data_type(data_type):
+    normalized = re.sub(r"[^a-z0-9]", "", _text(data_type).lower())
+    return normalized in {
+        "byte", "currency", "decimal", "decimal128", "double", "fixeddecimal",
+        "float", "int", "int16", "int32", "int64", "integer", "long",
+        "number", "real", "single", "uint16", "uint32", "uint64", "whole",
+        "wholenumber",
+    }
+
+
+def _format_references_numeric_column(expression, columns):
+    """Return True when FORMAT's value expression references a known numeric column."""
+    numeric_names = {
+        _name(column)
+        for column in columns
+        if _name(column) and _is_numeric_data_type(_key(column, "dataType"))
+    }
+    if not numeric_names:
+        return False
+    format_arguments = re.findall(r"\bFORMAT\s*\(\s*([^,\r\n]+)", _text(expression), re.I)
+    for argument in format_arguments:
+        for column_name in numeric_names:
+            if re.search(rf"\[\s*{re.escape(column_name)}\s*\]", argument, re.I):
+                return True
+    return False
+
+
+def _measure_is_text_like(measure, expression):
+    """Identify measures whose result is intentionally text and needs no format string."""
+    if "string" in _text(_key(measure, "dataType")).lower():
+        return True
+    if re.search(r"(?:label|name|title|text|description|message|caption)\s*$", _name(measure), re.I):
+        return True
+    canonical = _canon_expression(expression)
+    return "format(" in canonical or "concatenate(" in canonical or "&" in canonical
+
+
 def _relationship_is_invoked(relationship, measure_expressions):
     """Match USERELATIONSHIP to the specific inactive relationship it invokes."""
     from_refs = _column_ref_variants(
@@ -169,7 +210,7 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
             technical_names.append(table_name)
         if re.match(r"^(fact|dim)[A-Z_]", table_name) or lower_name.startswith(("fact", "dim")):
             prefix_names.append(table_name)
-        if lower_name.startswith(("localdatetable_", "datetabletemplate_")):
+        if _is_generated_table_name(table_name):
             auto_date_names.append(table_name)
 
         visible_string_columns = [
@@ -215,6 +256,8 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
     signatures = defaultdict(list)
     duplicate_copy_tables = set()
     for table in tables:
+        if _is_generated_table_name(_name(table)):
+            continue
         names = tuple(sorted(_name(c).lower() for c in _list(table, "columns") if _name(c)))
         if len(names) >= 3:
             signatures[names].append(_name(table))
@@ -242,12 +285,12 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
     invalid_summarize = []
     for table in tables:
         table_name = _name(table)
-        table_lower = table_name.lower()
-        table_is_generated = table_lower.startswith(("localdatetable_", "datetabletemplate_"))
+        columns = _list(table, "columns")
+        table_is_generated = _is_generated_table_name(table_name)
         table_is_exposed = not _bool(table, "isHidden") and not table_is_generated
         if table_is_exposed and not _text(_key(table, "description")):
             missing_descriptions["tables"].append(table_name)
-        for column in _list(table, "columns"):
+        for column in columns:
             column_name = _name(column)
             data_type = _text(_key(column, "dataType")).lower()
             expression = _expression(column)
@@ -305,6 +348,7 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
                 and "format(" in canon_expr
                 and "string" in data_type
                 and "date" not in column_name.lower()
+                and _format_references_numeric_column(expression, columns)
             ):
                 findings.append(_issue(
                     "MQ011", "Numeric value formatted into a text column", "Data types", "WARNING", "Column",
@@ -400,7 +444,11 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
                 "Rewrite with a direct Boolean filter or narrower filter-removal semantics where equivalent.",
                 f"expression={expression}", risk="HIGH", impact="PERFORMANCE",
             ))
-        if not _bool(measure, "isHidden") and not _text(_key(measure, "formatString")):
+        if (
+            not _bool(measure, "isHidden")
+            and not _text(_key(measure, "formatString"))
+            and not _measure_is_text_like(measure, expression)
+        ):
             findings.append(_issue(
                 "MQ019", "Visible measure without format string", "Formatting", "WARNING", "Measure",
                 table_name, measure_name, "A visible measure has no explicit format string.",

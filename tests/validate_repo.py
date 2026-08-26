@@ -115,7 +115,7 @@ def validate_scanner() -> None:
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
-        'SCANNER_VERSION = "2.4.0"',
+        'SCANNER_VERSION = "2.5.0"',
         "run_model_metadata_checks = True",
         "semantic-model metadata inspection",
         "def analyze_model_bim(",
@@ -168,7 +168,7 @@ def validate_scanner() -> None:
         "workspaceId": "00000000-0000-0000-0000-000000000000",
     }:
         fail("Scanner Environment dependency does not match the deployment manifest.")
-    if notebook["metadata"].get("scanner_version") != "2.4.0":
+    if notebook["metadata"].get("scanner_version") != "2.5.0":
         fail("Scanner metadata version must match the executable scanner version.")
     if "%pip" in source or "_inlineInstallationEnabled" in source:
         fail("Pipeline scanner must not use session-scoped package installation.")
@@ -452,6 +452,8 @@ def validate_model_quality_rules() -> None:
                 {"name": "vw_AllSales", "columns": wide_columns},
                 {"name": "DimCustomer", "columns": customer_columns + [
                     column("YearlyIncomeText", expression='FORMAT([YearlyIncome], "#,##0")'),
+                    column("Month Abbr", expression='FORMAT([Birth Date], "mmm")'),
+                    column("Birth Date", "dateTime"),
                 ]},
                 {"name": "DimCustomerCopy", "columns": customer_columns, "partitions": [
                     {"source": {"expression": "DimCustomer"}},
@@ -473,6 +475,7 @@ def validate_model_quality_rules() -> None:
                     {"name": "Sales 2013 Only", "expression": "CALCULATE(SUM(FactInternetSales[SalesAmount]), DimDate[CalendarYear] = 2013)", "formatString": "#,0"},
                     {"name": "Sales All Products", "expression": "CALCULATE(SUM(FactInternetSales[SalesAmount]), FILTER(ALL(DimProduct), DimProduct[ProductKey] >= 0))", "formatString": "#,0"},
                     {"name": "Money Total", "expression": "SUM(FactInternetSales[ExtendedAmount])"},
+                    {"name": "Monthly Sales Label", "expression": 'FORMAT([Money Total], "#,0") & " sales"'},
                 ]},
                 {"name": "FactResellerSales", "columns": [
                     column("SalesAmount", "decimal"), column("ShipDateKey", "int64"),
@@ -496,6 +499,10 @@ def validate_model_quality_rules() -> None:
                     column("MonthFullName", expression="[EnglishMonthName]"),
                 ]},
                 {"name": "LocalDateTable_1", "isHidden": True, "columns": [
+                    column("Date", "dateTime"), column("Name"),
+                    column("YearLabel", expression='FORMAT([Date], "yyyy")'),
+                ]},
+                {"name": "DateTableTemplate_1", "isHidden": True, "columns": [
                     column("Date", "dateTime"), column("Name"),
                     column("YearLabel", expression='FORMAT([Date], "yyyy")'),
                 ]},
@@ -529,7 +536,13 @@ def validate_model_quality_rules() -> None:
         fail("MQ009 must not repeat copy-table or generated-date-table root causes.")
     mq011 = [row for row in findings if row["rule_code"] == "MQ011"]
     if len(mq011) != 1 or mq011[0]["object_name"] != "YearlyIncomeText":
-        fail("MQ011 must ignore FORMAT expressions inside hidden generated tables.")
+        fail("MQ011 must require FORMAT to reference a known numeric column.")
+    mq002 = [row for row in findings if row["rule_code"] == "MQ002"]
+    if len(mq002) != 1 or mq002[0]["object_name"] != "DimCustomerCopy":
+        fail("MQ002 must keep direct copies while excluding generated date-table signatures.")
+    mq019 = [row for row in findings if row["rule_code"] == "MQ019"]
+    if len(mq019) != 2 or any(row["object_name"] == "Monthly Sales Label" for row in mq019):
+        fail("MQ019 must retain numeric measures and exclude intentional text/label measures.")
     mq030 = [row for row in findings if row["rule_code"] == "MQ030"]
     if len(mq030) != 1 or "count=2" not in mq030[0]["technical_evidence"]:
         fail("MQ030 must group unresolved inactive relationships by table pair.")

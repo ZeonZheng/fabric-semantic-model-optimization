@@ -99,11 +99,13 @@ validated platform baseline and
 [`docs/m6-5-2-analysis-quality.md`](docs/m6-5-2-analysis-quality.md) for the
 anti-pattern coverage gate. Precision and root-cause grouping are documented in
 [`docs/m6-5-3-precision-calibration.md`](docs/m6-5-3-precision-calibration.md).
+Normal-model false-positive calibration is documented in
+[`docs/m6-5-4-control-model-calibration.md`](docs/m6-5-4-control-model-calibration.md).
 
 ## Current stage
 
-Version `0.6.2` begins M6.5.3 Precision and Root-cause Calibration on the validated
-TEST-tenant baseline. Scanner `2.4.0` retains the M6.4 production-stabilization
+Version `0.6.3` begins M6.5.4 Control-model Calibration on the validated
+TEST-tenant baseline. Scanner `2.5.0` retains the M6.4 production-stabilization
 contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
 current identity and workspace-scoped APIs only. It does not enumerate tenant
@@ -136,3 +138,9 @@ checks ignore hidden/generated date objects; ambiguous-name checks also exclude
 wide-table and direct-copy table replicas already covered by `MQ001`/`MQ002`.
 Inactive relationships are matched to the specific `USERELATIONSHIP` expression
 that invokes them and unresolved relationships are grouped by table pair.
+
+M6.5.4 adds a normal-model control gate. Generated Auto Date/Time tables no longer
+create duplicate-signature findings, `FORMAT` is classified as numeric-to-text only
+when it references a known numeric column, and intentionally textual label measures
+do not require a numeric format string. The adverse-model 30/30 coverage gate remains
+mandatory so precision improvements cannot silently reduce anti-pattern recall.
