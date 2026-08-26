@@ -97,12 +97,13 @@ python tests/validate_repo.py
 Use [`docs/m6-5-1-test-acceptance.md`](docs/m6-5-1-test-acceptance.md) for the
 validated platform baseline and
 [`docs/m6-5-2-analysis-quality.md`](docs/m6-5-2-analysis-quality.md) for the
-anti-pattern coverage gate.
+anti-pattern coverage gate. Precision and root-cause grouping are documented in
+[`docs/m6-5-3-precision-calibration.md`](docs/m6-5-3-precision-calibration.md).
 
 ## Current stage
 
-Version `0.6.1` begins M6.5.2 Analysis Quality Calibration on the validated
-TEST-tenant baseline. Scanner `2.3.0` retains the M6.4 production-stabilization
+Version `0.6.2` begins M6.5.3 Precision and Root-cause Calibration on the validated
+TEST-tenant baseline. Scanner `2.4.0` retains the M6.4 production-stabilization
 contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
 current identity and workspace-scoped APIs only. It does not enumerate tenant
@@ -123,8 +124,15 @@ and automation eligibility. Empty evidence remains valid when the overview gives
 an explicit collector-specific explanation.
 
 M6.5.2 adds read-only Model.bim inspection and 30 deterministic metadata rules for
-the 29-item `SMO_Optimization1` anti-pattern benchmark. Generated Auto Date/Time,
+the 30-item `SMO_Optimization1` anti-pattern benchmark. Generated Auto Date/Time,
 technical table prefixes, and missing descriptions are consolidated into model-level
 root causes to reduce noise. A metadata-analysis failure makes the scan `PARTIAL`
 instead of silently publishing BPA/VertiPaq-only results. Report redesign and PROD
 Private Link network remediation remain outside this release.
+
+M6.5.3 preserves the 30/30 TEST coverage gate while removing secondary findings
+already explained by a stronger root cause. Ambiguous-name and numeric-to-text
+checks ignore hidden/generated date objects; ambiguous-name checks also exclude
+wide-table and direct-copy table replicas already covered by `MQ001`/`MQ002`.
+Inactive relationships are matched to the specific `USERELATIONSHIP` expression
+that invokes them and unresolved relationships are grouped by table pair.

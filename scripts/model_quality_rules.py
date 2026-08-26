@@ -78,6 +78,35 @@ def _canon_expression(value):
     return re.sub(r"\s+", "", value).lower()
 
 
+def _column_ref_variants(table_name, column_name):
+    """Return normalized DAX reference forms for one model column."""
+    table_name = _text(table_name)
+    column_name = _text(column_name)
+    if not table_name or not column_name:
+        return set()
+    return {
+        _canon_expression(f"{table_name}[{column_name}]"),
+        _canon_expression(f"'{table_name}'[{column_name}]"),
+    }
+
+
+def _relationship_is_invoked(relationship, measure_expressions):
+    """Match USERELATIONSHIP to the specific inactive relationship it invokes."""
+    from_refs = _column_ref_variants(
+        _key(relationship, "fromTable"), _key(relationship, "fromColumn")
+    )
+    to_refs = _column_ref_variants(
+        _key(relationship, "toTable"), _key(relationship, "toColumn")
+    )
+    for expression in measure_expressions:
+        canonical = _canon_expression(expression)
+        if "userelationship(" not in canonical:
+            continue
+        if any(ref in canonical for ref in from_refs) and any(ref in canonical for ref in to_refs):
+            return True
+    return False
+
+
 def _issue(code, rule_name, category, severity, object_type, table_name, object_name,
            description, action, evidence, confidence="HIGH", risk="MEDIUM",
            impact="MODEL_QUALITY"):
@@ -130,6 +159,7 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
     technical_names = []
     prefix_names = []
     auto_date_names = []
+    wide_root_cause_tables = set()
     for table in tables:
         table_name = _name(table)
         columns = _list(table, "columns")
@@ -147,6 +177,7 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
             if "string" in _text(_key(column, "dataType")).lower() and not _bool(column, "isHidden")
         ]
         if len(columns) >= 25 and len(visible_string_columns) >= 5 and relationship_tables[table_name] == 0:
+            wide_root_cause_tables.add(table_name)
             findings.append(_issue(
                 "MQ001", "Wide denormalized fact-grain table", "Model structure", "ERROR", "Table",
                 table_name, table_name,
@@ -182,12 +213,14 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
 
     # Duplicate table definitions: exact column signatures or a bare calculated-table reference.
     signatures = defaultdict(list)
+    duplicate_copy_tables = set()
     for table in tables:
         names = tuple(sorted(_name(c).lower() for c in _list(table, "columns") if _name(c)))
         if len(names) >= 3:
             signatures[names].append(_name(table))
         expression = _canon_expression(_expression(table)).strip("'")
         if expression in {name.lower() for name in table_by_name if name.lower() != _name(table).lower()}:
+            duplicate_copy_tables.add(_name(table))
             findings.append(_issue(
                 "MQ002", "Duplicate calculated table", "Model structure", "ERROR", "Table", _name(table), _name(table),
                 "The calculated table is a direct copy of another model table.",
@@ -209,7 +242,10 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
     invalid_summarize = []
     for table in tables:
         table_name = _name(table)
-        if not _bool(table, "isHidden") and not _text(_key(table, "description")):
+        table_lower = table_name.lower()
+        table_is_generated = table_lower.startswith(("localdatetable_", "datetabletemplate_"))
+        table_is_exposed = not _bool(table, "isHidden") and not table_is_generated
+        if table_is_exposed and not _text(_key(table, "description")):
             missing_descriptions["tables"].append(table_name)
         for column in _list(table, "columns"):
             column_name = _name(column)
@@ -217,9 +253,16 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
             expression = _expression(column)
             canon_expr = _canon_expression(expression)
             object_ref = f"{table_name}[{column_name}]"
-            if not _bool(column, "isHidden") and not _text(_key(column, "description")):
+            column_is_exposed = table_is_exposed and not _bool(column, "isHidden")
+            if column_is_exposed and not _text(_key(column, "description")):
                 missing_descriptions["columns"].append(object_ref)
-            if column_name and not re.search(r"(?:key|id)$", column_name, re.I):
+            if (
+                column_is_exposed
+                and table_name not in wide_root_cause_tables
+                and table_name not in duplicate_copy_tables
+                and column_name
+                and not re.search(r"(?:key|id)$", column_name, re.I)
+            ):
                 duplicate_columns[column_name.lower()].append(object_ref)
 
             if "string" in data_type and ("date" in column_name.lower() or ("format(" in canon_expr and "datevalue(" in canon_expr)):
@@ -257,7 +300,12 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
                     "Keep attributes separate for filtering/grouping; add a display label only when required.",
                     f"expression={expression}", risk="MEDIUM",
                 ))
-            if "format(" in canon_expr and "string" in data_type and "date" not in column_name.lower():
+            if (
+                column_is_exposed
+                and "format(" in canon_expr
+                and "string" in data_type
+                and "date" not in column_name.lower()
+            ):
                 findings.append(_issue(
                     "MQ011", "Numeric value formatted into a text column", "Data types", "WARNING", "Column",
                     table_name, column_name, "FORMAT converts a numeric value into text, preventing correct aggregation and sorting.",
@@ -437,7 +485,7 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
             f"discourageImplicitMeasures={implicit}; roles={len(roles)}; perspectives={len(perspectives)}", risk="HIGH",
         ))
 
-    userelationship_text = "\n".join(all_measure_expressions).lower()
+    unresolved_relationships = defaultdict(list)
     for relationship in relationships:
         if _bool(relationship, "isActive", True):
             continue
@@ -445,14 +493,18 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
         from_column = _text(_key(relationship, "fromColumn"))
         to_table = _text(_key(relationship, "toTable"))
         to_column = _text(_key(relationship, "toColumn"))
-        if "userelationship(" not in userelationship_text:
-            findings.append(_issue(
-                "MQ030", "Inactive relationship without USERELATIONSHIP measure", "Relationships", "INFO", "Relationship",
-                from_table, f"{from_table}[{from_column}] -> {to_table}[{to_column}]",
-                "An inactive relationship exists but no measure invokes USERELATIONSHIP.",
-                "Confirm the role-playing relationship is required and add explicit measures or remove incomplete design artifacts.",
-                f"from={from_table}[{from_column}]; to={to_table}[{to_column}]", risk="HIGH",
-            ))
+        if not _relationship_is_invoked(relationship, all_measure_expressions):
+            unresolved_relationships[(from_table, to_table)].append(
+                f"{from_table}[{from_column}] -> {to_table}[{to_column}]"
+            )
+    for (from_table, to_table), relationship_refs in sorted(unresolved_relationships.items()):
+        findings.append(_issue(
+            "MQ030", "Inactive relationships without USERELATIONSHIP measures", "Relationships", "INFO", "Relationship group",
+            from_table, f"{from_table} -> {to_table}",
+            "One or more inactive relationships between the same table pair are not invoked by a matching USERELATIONSHIP measure.",
+            "Confirm each role-playing relationship is required and add explicit measures or remove incomplete design artifacts.",
+            f"count={len(relationship_refs)}; relationships=" + "; ".join(sorted(relationship_refs)), risk="HIGH",
+        ))
 
     # Deterministic de-duplication protects idempotent output and opportunity counts.
     unique = {}

@@ -115,7 +115,7 @@ def validate_scanner() -> None:
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
-        'SCANNER_VERSION = "2.3.0"',
+        'SCANNER_VERSION = "2.4.0"',
         "run_model_metadata_checks = True",
         "semantic-model metadata inspection",
         "def analyze_model_bim(",
@@ -168,7 +168,7 @@ def validate_scanner() -> None:
         "workspaceId": "00000000-0000-0000-0000-000000000000",
     }:
         fail("Scanner Environment dependency does not match the deployment manifest.")
-    if notebook["metadata"].get("scanner_version") != "2.3.0":
+    if notebook["metadata"].get("scanner_version") != "2.4.0":
         fail("Scanner metadata version must match the executable scanner version.")
     if "%pip" in source or "_inlineInstallationEnabled" in source:
         fail("Pipeline scanner must not use session-scoped package installation.")
@@ -467,14 +467,18 @@ def validate_model_quality_rules() -> None:
                     column("CarrierTrackingNumber"),
                     column("UnitPriceDiscountPct", "double"),
                     column("SalesOrderLineNumber", "int64", summarizeBy="sum"),
+                    column("ShipDateKey", "int64"),
                 ], "measures": [
                     {"name": "Total Sales Alias", "expression": "[Total Sales Amount]"},
                     {"name": "Sales 2013 Only", "expression": "CALCULATE(SUM(FactInternetSales[SalesAmount]), DimDate[CalendarYear] = 2013)", "formatString": "#,0"},
                     {"name": "Sales All Products", "expression": "CALCULATE(SUM(FactInternetSales[SalesAmount]), FILTER(ALL(DimProduct), DimProduct[ProductKey] >= 0))", "formatString": "#,0"},
                     {"name": "Money Total", "expression": "SUM(FactInternetSales[ExtendedAmount])"},
                 ]},
-                {"name": "FactResellerSales", "columns": [column("SalesAmount", "decimal")], "measures": [
+                {"name": "FactResellerSales", "columns": [
+                    column("SalesAmount", "decimal"), column("ShipDateKey", "int64"),
+                ], "measures": [
                     {"name": "Total Sales Amount (2)", "expression": "SUM(FactInternetSales[SalesAmount])", "formatString": "#,0"},
+                    {"name": "Reseller Ship Sales", "expression": "CALCULATE([Total Sales Amount], USERELATIONSHIP(FactResellerSales[ShipDateKey], DimDate[DateKey]))", "formatString": "#,0"},
                 ]},
                 {"name": "DimProduct", "columns": [
                     column("Name", expression="[EnglishProductName]"),
@@ -486,15 +490,21 @@ def validate_model_quality_rules() -> None:
                     {"name": "Total Sales Amount", "expression": "SUM(FactInternetSales[SalesAmount])", "formatString": "#,0"},
                 ]},
                 {"name": "DimDate", "columns": [
+                    column("DateKey", "int64"),
                     column("CalendarYear", "int64", summarizeBy="sum"),
                     column("EnglishMonthName"),
                     column("MonthFullName", expression="[EnglishMonthName]"),
                 ]},
-                {"name": "LocalDateTable_1", "isHidden": True, "columns": [column("Date", "dateTime")]},
+                {"name": "LocalDateTable_1", "isHidden": True, "columns": [
+                    column("Date", "dateTime"), column("Name"),
+                    column("YearLabel", expression='FORMAT([Date], "yyyy")'),
+                ]},
             ],
             "relationships": [
                 {"fromTable": "FactInternetSales", "fromColumn": "OrderDateText", "toTable": "LocalDateTable_1", "toColumn": "Date", "isActive": True},
                 {"fromTable": "FactInternetSales", "fromColumn": "OrderDateText", "toTable": "DimDate", "toColumn": "CalendarYear", "isActive": False},
+                {"fromTable": "FactInternetSales", "fromColumn": "ShipDateKey", "toTable": "DimDate", "toColumn": "DateKey", "isActive": False},
+                {"fromTable": "FactResellerSales", "fromColumn": "ShipDateKey", "toTable": "DimDate", "toColumn": "DateKey", "isActive": False},
             ],
         }
     }
@@ -512,6 +522,19 @@ def validate_model_quality_rules() -> None:
         fail("Missing descriptions must be consolidated into one model-level root-cause finding.")
     if sum(row["rule_code"] == "MQ020" for row in findings) != 1:
         fail("Auto Date/Time tables must be consolidated into one model-level root-cause finding.")
+    mq009 = [row for row in findings if row["rule_code"] == "MQ009"]
+    if len(mq009) != 1 or mq009[0]["object_name"] != "name":
+        fail("Ambiguous-name analysis must keep the visible injected Name conflict without hidden/generated noise.")
+    if "DimCustomerCopy" in mq009[0]["technical_evidence"] or "LocalDateTable" in mq009[0]["technical_evidence"]:
+        fail("MQ009 must not repeat copy-table or generated-date-table root causes.")
+    mq011 = [row for row in findings if row["rule_code"] == "MQ011"]
+    if len(mq011) != 1 or mq011[0]["object_name"] != "YearlyIncomeText":
+        fail("MQ011 must ignore FORMAT expressions inside hidden generated tables.")
+    mq030 = [row for row in findings if row["rule_code"] == "MQ030"]
+    if len(mq030) != 1 or "count=2" not in mq030[0]["technical_evidence"]:
+        fail("MQ030 must group unresolved inactive relationships by table pair.")
+    if "FactResellerSales" in mq030[0]["technical_evidence"]:
+        fail("MQ030 must exclude the specific relationship invoked by USERELATIONSHIP.")
 
 
 def validate_no_secrets() -> None:
