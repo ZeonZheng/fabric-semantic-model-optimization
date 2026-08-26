@@ -748,6 +748,7 @@ def curate_latest_model_analysis(result):
     workspace_name = model_row["workspace_name"]
     semantic_model_name = model_row["model_name"]
     findings = result["findings"]
+    auto_date_present = any(is_auto_date_root_cause_finding(row) for row in findings)
 
     opportunity_groups = {}
     recommendation_groups = {}
@@ -757,14 +758,19 @@ def curate_latest_model_analysis(result):
 
     for finding in findings:
         finding_quality = grade_finding(finding)
-        domain = finding.get("category") or finding.get("impact_area") or "General optimization"
-        source = finding.get("source") or "Unknown source"
-        opportunity_id = stable_id(semantic_model_id, "OPPORTUNITY", source, domain)
+        raw_domain = finding.get("category") or finding.get("impact_area") or "General optimization"
+        raw_source = finding.get("source") or "Unknown source"
+        consolidation = root_cause_grouping(finding, auto_date_present)
+        domain = consolidation["domain"] if consolidation else raw_domain
+        source = consolidation["source"] if consolidation else raw_source
+        grouping_key = consolidation["key"] if consolidation else f"{source}|{domain}"
+        opportunity_id = stable_id(semantic_model_id, "OPPORTUNITY", grouping_key)
         opportunity = opportunity_groups.setdefault(opportunity_id, {
             "findings": [],
             "recommendations": set(),
             "domain": domain,
             "source": source,
+            "title": consolidation["title"] if consolidation else f"{domain} optimization",
         })
         opportunity["findings"].append(finding)
 
@@ -772,16 +778,16 @@ def curate_latest_model_analysis(result):
             semantic_model_id,
             "RECOMMENDATION",
             opportunity_id,
-            finding.get("rule_id") or finding.get("rule_name"),
-            finding.get("recommended_action"),
+            consolidation["key"] if consolidation else finding.get("rule_id") or finding.get("rule_name"),
+            consolidation["action"] if consolidation else finding.get("recommended_action"),
         )
         recommendation = recommendation_groups.setdefault(recommendation_id, {
             "findings": [],
             "opportunity_id": opportunity_id,
             "domain": domain,
             "source": source,
-            "title": finding.get("rule_name") or "Optimization recommendation",
-            "action": finding.get("recommended_action"),
+            "title": consolidation["title"] if consolidation else finding.get("rule_name") or "Optimization recommendation",
+            "action": consolidation["action"] if consolidation else finding.get("recommended_action"),
         })
         recommendation["findings"].append(finding)
         opportunity["recommendations"].add(recommendation_id)
@@ -799,8 +805,8 @@ def curate_latest_model_analysis(result):
             "workspace_name": workspace_name,
             "semantic_model_id": semantic_model_id,
             "semantic_model_name": semantic_model_name,
-            "finding_source": source,
-            "optimization_domain": domain,
+            "finding_source": raw_source,
+            "optimization_domain": raw_domain,
             "rule_name": finding.get("rule_name"),
             "severity": finding.get("severity"),
             "confidence": finding.get("confidence"),
@@ -831,7 +837,7 @@ def curate_latest_model_analysis(result):
             "workspace_name": workspace_name,
             "semantic_model_id": semantic_model_id,
             "semantic_model_name": semantic_model_name,
-            "opportunity_title": f"{group['domain']} optimization",
+            "opportunity_title": group["title"],
             "optimization_domain": group["domain"],
             "finding_source": group["source"],
             "highest_severity": highest.get("severity"),
@@ -1015,18 +1021,18 @@ def set_source(cell: dict, text: str) -> None:
 def main() -> None:
     notebook = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
     cells = notebook["cells"]
-    notebook.setdefault("metadata", {})["scanner_version"] = "2.6.0"
+    notebook.setdefault("metadata", {})["scanner_version"] = "2.6.1"
 
     for cell in cells:
         text = source_text(cell)
         text = re.sub(
             r'SCANNER_VERSION = "\d+\.\d+\.\d+"',
-            'SCANNER_VERSION = "2.6.0"',
+            'SCANNER_VERSION = "2.6.1"',
             text,
         )
         text = re.sub(
             r"Semantic Model Optimization Scanner — V(?:1\.2|2\.\d+(?:\.\d+)*)",
-            "Semantic Model Optimization Scanner — V2.6.0",
+            "Semantic Model Optimization Scanner — V2.6.1",
             text,
         )
         if "bpa_extended = False" in text and "run_model_metadata_checks" not in text:

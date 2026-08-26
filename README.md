@@ -103,11 +103,13 @@ Normal-model false-positive calibration is documented in
 [`docs/m6-5-4-control-model-calibration.md`](docs/m6-5-4-control-model-calibration.md).
 Priority and remediation-queue calibration is documented in
 [`docs/m6-5-5-actionability-calibration.md`](docs/m6-5-5-actionability-calibration.md).
+Cross-source root-cause consolidation is documented in
+[`docs/m6-5-6-root-cause-consolidation.md`](docs/m6-5-6-root-cause-consolidation.md).
 
 ## Current stage
 
-Version `0.6.4` completes M6.5.5 Actionability Calibration on the validated
-TEST-tenant baseline. Scanner `2.6.0` retains the M6.4 production-stabilization
+Version `0.6.5` begins M6.5.6 Cross-source Root-cause Consolidation on the validated
+TEST-tenant baseline. Scanner `2.6.1` retains the M6.4 production-stabilization
 contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
 current identity and workspace-scoped APIs only. It does not enumerate tenant
@@ -157,3 +159,10 @@ approval-controlled script queue. The live TEST gate retained 30/30 adverse-mode
 MQ coverage, removed volume-generated P1 recommendations from both models, and
 reduced script candidates from 11 to 5 on the adverse model and from 8 to 4 on the
 control model.
+
+M6.5.6 consolidates overlapping Auto Date/Time evidence across BPA categories and
+model-metadata rules into one model-level opportunity and one recommendation. Raw
+findings retain their original source, domain, rule, object, and technical evidence;
+only their rollup key changes. `MQ022` joins the Auto Date/Time root cause only when
+the same model also contains direct Auto Date/Time evidence, preventing an unrelated
+missing-date-table finding from being relabeled.

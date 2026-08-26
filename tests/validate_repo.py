@@ -17,12 +17,16 @@ sys.path.insert(0, str(ROOT))
 
 from scripts.quality_rules import (  # noqa: E402
     ACTIONABLE,
+    AUTO_DATE_ROOT_CAUSE_SOURCE,
+    AUTO_DATE_ROOT_CAUSE_TITLE,
     INFORMATIONAL,
     REVIEW_REQUIRED,
     SUPPRESSED,
     grade_finding,
     grade_opportunity,
     grade_recommendation,
+    is_auto_date_root_cause_finding,
+    root_cause_grouping,
     summarize_opportunity,
 )
 from scripts.model_quality_rules import analyze_model_bim  # noqa: E402
@@ -116,7 +120,7 @@ def validate_scanner() -> None:
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
-        'SCANNER_VERSION = "2.6.0"',
+        'SCANNER_VERSION = "2.6.1"',
         "run_model_metadata_checks = True",
         "semantic-model metadata inspection",
         "def analyze_model_bim(",
@@ -136,6 +140,10 @@ def validate_scanner() -> None:
         "Model analysis failures:",
         "def ensure_curated_tables()",
         "def curate_latest_model_analysis(result)",
+        "auto_date_present = any(is_auto_date_root_cause_finding(row) for row in findings)",
+        "consolidation = root_cause_grouping(finding, auto_date_present)",
+        '"finding_source": raw_source',
+        '"source": source',
         "def reconcile_workspace_current_state(targets)",
         "def validate_curated_scan_output(model_results)",
         "reconcile_workspace_current_state(targets)",
@@ -169,7 +177,7 @@ def validate_scanner() -> None:
         "workspaceId": "00000000-0000-0000-0000-000000000000",
     }:
         fail("Scanner Environment dependency does not match the deployment manifest.")
-    if notebook["metadata"].get("scanner_version") != "2.6.0":
+    if notebook["metadata"].get("scanner_version") != "2.6.1":
         fail("Scanner metadata version must match the executable scanner version.")
     if "%pip" in source or "_inlineInstallationEnabled" in source:
         fail("Pipeline scanner must not use session-scoped package installation.")
@@ -401,6 +409,49 @@ def validate_quality_rules() -> None:
         fail("Generated date findings must roll up into one high-priority model-level review.")
     if "explicit date dimension" not in consolidated["recommendation_title"]:
         fail("Auto Date/Time remediation must use a meaningful model-level recommendation title.")
+
+    mq020 = {
+        "finding_text": "Generated date tables are present.",
+        "technical_evidence": "generated_table_count=2",
+        "recommended_action": "Disable Auto Date/Time.",
+        "severity": "ERROR", "confidence": "HIGH", "change_risk": "HIGH",
+        "rule_name": "MQ020: Auto Date/Time tables present", "source": "MODEL_METADATA_HEURISTIC",
+    }
+    mq022 = {
+        "finding_text": "No table is marked as a date table.",
+        "technical_evidence": "marked_date_table_count=0",
+        "recommended_action": "Mark the conformed date dimension.",
+        "severity": "ERROR", "confidence": "HIGH", "change_risk": "HIGH",
+        "rule_name": "MQ022: No explicit table marked as the date table", "source": "MODEL_METADATA_HEURISTIC",
+    }
+    if not is_auto_date_root_cause_finding(generated) or not is_auto_date_root_cause_finding(mq020):
+        fail("Generated objects and MQ020 must both identify the Auto Date/Time root cause.")
+    if root_cause_grouping(mq022, auto_date_present=False) is not None:
+        fail("MQ022 without Auto Date/Time evidence must remain an independent date-table finding.")
+    grouped_mq022 = root_cause_grouping(mq022, auto_date_present=True)
+    if not grouped_mq022 or grouped_mq022["source"] != AUTO_DATE_ROOT_CAUSE_SOURCE:
+        fail("MQ022 must join the Auto Date/Time root cause only when direct evidence exists.")
+    if root_cause_grouping({"rule_name": "MQ017: Too many inactive relationships"}, True) is not None:
+        fail("Unrelated metadata findings must not be absorbed into the Auto Date/Time root cause.")
+
+    cross_source = grade_recommendation(
+        [generated, mq020, mq022],
+        "Date handling",
+        AUTO_DATE_ROOT_CAUSE_TITLE,
+        grouped_mq022["action"],
+    )
+    if (
+        cross_source["recommendation_title"] != AUTO_DATE_ROOT_CAUSE_TITLE
+        or cross_source["actionability_status"] != REVIEW_REQUIRED
+        or cross_source["recommendation_priority_score"] != 72
+    ):
+        fail("Cross-source Auto Date/Time evidence must produce one stable P2 review recommendation.")
+    cross_source_opportunity = grade_opportunity([generated, mq020, mq022])
+    if (
+        cross_source_opportunity["actionability_status"] != REVIEW_REQUIRED
+        or cross_source_opportunity["priority_score"] != 72
+    ):
+        fail("The consolidated Auto Date/Time opportunity must retain its stable P2 review grade.")
 
     informational = grade_recommendation([{
         "finding_text": "Context only.", "technical_evidence": "Observed metadata.",

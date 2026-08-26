@@ -22,6 +22,15 @@ SCRIPT_CANDIDATE_RULE_FRAGMENTS = (
     "FORMAT FLAG COLUMNS AS YES/NO VALUE STRINGS",
 )
 
+AUTO_DATE_ROOT_CAUSE_KEY = "AUTO_DATE_TIME"
+AUTO_DATE_ROOT_CAUSE_SOURCE = "ROOT_CAUSE_CONSOLIDATION"
+AUTO_DATE_ROOT_CAUSE_DOMAIN = "Date handling"
+AUTO_DATE_ROOT_CAUSE_TITLE = "Replace Auto Date/Time with an explicit date dimension"
+AUTO_DATE_ROOT_CAUSE_ACTION = (
+    "Disable Auto Date/Time, create and mark an explicit date dimension, update relationships and calculations, "
+    "then refresh and regression-test dependent reports."
+)
+
 
 def _normalized(value):
     return str(value or "").strip().upper()
@@ -33,6 +42,50 @@ def is_system_generated_date_object(finding):
     return any(
         _normalized(name).startswith(prefixes)
         for name in (finding.get("table_name"), finding.get("object_name"))
+    )
+
+
+def is_auto_date_root_cause_finding(finding):
+    """Identify direct evidence that the model uses Auto Date/Time."""
+    rule_name = _normalized(finding.get("rule_name"))
+    return (
+        is_system_generated_date_object(finding)
+        or rule_name.startswith("MQ020:")
+        or "AUTO DATE/TIME" in rule_name
+    )
+
+
+def is_date_table_companion_finding(finding):
+    """Identify the missing-explicit-date-table finding that can share this root cause."""
+    return _normalized(finding.get("rule_name")).startswith("MQ022:")
+
+
+def root_cause_grouping(finding, auto_date_present):
+    """Return a canonical rollup key while leaving the raw finding unchanged."""
+    belongs_to_auto_date_root_cause = is_auto_date_root_cause_finding(finding) or (
+        auto_date_present and is_date_table_companion_finding(finding)
+    )
+    if not belongs_to_auto_date_root_cause:
+        return None
+    return {
+        "key": AUTO_DATE_ROOT_CAUSE_KEY,
+        "source": AUTO_DATE_ROOT_CAUSE_SOURCE,
+        "domain": AUTO_DATE_ROOT_CAUSE_DOMAIN,
+        "title": AUTO_DATE_ROOT_CAUSE_TITLE,
+        "action": AUTO_DATE_ROOT_CAUSE_ACTION,
+    }
+
+
+def _is_auto_date_root_cause_group(findings, title=None):
+    """Confirm that a grouped recommendation/opportunity is one Auto Date root cause."""
+    if not findings:
+        return False
+    if _normalized(title) == _normalized(AUTO_DATE_ROOT_CAUSE_TITLE):
+        return True
+    has_direct_evidence = any(is_auto_date_root_cause_finding(row) for row in findings)
+    return has_direct_evidence and all(
+        is_auto_date_root_cause_finding(row) or is_date_table_companion_finding(row)
+        for row in findings
     )
 
 
@@ -154,16 +207,16 @@ def grade_recommendation(findings, domain, title, action):
     """Aggregate finding grades into an implementation-oriented recommendation."""
     grades = [grade_finding(row) for row in findings]
     statuses = [grade["actionability_status"] for grade in grades]
-    all_auto_date = bool(findings) and all(is_system_generated_date_object(row) for row in findings)
+    auto_date_root_cause = _is_auto_date_root_cause_group(findings, title)
 
-    if all_auto_date:
+    if auto_date_root_cause:
         status = REVIEW_REQUIRED
-        reason = "Generated local date objects were consolidated into one model-level remediation that requires relationship and calculation review."
-        title = "Replace Auto Date/Time with an explicit date dimension"
-        action = (
-            "Disable Auto Date/Time, create and mark an explicit date dimension, update relationships and calculations, "
-            "then refresh and regression-test dependent reports."
+        reason = (
+            "BPA generated-date-object evidence and model-metadata date findings were consolidated into one "
+            "model-level remediation that requires relationship and calculation review."
         )
+        title = AUTO_DATE_ROOT_CAUSE_TITLE
+        action = AUTO_DATE_ROOT_CAUSE_ACTION
         score = 72
     else:
         if ACTIONABLE in statuses:
@@ -239,8 +292,8 @@ def grade_opportunity(findings):
     """Aggregate actionability and priority for an opportunity summary."""
     grades = [grade_finding(row) for row in findings]
     statuses = [grade["actionability_status"] for grade in grades]
-    all_auto_date = bool(findings) and all(is_system_generated_date_object(row) for row in findings)
-    if all_auto_date:
+    auto_date_root_cause = _is_auto_date_root_cause_group(findings)
+    if auto_date_root_cause:
         status, score = REVIEW_REQUIRED, 72
     elif ACTIONABLE in statuses:
         status, score = ACTIONABLE, max(grade["finding_priority_score"] for grade in grades)
