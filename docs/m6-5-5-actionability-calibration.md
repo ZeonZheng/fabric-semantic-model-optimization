@@ -51,4 +51,35 @@ state suitable for generated remediation.
 5. Finding, recommendation, and opportunity counts and their link-table integrity
    continue to pass the existing business-layer quality gate.
 
-Live Scanner 2.6.0 TEST results will be added after deployment and dual-model rerun.
+## TEST acceptance (2026-08-26)
+
+Solution `0.6.4` was deployed to `SMO Analytics - Dev`; scanner initialization job
+`fd53f519-fcca-4b6f-8e84-ea3fc893e78b` completed and the SQL endpoint reported all
+eleven model-source tables ready.
+
+| Gate | Adverse model | Control model |
+| --- | --- | --- |
+| Pipeline run | `7c597e35-5252-4c30-82ac-675a183bae5f` | `f0110213-be3d-4812-b96d-226ca622290c` |
+| Analysis ID | `7b935671-ae75-4442-a3b9-c737a2778183` | `688aae34-1897-42d1-8d00-da5bd4cdcf01` |
+| Scanner / status | `2.6.0` / `SUCCEEDED` | `2.6.0` / `SUCCEEDED` |
+| Findings / metadata MQ coverage | 1,021 / 30 of 30 | 138 / 9 of 30 |
+| Recommendations | 56 | 28 |
+| Actionable / review / informational | 33 / 15 / 8 | 19 / 7 / 2 |
+| P1 / P2 / P3 / P4 | 0 / 13 / 35 / 8 | 0 / 5 / 21 / 2 |
+| Script candidates | 5 | 4 |
+
+The actionability states and rule recall remained stable; the change affected only
+priority and automation classification. In both models, P1 fell to zero because no
+scan evidence was explicitly critical or quantified. The adverse model retained its
+core structural and DAX issues in P2 rather than being flattened into low priority.
+
+The control script queue contains only `Do not summarize numeric columns`, `Hide
+foreign keys`, `Mark primary keys`, and the deterministic whole-number format rule.
+The adverse queue adds the deterministic Yes/No flag format rule. Data-category
+selection, relationship data-type redesign, unspecified measure/date formats, and
+object renaming are no longer script candidates.
+
+The M6.5.5 dual-model gate passes. A separate follow-up remains: Auto Date/Time can
+still appear as overlapping BPA and MQ recommendations. Cross-source root-cause
+consolidation should merge those recommendation rows without discarding their
+original finding evidence.

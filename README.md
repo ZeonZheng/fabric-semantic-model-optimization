@@ -106,7 +106,7 @@ Priority and remediation-queue calibration is documented in
 
 ## Current stage
 
-Version `0.6.4` begins M6.5.5 Actionability Calibration on the validated
+Version `0.6.4` completes M6.5.5 Actionability Calibration on the validated
 TEST-tenant baseline. Scanner `2.6.0` retains the M6.4 production-stabilization
 contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
@@ -153,4 +153,7 @@ M6.5.5 calibrates operational priority independently from finding volume. P1 is
 reserved for explicitly critical or quantified evidence, high-risk unquantified
 changes require review, and broad categories no longer imply automation eligibility.
 Only explicitly allowlisted deterministic metadata operations enter the future
-approval-controlled script queue.
+approval-controlled script queue. The live TEST gate retained 30/30 adverse-model
+MQ coverage, removed volume-generated P1 recommendations from both models, and
+reduced script candidates from 11 to 5 on the adverse model and from 8 to 4 on the
+control model.
