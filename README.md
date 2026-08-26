@@ -104,7 +104,7 @@ Normal-model false-positive calibration is documented in
 
 ## Current stage
 
-Version `0.6.3` begins M6.5.4 Control-model Calibration on the validated
+Version `0.6.3` completes M6.5.4 Control-model Calibration on the validated
 TEST-tenant baseline. Scanner `2.5.0` retains the M6.4 production-stabilization
 contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
@@ -143,4 +143,6 @@ M6.5.4 adds a normal-model control gate. Generated Auto Date/Time tables no long
 create duplicate-signature findings, `FORMAT` is classified as numeric-to-text only
 when it references a known numeric column, and intentionally textual label measures
 do not require a numeric format string. The adverse-model 30/30 coverage gate remains
-mandatory so precision improvements cannot silently reduce anti-pattern recall.
+mandatory so precision improvements cannot silently reduce anti-pattern recall. The
+live TEST gate passed: the adverse model retained 30/30 rules, while the control model
+fell from 143 to 138 findings by removing exactly the five targeted false positives.

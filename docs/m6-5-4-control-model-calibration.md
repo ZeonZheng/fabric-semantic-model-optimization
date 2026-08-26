@@ -45,3 +45,44 @@ The expected stable result, if BPA evidence does not change, is 138 total findin
    remain visible.
 4. Both scans must complete with core status `SUCCEEDED` under the normal
    `workspace_user` profile.
+
+## TEST acceptance (2026-08-26)
+
+The `0.6.3` solution was deployed to `SMO Analytics - Dev` from `codex/m6-4`.
+The deployment initialization job was
+`d6e470ac-0b02-4c41-a8bb-e159dfddc84f`; all eleven Lakehouse tables became
+available through the SQL analytics endpoint and the Direct Lake semantic model
+refresh completed.
+
+| Gate | Adverse model | Control model |
+| --- | --- | --- |
+| Semantic model | `SMO_Optimization1` | `Getting Started in Power BI` |
+| Pipeline run | `060bcedb-d5e8-4a15-952f-7fb78f27142b` | `6ab4e52a-643e-456c-a850-536d9c7fe747` |
+| Analysis ID | `134eb8b7-4024-4e7b-9bdc-3ed2698279f2` | `da6f2cd9-a983-419b-bf18-c42cc73fc696` |
+| Scanner | `2.5.0` | `2.5.0` |
+| Status | `SUCCEEDED` | `SUCCEEDED` |
+| Total findings | 1,021 | 138 |
+| BPA findings | 938 | 121 |
+| Metadata findings | 83 | 17 |
+| Distinct MQ rules | 30/30 | 9/30 |
+
+The adverse model retained all MQ001-MQ030 rule codes (scanner 2.4.0 produced
+1,022 total / 84 metadata findings). The one-row reduction is the intended
+text-label-measure correction, so recall did not regress.
+
+The control result exactly matched the predicted 138 findings. Compared with its
+2.4.0 baseline, the five confirmed false positives were removed and no BPA finding
+changed:
+
+| Metric | Scanner 2.4.0 | Scanner 2.5.0 | Change |
+| --- | ---: | ---: | ---: |
+| Total findings | 143 | 138 | -5 |
+| BPA | 121 | 121 | 0 |
+| Metadata | 22 | 17 | -5 |
+| Distinct MQ rules | 12 | 9 | -3 |
+| MQ002 + MQ011 + MQ019 targeted rows | 5 | 0 | -5 |
+
+The remaining control metadata distribution is MQ009=6, MQ010=2, MQ017=3,
+MQ020=1, MQ021=1, MQ022=1, MQ024=1, MQ028=1, and MQ029=1. These findings retain
+technical evidence and are review candidates rather than calibration false
+positives. The dual-model acceptance gate therefore passes.
