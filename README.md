@@ -182,3 +182,5 @@ volume. The recommendation queue defaults to `P2_HIGH` plus `ACTIONABLE` and
 Recommendation rows carry their related opportunity so users can drill through to
 implementation controls and preserved raw technical evidence. The report uses the
 existing latest TEST analyses; no rescan or realized-benefit claim is part of M6.6.
+The live TEST gate passed for saved queue filters, cross-page context synchronization,
+dual-model baseline counts, and Opportunity drillthrough, so M6.6 is complete.
