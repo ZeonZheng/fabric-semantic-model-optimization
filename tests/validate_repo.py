@@ -393,6 +393,15 @@ def validate_report() -> None:
     ).read_text(encoding="utf-8"))
     actionability_filter = json.dumps(actionability_slicer.get("visual", {}).get("objects", {}).get("general", []))
     priority_filter = json.dumps(priority_slicer.get("visual", {}).get("objects", {}).get("general", []))
+    for slicer_name, slicer in (
+        ("actionability", actionability_slicer), ("priority", priority_slicer),
+    ):
+        general = slicer.get("visual", {}).get("objects", {}).get("general", [])
+        if len(general) != 1 or "selector" in general[0]:
+            fail(f"The {slicer_name} saved selection must use an unscoped general.filter instance.")
+        orientation = general[0].get("properties", {}).get("orientation", {})
+        if orientation.get("expr", {}).get("Literal", {}).get("Value") != "0D":
+            fail(f"The {slicer_name} saved selection must retain the general orientation property.")
     for selected_status in ("ACTIONABLE", "REVIEW_REQUIRED"):
         if selected_status not in actionability_filter:
             fail(f"The recommendation queue default selection is missing {selected_status}.")

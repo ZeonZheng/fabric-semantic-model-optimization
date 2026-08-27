@@ -418,6 +418,7 @@ def categorical_slicer_filter(entity: str, prop: str, values: list[str], alias: 
     }
     return {
         "properties": {
+            "orientation": {"expr": {"Literal": {"Value": "0D"}}},
             "filter": {
                 "filter": {
                     "Version": 2,
@@ -446,7 +447,6 @@ def categorical_slicer_filter(entity: str, prop: str, values: list[str], alias: 
                 }
             }
         },
-        "selector": {"metadata": f"{entity}.{prop}"},
     }
 
 

@@ -119,6 +119,13 @@
       "general": [
         {
           "properties": {
+            "orientation": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
             "filter": {
               "filter": {
                 "Version": 2,
@@ -210,9 +217,6 @@
                 ]
               }
             }
-          },
-          "selector": {
-            "metadata": "semantic_model_optimization_recommendations.recommendation_priority_band"
           }
         }
       ]

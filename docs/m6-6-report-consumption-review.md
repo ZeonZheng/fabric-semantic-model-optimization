@@ -41,8 +41,8 @@ Use the existing current-state data in workspace `SMO Analytics - Dev`
 
 | Model | Latest analysis ID | Accepted M6.5.6 baseline |
 | --- | --- | --- |
-| `SMO_Optimization1` adverse model | `7b935671-ae75-4442-a3b9-c737a2778183` | `SUCCEEDED`; 1,021 findings; 30/30 MQ; 54 recommendations |
-| `Getting Started in Power BI` control model | `688aae34-1897-42d1-8d00-da5bd4cdcf01` | `SUCCEEDED`; 138 findings; 9 MQ; 25 recommendations |
+| `SMO_Optimization1` adverse model | `ce4c1f2e-fe41-4ca2-9cff-5ab740ef8eea` | `SUCCEEDED`; 1,021 findings; 30/30 MQ; 54 recommendations |
+| `Getting Started in Power BI` control model | `bff4e3d3-a64e-49ca-abb2-c24e7d172030` | `SUCCEEDED`; 138 findings; 9 MQ; 25 recommendations |
 
 ## Acceptance gates
 
