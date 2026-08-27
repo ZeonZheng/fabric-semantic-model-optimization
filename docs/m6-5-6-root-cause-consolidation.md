@@ -48,4 +48,21 @@ be deleted merely because they share a root cause.
 
 ## TEST acceptance
 
-Pending deployment and dual-model rescan.
+Accepted on 2026-08-27 after deploying solution `0.6.5` / scanner `2.6.1` to
+the TEST workspace and completing the dual-model regression scan.
+
+| Gate | `Getting Started in Power BI` control | `SMO_Optimization1` adverse |
+| --- | ---: | ---: |
+| Scan status | `SUCCEEDED` | `SUCCEEDED` |
+| Findings | 138 | 1,021 |
+| Detected MQ rules | 9 | 30 of 30 |
+| Recommendations before / after | 28 / 25 | 56 / 54 |
+| Auto Date/Time opportunities | 1 | 1 |
+| Auto Date/Time recommendations | 1 | 1 |
+
+The findings totals and MQ coverage are unchanged from the accepted scanner
+`2.6.0` baseline. The recommendation reductions are exactly the duplicate rollups
+removed by consolidation. Raw findings preserve their original source and evidence,
+while generated-object, MQ020, and eligible MQ022 evidence is linked to the single
+canonical Auto Date/Time root cause. The existing business-layer referential-
+integrity gates also passed. M6.5.6 is therefore complete.

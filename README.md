@@ -108,8 +108,8 @@ Cross-source root-cause consolidation is documented in
 
 ## Current stage
 
-Version `0.6.5` begins M6.5.6 Cross-source Root-cause Consolidation on the validated
-TEST-tenant baseline. Scanner `2.6.1` retains the M6.4 production-stabilization
+Version `0.6.5` completes M6.5.6 Cross-source Root-cause Consolidation on the
+validated TEST-tenant baseline. Scanner `2.6.1` retains the M6.4 production-stabilization
 contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
 current identity and workspace-scoped APIs only. It does not enumerate tenant
@@ -165,4 +165,8 @@ model-metadata rules into one model-level opportunity and one recommendation. Ra
 findings retain their original source, domain, rule, object, and technical evidence;
 only their rollup key changes. `MQ022` joins the Auto Date/Time root cause only when
 the same model also contains direct Auto Date/Time evidence, preventing an unrelated
-missing-date-table finding from being relabeled.
+missing-date-table finding from being relabeled. The live TEST gate passed on both
+models: the control model retained 138 findings and 9 detected MQ rules while its
+recommendations fell from 28 to 25; the adverse model retained 1,021 findings and
+30/30 MQ coverage while its recommendations fell from 56 to 54. Each model now has
+exactly one Auto Date/Time opportunity and one recommendation, so M6.5.6 is complete.
