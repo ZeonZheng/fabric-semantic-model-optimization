@@ -90,4 +90,5 @@ Viewer review after this technical acceptance identified unclear page roles,
 clipped card/context content, missing object-level navigation, and a missing
 drillthrough Back action. Final consumption acceptance therefore moved to the
 [M6.6.1 Viewer UX redesign](m6-6-1-viewer-ux-redesign.md); the technical M6.6
-baseline above remains valid but is not treated as final Viewer acceptance.
+baseline above remains valid. M6.6.1 subsequently passed final Viewer acceptance
+on Solution `0.6.7` without rescanning either model.

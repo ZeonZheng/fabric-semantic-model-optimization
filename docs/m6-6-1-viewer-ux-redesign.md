@@ -188,5 +188,41 @@ Design Brief:
 
 ## Current result
 
-Local PBIR redesign is implemented and static validation is in progress. TEST
-deployment and Viewer-scenario acceptance are pending.
+M6.6.1 passed TEST Viewer acceptance on 2026-08-27 with Solution `0.6.7` and
+the unchanged scanner version `2.6.1`.
+
+- Deployment completed with status `SUCCEEDED`. The Direct Lake semantic model
+  refreshed and the existing report and semantic-model item IDs were preserved.
+- At the Service `Fit to page` view (71% in the acceptance browser), Start here
+  rendered without overlapping or clipped cards. Its four decision metrics were
+  fully visible: 19 root causes, 54 actions, 15 high-severity evidence records,
+  and 13 items needing review.
+- `SMO_Optimization1` opened as the explicit validation preset. The scope row
+  displayed `SUCCEEDED`, scanner `2.6.1`, and analysis ID
+  `ce4c1f2e-fe41-4ca2-9cff-5ab740ef8eea` without the former context-card crop.
+- The visible navigation and page questions separated the jobs of Start here,
+  Issues, Actions, Evidence, and Storage. The report page navigator also changed
+  pages through its accessible button action.
+- Selecting `Object type = Table` on Issues reduced the root-cause queue from 19
+  to 5 rows. The same object selection persisted on Actions and Evidence,
+  confirming the Findings-to-Issues-to-Actions filter path.
+- Actions retained the saved `P2_HIGH` plus `ACTIONABLE` / `REVIEW_REQUIRED`
+  decision scope. Under the Table selection it returned five work items instead
+  of repeating the grouped issue inventory.
+- Evidence retained `Object type = Table` and exposed concrete table names and
+  rule text. Long technical fields remain available through table scrolling and
+  the drillthrough detail rather than being placed in clipped cards.
+- Right-clicking `Model structure optimization` opened Issue detail with its six
+  action controls and 13 preserved evidence records. The new Back action was
+  visible and returned to Issues successfully.
+- Repository validation checked 79 JSON/notebook/platform files; Python compile,
+  `git diff --check`, and the Microsoft Power BI report authoring validator all
+  completed with zero errors.
+
+The deployment performed only the normal deployment-time scanner notebook
+initialization and semantic-model refresh. It did not run `Load_SMO_Data` or start
+a model analysis, and SQL endpoint validation reported 11/11 existing source
+tables ready with zero tables refreshed. The accepted baselines therefore remain
+unchanged: the adverse model has 1,021 findings, 30/30 MQ coverage, and 54
+recommendations; the control model has 138 findings, 9 MQ rules, and 25
+recommendations.

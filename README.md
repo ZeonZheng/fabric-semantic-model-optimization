@@ -112,7 +112,7 @@ The M6.6.1 Viewer UX redesign is documented in
 
 ## Current stage
 
-Version `0.6.7` implements the M6.6.1 Viewer UX redesign on the
+Version `0.6.7` deploys the accepted M6.6.1 Viewer UX redesign to TEST on the
 validated TEST-tenant baseline. Scanner `2.6.1` is unchanged and retains the M6.4 production-stabilization
 contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
@@ -191,4 +191,7 @@ page roles were unclear, object-level problem location was missing, KPI/context
 visuals clipped in Service, and drillthrough had no Back action. M6.6.1 replaces
 the inventory-style layout with Start here → Issues → Actions → Evidence,
 adds synchronized object locators and the adverse-model validation preset, and
-retains the existing TEST analyses without rescanning.
+retains the existing TEST analyses without rescanning. Live Viewer acceptance
+confirmed the unclipped four-card landing page, the Table object filter across
+Issues/Actions/Evidence, the saved P2 action queue, and Issue detail drillthrough
+with a working Back action.
