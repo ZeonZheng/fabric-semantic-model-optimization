@@ -85,3 +85,9 @@ unchanged scanner version `2.6.1`.
 
 The deployment reused the current Lakehouse data and refreshed the semantic model;
 no scanner run was started, so M6.6 did not change the accepted analysis rows.
+
+Viewer review after this technical acceptance identified unclear page roles,
+clipped card/context content, missing object-level navigation, and a missing
+drillthrough Back action. Final consumption acceptance therefore moved to the
+[M6.6.1 Viewer UX redesign](m6-6-1-viewer-ux-redesign.md); the technical M6.6
+baseline above remains valid but is not treated as final Viewer acceptance.

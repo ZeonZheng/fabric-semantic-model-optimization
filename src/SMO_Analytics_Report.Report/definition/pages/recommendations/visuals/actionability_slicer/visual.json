@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "actionability_slicer",
   "position": {
-    "x": 30,
-    "y": 230,
+    "x": 24,
+    "y": 480,
     "z": 2100,
-    "height": 88,
-    "width": 360,
+    "height": 80,
+    "width": 232,
     "tabOrder": 2100
   },
   "visual": {
@@ -27,8 +27,8 @@
                 }
               },
               "queryRef": "semantic_model_optimization_recommendations.actionability_status",
-              "nativeQueryRef": "Actionability",
-              "displayName": "Actionability"
+              "nativeQueryRef": "Decision",
+              "displayName": "Decision"
             }
           ]
         }
@@ -48,7 +48,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Actionability'"
+                  "Value": "'Decision'"
                 }
               }
             },
@@ -62,6 +62,26 @@
                   }
                 }
               }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Decision'"
+                }
+              }
             }
           }
         }
@@ -72,28 +92,28 @@
             "top": {
               "expr": {
                 "Literal": {
-                  "Value": "8D"
+                  "Value": "4D"
                 }
               }
             },
             "bottom": {
               "expr": {
                 "Literal": {
-                  "Value": "8D"
+                  "Value": "4D"
                 }
               }
             },
             "left": {
               "expr": {
                 "Literal": {
-                  "Value": "8D"
+                  "Value": "4D"
                 }
               }
             },
             "right": {
               "expr": {
                 "Literal": {
-                  "Value": "8D"
+                  "Value": "4D"
                 }
               }
             }

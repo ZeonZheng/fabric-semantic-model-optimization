@@ -2,12 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "top_columns",
   "position": {
-    "x": 30,
-    "y": 130,
-    "z": 2000,
-    "height": 220,
-    "width": 560,
-    "tabOrder": 2000
+    "x": 280,
+    "y": 216,
+    "z": 2001,
+    "height": 216,
+    "width": 456,
+    "tabOrder": 2001
   },
   "visual": {
     "visualType": "clusteredBarChart",
@@ -67,7 +67,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Largest columns by storage'"
+                  "Value": "'Largest columns'"
                 }
               }
             },
@@ -79,6 +79,26 @@
                       "Value": "'#102A43'"
                     }
                   }
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Largest columns'"
                 }
               }
             }

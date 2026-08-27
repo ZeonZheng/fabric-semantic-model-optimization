@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "findings_table",
   "position": {
-    "x": 30,
-    "y": 365,
+    "x": 280,
+    "y": 216,
     "z": 3000,
-    "height": 315,
-    "width": 1200,
+    "height": 480,
+    "width": 976,
     "tabOrder": 3000
   },
   "visual": {
@@ -23,42 +23,12 @@
                       "Entity": "semantic_model_optimization_findings"
                     }
                   },
-                  "Property": "finding_priority_score"
-                }
-              },
-              "queryRef": "semantic_model_optimization_findings.finding_priority_score",
-              "nativeQueryRef": "Priority score",
-              "displayName": "Priority score"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_findings"
-                    }
-                  },
                   "Property": "finding_priority_band"
                 }
               },
               "queryRef": "semantic_model_optimization_findings.finding_priority_band",
-              "nativeQueryRef": "Priority band",
-              "displayName": "Priority band"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_findings"
-                    }
-                  },
-                  "Property": "actionability_status"
-                }
-              },
-              "queryRef": "semantic_model_optimization_findings.actionability_status",
-              "nativeQueryRef": "Actionability",
-              "displayName": "Actionability"
+              "nativeQueryRef": "Priority",
+              "displayName": "Priority"
             },
             {
               "field": {
@@ -83,12 +53,12 @@
                       "Entity": "semantic_model_optimization_findings"
                     }
                   },
-                  "Property": "rule_name"
+                  "Property": "affected_object_type"
                 }
               },
-              "queryRef": "semantic_model_optimization_findings.rule_name",
-              "nativeQueryRef": "Rule",
-              "displayName": "Rule"
+              "queryRef": "semantic_model_optimization_findings.affected_object_type",
+              "nativeQueryRef": "Object type",
+              "displayName": "Object type"
             },
             {
               "field": {
@@ -117,8 +87,8 @@
                 }
               },
               "queryRef": "semantic_model_optimization_findings.affected_object_name",
-              "nativeQueryRef": "Affected object",
-              "displayName": "Affected object"
+              "nativeQueryRef": "Object",
+              "displayName": "Object"
             },
             {
               "field": {
@@ -128,12 +98,12 @@
                       "Entity": "semantic_model_optimization_findings"
                     }
                   },
-                  "Property": "finding_description"
+                  "Property": "rule_name"
                 }
               },
-              "queryRef": "semantic_model_optimization_findings.finding_description",
-              "nativeQueryRef": "Finding",
-              "displayName": "Finding"
+              "queryRef": "semantic_model_optimization_findings.rule_name",
+              "nativeQueryRef": "Rule",
+              "displayName": "Rule"
             },
             {
               "field": {
@@ -143,27 +113,27 @@
                       "Entity": "semantic_model_optimization_findings"
                     }
                   },
-                  "Property": "recommended_action"
+                  "Property": "actionability_status"
                 }
               },
-              "queryRef": "semantic_model_optimization_findings.recommended_action",
-              "nativeQueryRef": "Recommended action",
-              "displayName": "Recommended action"
+              "queryRef": "semantic_model_optimization_findings.actionability_status",
+              "nativeQueryRef": "Decision",
+              "displayName": "Decision"
             },
             {
               "field": {
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_model_optimization_findings"
+                      "Entity": "semantic_model_optimization_opportunities"
                     }
                   },
-                  "Property": "suppression_reason"
+                  "Property": "opportunity_title"
                 }
               },
-              "queryRef": "semantic_model_optimization_findings.suppression_reason",
-              "nativeQueryRef": "Suppression reason",
-              "displayName": "Suppression reason"
+              "queryRef": "semantic_model_optimization_opportunities.opportunity_title",
+              "nativeQueryRef": "Root cause",
+              "displayName": "Root cause"
             }
           ]
         }
@@ -201,7 +171,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Findings = raw scanner evidence by affected object'"
+                  "Value": "'Evidence locator \u2014 raw descriptions and technical evidence are one drillthrough away'"
                 }
               }
             },
@@ -213,6 +183,26 @@
                       "Value": "'#102A43'"
                     }
                   }
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Evidence locator \u2014 raw descriptions and technical evidence are one drillthrough away'"
                 }
               }
             }
@@ -260,6 +250,13 @@
                 }
               }
             },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "9D"
+                }
+              }
+            },
             "autoSizeColumnWidth": {
               "expr": {
                 "Literal": {
@@ -271,6 +268,13 @@
               "expr": {
                 "Literal": {
                   "Value": "'growToFit'"
+                }
+              }
+            },
+            "wordWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }
@@ -321,6 +325,20 @@
                       "Value": "'#102A43'"
                     }
                   }
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "9D"
+                }
+              }
+            },
+            "wordWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }

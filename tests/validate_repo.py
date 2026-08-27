@@ -289,7 +289,7 @@ def validate_report() -> None:
     if "44444444-4444-4444-4444-444444444444" not in connection:
         fail("Report semantic-model placeholder is missing.")
     pages = json.loads((report_root / "definition/pages/pages.json").read_text())
-    expected_pages = ["overview", "recommendations", "opportunities", "findings", "storage", "opportunity_detail"]
+    expected_pages = ["overview", "opportunities", "recommendations", "findings", "storage", "opportunity_detail"]
     if pages["pageOrder"] != expected_pages:
         fail("The report must retain five visible pages plus one hidden drillthrough detail page.")
     visual_count = 0
@@ -297,6 +297,9 @@ def validate_report() -> None:
     workspace_sync_count = 0
     model_sync_count = 0
     analysis_sync_count = 0
+    object_type_sync_count = 0
+    affected_table_sync_count = 0
+    affected_object_sync_count = 0
     model_tables = ROOT / "src/SMO_Analytics_SM.SemanticModel/definition/tables"
     semantic_fields = {}
     for table_path in model_tables.glob("*.tmdl"):
@@ -331,6 +334,13 @@ def validate_report() -> None:
             fail(f"Report page {page} has no visuals.")
         for visual_path in visuals:
             visual_definition = json.loads(visual_path.read_text())
+            position = visual_definition.get("position", {})
+            if (
+                position.get("x", 0) < 0 or position.get("y", 0) < 0
+                or position.get("x", 0) + position.get("width", 0) > page_definition.get("width", 1280)
+                or position.get("y", 0) + position.get("height", 0) > page_definition.get("height", 720)
+            ):
+                fail(f"Visual {visual_path.relative_to(ROOT)} extends outside the report canvas.")
             for entity, prop in referenced_fields(visual_definition):
                 if entity not in semantic_fields or prop not in semantic_fields[entity]:
                     fail(f"Report field {entity}.{prop} in {visual_path.relative_to(ROOT)} is not present in TMDL.")
@@ -338,9 +348,31 @@ def validate_report() -> None:
             workspace_sync_count += sync_group == "SMO_Workspace"
             model_sync_count += sync_group == "SMO_SemanticModel"
             analysis_sync_count += sync_group == "SMO_Analysis"
+            object_type_sync_count += sync_group == "SMO_ObjectType"
+            affected_table_sync_count += sync_group == "SMO_AffectedTable"
+            affected_object_sync_count += sync_group == "SMO_AffectedObject"
+        visual_definitions = [json.loads(path.read_text()) for path in visuals]
+        for index, left in enumerate(visual_definitions):
+            lp = left["position"]
+            for right in visual_definitions[index + 1:]:
+                rp = right["position"]
+                overlaps = not (
+                    lp["x"] + lp["width"] <= rp["x"]
+                    or rp["x"] + rp["width"] <= lp["x"]
+                    or lp["y"] + lp["height"] <= rp["y"]
+                    or rp["y"] + rp["height"] <= lp["y"]
+                )
+                if overlaps:
+                    fail(f"Report page {page} contains overlapping visuals {left['name']} and {right['name']}.")
         visual_count += len(visuals)
-    if visible_pages != ["overview", "recommendations", "opportunities", "findings", "storage"]:
+    if visible_pages != ["overview", "opportunities", "recommendations", "findings", "storage"]:
         fail(f"The report must expose exactly the approved five visible pages, found {visible_pages}.")
+    display_names = [
+        json.loads((report_root / "definition/pages" / page / "page.json").read_text())["displayName"]
+        for page in visible_pages
+    ]
+    if display_names != ["Start here", "1 · Issues", "2 · Actions", "3 · Evidence", "Storage"]:
+        fail(f"The report must expose a guided Start here → Issues → Actions → Evidence path, found {display_names}.")
     detail_page = json.loads((report_root / "definition/pages/opportunity_detail/page.json").read_text())
     if detail_page.get("pageBinding", {}).get("type") != "Drillthrough":
         fail("Opportunity detail must be configured as a drillthrough page.")
@@ -355,10 +387,15 @@ def validate_report() -> None:
     )
     if drill_property != "opportunity_title":
         fail("Opportunity drillthrough must use the visible opportunity title from the source table.")
-    if workspace_sync_count != 6 or model_sync_count != 6 or analysis_sync_count != 6:
-        fail("Workspace, semantic-model, and latest-analysis slicers must be synchronized across every report page.")
-    if visual_count != 44:
-        fail(f"The M6.6 report contract requires 44 visuals, found {visual_count}.")
+    if workspace_sync_count != 5 or model_sync_count != 6 or analysis_sync_count != 5:
+        fail("Global scope slicers must stay synchronized across visible pages, with model context retained on detail.")
+    if object_type_sync_count != 3 or affected_table_sync_count != 3 or affected_object_sync_count != 3:
+        fail("Object type, table, and object locators must stay synchronized across Issues, Actions, and Evidence.")
+    if visual_count != 61:
+        fail(f"The M6.6.1 report contract requires 61 visuals, found {visual_count}.")
+    model_text = (model_tables.parent / "model.tmdl").read_text(encoding="utf-8")
+    if "relationship opportunity_findings" not in model_text or "crossFilteringBehavior: bothDirections" not in model_text:
+        fail("Object-level evidence filters must propagate to grouped issues and actions.")
     metrics_text = (model_tables / "Metrics.tmdl").read_text(encoding="utf-8")
     for context_field in (
         "measure 'Selected analysis context'", "latest_analysis_id", "latest_analysis_status",
@@ -376,8 +413,8 @@ def validate_report() -> None:
         fail("Recommendations must expose the Top actionable recommendations queue.")
     top_queue_text = top_queue.read_text(encoding="utf-8")
     for field in (
-        "recommendation_priority_score", "actionability_status", "why_it_matters",
-        "opportunity_title", "automation_eligibility", "affected_finding_count",
+        "recommendation_priority_band", "actionability_status", "opportunity_title",
+        "automation_eligibility", "affected_finding_count",
     ):
         if field not in top_queue_text:
             fail(f"Top actionable recommendations is missing {field}.")
@@ -407,6 +444,24 @@ def validate_report() -> None:
             fail(f"The recommendation queue default selection is missing {selected_status}.")
     if "P2_HIGH" not in priority_filter:
         fail("The recommendation queue must default to P2_HIGH.")
+    for page in pages["pageOrder"]:
+        model_slicer = report_root / "definition/pages" / page / "visuals/semantic_model_filter/visual.json"
+        if not model_slicer.exists():
+            fail(f"Page {page} is missing the semantic-model context slicer.")
+        if "SMO_Optimization1" not in model_slicer.read_text(encoding="utf-8"):
+            fail(f"Page {page} must retain the adverse-model validation preset.")
+    back_button = json.loads((
+        report_root / "definition/pages/opportunity_detail/visuals/back_button/visual.json"
+    ).read_text(encoding="utf-8"))
+    back_link = back_button.get("visual", {}).get("visualContainerObjects", {}).get("visualLink", [])
+    if not back_link or "Back" not in json.dumps(back_link):
+        fail("Opportunity detail must provide a working drillthrough back button.")
+    overview_kpis = json.loads((
+        report_root / "definition/pages/overview/visuals/optimization_kpis/visual.json"
+    ).read_text(encoding="utf-8"))
+    kpi_projections = overview_kpis["visual"]["query"]["queryState"]["Data"]["projections"]
+    if len(kpi_projections) != 4 or overview_kpis["position"]["height"] < 112:
+        fail("The Start here KPI strip must use four legible metrics in a clipping-safe card.")
     detail_text = "\n".join(
         path.read_text(encoding="utf-8")
         for path in (report_root / "definition/pages/opportunity_detail/visuals").glob("*/visual.json")

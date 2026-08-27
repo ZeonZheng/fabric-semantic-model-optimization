@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
-  "name": "risk_slicer",
+  "name": "object_type_slicer",
   "position": {
-    "x": 790,
-    "y": 230,
-    "z": 2102,
-    "height": 88,
-    "width": 440,
-    "tabOrder": 2102
+    "x": 24,
+    "y": 216,
+    "z": 2000,
+    "height": 80,
+    "width": 232,
+    "tabOrder": 2000
   },
   "visual": {
     "visualType": "slicer",
@@ -20,15 +20,15 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_model_optimization_recommendations"
+                      "Entity": "semantic_model_optimization_findings"
                     }
                   },
-                  "Property": "change_risk"
+                  "Property": "affected_object_type"
                 }
               },
-              "queryRef": "semantic_model_optimization_recommendations.change_risk",
-              "nativeQueryRef": "Change risk",
-              "displayName": "Change risk"
+              "queryRef": "semantic_model_optimization_findings.affected_object_type",
+              "nativeQueryRef": "Object type",
+              "displayName": "Object type"
             }
           ]
         }
@@ -48,7 +48,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Change risk'"
+                  "Value": "'Object type'"
                 }
               }
             },
@@ -62,6 +62,26 @@
                   }
                 }
               }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Object type'"
+                }
+              }
             }
           }
         }
@@ -72,28 +92,28 @@
             "top": {
               "expr": {
                 "Literal": {
-                  "Value": "8D"
+                  "Value": "4D"
                 }
               }
             },
             "bottom": {
               "expr": {
                 "Literal": {
-                  "Value": "8D"
+                  "Value": "4D"
                 }
               }
             },
             "left": {
               "expr": {
                 "Literal": {
-                  "Value": "8D"
+                  "Value": "4D"
                 }
               }
             },
             "right": {
               "expr": {
                 "Literal": {
-                  "Value": "8D"
+                  "Value": "4D"
                 }
               }
             }
@@ -116,6 +136,11 @@
           }
         }
       ]
+    },
+    "syncGroup": {
+      "groupName": "SMO_ObjectType",
+      "fieldChanges": true,
+      "filterChanges": true
     }
   }
 }

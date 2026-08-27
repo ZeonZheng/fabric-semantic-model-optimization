@@ -2,12 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "top_tables",
   "position": {
-    "x": 610,
-    "y": 130,
-    "z": 2001,
-    "height": 220,
-    "width": 620,
-    "tabOrder": 2001
+    "x": 752,
+    "y": 216,
+    "z": 2002,
+    "height": 216,
+    "width": 504,
+    "tabOrder": 2002
   },
   "visual": {
     "visualType": "clusteredBarChart",
@@ -72,7 +72,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Largest tables by storage'"
+                  "Value": "'Largest tables'"
                 }
               }
             },
@@ -84,6 +84,26 @@
                       "Value": "'#102A43'"
                     }
                   }
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Largest tables'"
                 }
               }
             }

@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "top_actionable_recommendations",
   "position": {
-    "x": 30,
-    "y": 335,
+    "x": 280,
+    "y": 216,
     "z": 3000,
-    "height": 345,
-    "width": 1200,
+    "height": 480,
+    "width": 976,
     "tabOrder": 3000
   },
   "visual": {
@@ -23,12 +23,12 @@
                       "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
-                  "Property": "recommendation_priority_score"
+                  "Property": "recommendation_priority_band"
                 }
               },
-              "queryRef": "semantic_model_optimization_recommendations.recommendation_priority_score",
-              "nativeQueryRef": "Priority score",
-              "displayName": "Priority score"
+              "queryRef": "semantic_model_optimization_recommendations.recommendation_priority_band",
+              "nativeQueryRef": "Priority",
+              "displayName": "Priority"
             },
             {
               "field": {
@@ -42,8 +42,8 @@
                 }
               },
               "queryRef": "semantic_model_optimization_recommendations.actionability_status",
-              "nativeQueryRef": "Actionability",
-              "displayName": "Actionability"
+              "nativeQueryRef": "Decision",
+              "displayName": "Decision"
             },
             {
               "field": {
@@ -57,8 +57,8 @@
                 }
               },
               "queryRef": "semantic_model_optimization_recommendations.recommendation_title",
-              "nativeQueryRef": "Recommendation",
-              "displayName": "Recommendation"
+              "nativeQueryRef": "Action",
+              "displayName": "Action"
             },
             {
               "field": {
@@ -72,23 +72,8 @@
                 }
               },
               "queryRef": "semantic_model_optimization_opportunities.opportunity_title",
-              "nativeQueryRef": "Opportunity / root cause",
-              "displayName": "Opportunity / root cause"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_recommendations"
-                    }
-                  },
-                  "Property": "why_it_matters"
-                }
-              },
-              "queryRef": "semantic_model_optimization_recommendations.why_it_matters",
-              "nativeQueryRef": "Why it matters",
-              "displayName": "Why it matters"
+              "nativeQueryRef": "Root cause",
+              "displayName": "Root cause"
             },
             {
               "field": {
@@ -102,8 +87,8 @@
                 }
               },
               "queryRef": "semantic_model_optimization_recommendations.change_risk",
-              "nativeQueryRef": "Change risk",
-              "displayName": "Change risk"
+              "nativeQueryRef": "Risk",
+              "displayName": "Risk"
             },
             {
               "field": {
@@ -132,8 +117,8 @@
                 }
               },
               "queryRef": "semantic_model_optimization_recommendations.affected_finding_count",
-              "nativeQueryRef": "Evidence rows",
-              "displayName": "Evidence rows"
+              "nativeQueryRef": "Evidence",
+              "displayName": "Evidence"
             }
           ]
         }
@@ -171,7 +156,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Recommendations = user work items \u2014 P2 Actionable and Review Required by default; right-click Opportunity for evidence'"
+                  "Value": "'Actions = user work items \u2014 right-click Root cause for why, validation, rollback, and evidence'"
                 }
               }
             },
@@ -183,6 +168,26 @@
                       "Value": "'#102A43'"
                     }
                   }
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Actions = user work items \u2014 right-click Root cause for why, validation, rollback, and evidence'"
                 }
               }
             }
@@ -230,6 +235,13 @@
                 }
               }
             },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "9D"
+                }
+              }
+            },
             "autoSizeColumnWidth": {
               "expr": {
                 "Literal": {
@@ -241,6 +253,13 @@
               "expr": {
                 "Literal": {
                   "Value": "'growToFit'"
+                }
+              }
+            },
+            "wordWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }
@@ -291,6 +310,20 @@
                       "Value": "'#102A43'"
                     }
                   }
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "9D"
+                }
+              }
+            },
+            "wordWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }

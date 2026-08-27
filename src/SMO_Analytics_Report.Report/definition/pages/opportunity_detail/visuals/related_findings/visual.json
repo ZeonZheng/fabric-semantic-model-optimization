@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "related_findings",
   "position": {
-    "x": 30,
-    "y": 490,
+    "x": 24,
+    "y": 488,
     "z": 4000,
-    "height": 190,
-    "width": 1200,
+    "height": 208,
+    "width": 1232,
     "tabOrder": 4000
   },
   "visual": {
@@ -53,21 +53,6 @@
                       "Entity": "semantic_model_optimization_findings"
                     }
                   },
-                  "Property": "confidence"
-                }
-              },
-              "queryRef": "semantic_model_optimization_findings.confidence",
-              "nativeQueryRef": "Confidence",
-              "displayName": "Confidence"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_findings"
-                    }
-                  },
                   "Property": "rule_name"
                 }
               },
@@ -83,12 +68,42 @@
                       "Entity": "semantic_model_optimization_findings"
                     }
                   },
+                  "Property": "affected_object_type"
+                }
+              },
+              "queryRef": "semantic_model_optimization_findings.affected_object_type",
+              "nativeQueryRef": "Object type",
+              "displayName": "Object type"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_findings"
+                    }
+                  },
+                  "Property": "affected_table_name"
+                }
+              },
+              "queryRef": "semantic_model_optimization_findings.affected_table_name",
+              "nativeQueryRef": "Table",
+              "displayName": "Table"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_findings"
+                    }
+                  },
                   "Property": "affected_object_name"
                 }
               },
               "queryRef": "semantic_model_optimization_findings.affected_object_name",
-              "nativeQueryRef": "Affected object",
-              "displayName": "Affected object"
+              "nativeQueryRef": "Object",
+              "displayName": "Object"
             },
             {
               "field": {
@@ -138,7 +153,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Finding = preserved raw scanner evidence'"
+                  "Value": "'Preserved raw evidence'"
                 }
               }
             },
@@ -150,6 +165,26 @@
                       "Value": "'#102A43'"
                     }
                   }
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Preserved raw evidence'"
                 }
               }
             }
@@ -197,6 +232,13 @@
                 }
               }
             },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "9D"
+                }
+              }
+            },
             "autoSizeColumnWidth": {
               "expr": {
                 "Literal": {
@@ -208,6 +250,13 @@
               "expr": {
                 "Literal": {
                   "Value": "'growToFit'"
+                }
+              }
+            },
+            "wordWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }
@@ -258,6 +307,20 @@
                       "Value": "'#102A43'"
                     }
                   }
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "9D"
+                }
+              }
+            },
+            "wordWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }

@@ -333,12 +333,16 @@ def write_model() -> None:
     ]
     relation_text = []
     for name, from_table, from_column, to_table, to_column in relationships:
-        relation_text.extend([
+        relation_definition = [
             f"relationship {name}",
             f"\tfromColumn: {from_table}.{from_column}",
             f"\ttoColumn: {to_table}.{to_column}",
-            "",
-        ])
+        ]
+        if name == "opportunity_findings":
+            # Object-level slicers live on Findings. Bidirectional filtering lets
+            # those selections locate their grouped root causes and action items.
+            relation_definition.append("\tcrossFilteringBehavior: bothDirections")
+        relation_text.extend([*relation_definition, ""])
     model = "\n".join([
         "model Model",
         "\tculture: en-US",
@@ -393,19 +397,23 @@ def literal(value: str) -> dict:
     return {"expr": {"Literal": {"Value": repr(value)}}}
 
 
-def table_formatting() -> tuple[dict, dict]:
+def table_formatting(font_size: int = 9) -> tuple[dict, dict]:
     objects = {
         "columnHeaders": [{"properties": {
             "fontColor": {"solid": {"color": literal("#FFFFFF")}},
             "backColor": {"solid": {"color": literal("#243B53")}},
+            "fontSize": {"expr": {"Literal": {"Value": f"{font_size}D"}}},
             "autoSizeColumnWidth": {"expr": {"Literal": {"Value": "true"}}},
             "columnAdjustment": literal("growToFit"),
+            "wordWrap": {"expr": {"Literal": {"Value": "false"}}},
         }}],
         "values": [{"properties": {
             "backColorPrimary": {"solid": {"color": literal("#FFFFFF")}},
             "backColorSecondary": {"solid": {"color": literal("#F4F7FA")}},
             "fontColorPrimary": {"solid": {"color": literal("#102A43")}},
             "fontColorSecondary": {"solid": {"color": literal("#102A43")}},
+            "fontSize": {"expr": {"Literal": {"Value": f"{font_size}D"}}},
+            "wordWrap": {"expr": {"Literal": {"Value": "false"}}},
         }}],
     }
     vcos = {"stylePreset": [{"properties": {"name": literal("None")}}]}
@@ -456,16 +464,27 @@ def visual(
     conditional_color: tuple[str, str] | None = None,
     sort_by: tuple[str, str] | None = None,
     selected_values: tuple[str, str, list[str]] | None = None,
+    show_title: bool = True,
 ) -> dict:
-    title_objects = {"title": [{"properties": {
-        "show": {"expr": {"Literal": {"Value": "true"}}},
-        "text": literal(title),
-        "fontColor": {"solid": {"color": literal("#102A43")}},
-    }}]}
+    title_objects = {
+        "title": [{"properties": {
+            "show": {"expr": {"Literal": {"Value": "true" if show_title else "false"}}},
+            "text": literal(title),
+            "fontColor": {"solid": {"color": literal("#102A43")}},
+            "fontSize": {"expr": {"Literal": {"Value": "11D"}}},
+        }}],
+        "general": [{"properties": {
+            "altText": literal(title or name.replace("_", " ")),
+        }}],
+    }
     result = {
         "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
         "name": name,
-        "position": {"x": x, "y": y, "z": z, "height": height, "width": width, "tabOrder": z},
+        "position": {
+            "x": x, "y": y, "z": z,
+            "height": max(height, 80) if visual_type == "slicer" else height,
+            "width": width, "tabOrder": z,
+        },
         "visual": {
             "visualType": visual_type,
             "query": {"queryState": {role: {"projections": projections} for role, projections in roles.items()}},
@@ -488,7 +507,7 @@ def visual(
             entity, prop, values = selected_values
             result["visual"]["objects"]["general"] = [categorical_slicer_filter(entity, prop, values)]
         result["visual"]["visualContainerObjects"]["padding"] = [{"properties": {
-            side: {"expr": {"Literal": {"Value": "8D"}}} for side in ("top", "bottom", "left", "right")
+            side: {"expr": {"Literal": {"Value": "4D"}}} for side in ("top", "bottom", "left", "right")
         }}]
         if sync_group:
             result["visual"]["syncGroup"] = {
@@ -533,6 +552,53 @@ def visual(
                     "metadata": query_ref,
                 },
             })
+    elif visual_type == "cardVisual":
+        result["visual"]["objects"] = {
+            "value": [{"properties": {
+                "fontSize": {"expr": {"Literal": {"Value": "24D"}}},
+                "bold": {"expr": {"Literal": {"Value": "true"}}},
+                "fontColor": {"solid": {"color": literal("#102A43")}},
+            }, "selector": {"id": "default"}}],
+            "label": [{"properties": {
+                "show": {"expr": {"Literal": {"Value": "true"}}},
+                "fontSize": {"expr": {"Literal": {"Value": "12D"}}},
+                "fontColor": {"solid": {"color": literal("#486581")}},
+            }, "selector": {"id": "default"}}],
+            "outline": [{"properties": {
+                "show": {"expr": {"Literal": {"Value": "false"}}},
+            }, "selector": {"id": "default"}}],
+            "padding": [{"properties": {
+                "paddingUniform": {"expr": {"Literal": {"Value": "4L"}}},
+            }, "selector": {"id": "default"}}],
+            "layout": [{"properties": {
+                "paddingUniform": {"expr": {"Literal": {"Value": "4L"}}},
+                "topOuterMargin": {"expr": {"Literal": {"Value": "0L"}}},
+                "bottomOuterMargin": {"expr": {"Literal": {"Value": "0L"}}},
+                "leftOuterMargin": {"expr": {"Literal": {"Value": "0L"}}},
+                "rightOuterMargin": {"expr": {"Literal": {"Value": "0L"}}},
+            }, "selector": {"id": "default"}}],
+            "spacing": [{"properties": {
+                "verticalSpacing": {"expr": {"Literal": {"Value": "0L"}}},
+            }, "selector": {"id": "default"}}],
+            "cardCalloutArea": [{"properties": {
+                "show": {"expr": {"Literal": {"Value": "true"}}},
+                "paddingUniform": {"expr": {"Literal": {"Value": "4L"}}},
+                "rectangleRoundedCurve": {"expr": {"Literal": {"Value": "6L"}}},
+                "backgroundFillColor": {"solid": {"color": literal("#F4F7FA")}},
+                "backgroundTransparency": {"expr": {"Literal": {"Value": "0D"}}},
+            }}],
+        }
+        result["visual"]["visualContainerObjects"].update({
+            "background": [{"properties": {
+                "show": {"expr": {"Literal": {"Value": "true"}}},
+                "color": {"solid": {"color": literal("#FFFFFF")}},
+                "transparency": {"expr": {"Literal": {"Value": "0D"}}},
+            }}],
+            "padding": [{"properties": {
+                side: {"expr": {"Literal": {"Value": "0D"}}}
+                for side in ("top", "bottom", "left", "right")
+            }}],
+        })
     else:
         result["visual"]["visualContainerObjects"]["background"] = [{"properties": {
             "show": {"expr": {"Literal": {"Value": "true"}}},
@@ -542,22 +608,143 @@ def visual(
     return result
 
 
+def textbox(name: str, x: int, y: int, width: int, height: int, lines: list[tuple[str, str, str]], z: int) -> dict:
+    paragraphs = []
+    for value, size, color in lines:
+        paragraphs.append({
+            "textRuns": [{"value": value, "textStyle": {
+                "fontFamily": "Segoe UI", "fontSize": size, "color": color,
+            }}],
+            "horizontalTextAlignment": "left",
+        })
+    return {
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+        "name": name,
+        "position": {"x": x, "y": y, "z": z, "height": height, "width": width, "tabOrder": z},
+        "visual": {
+            "visualType": "textbox",
+            "objects": {"general": [{"properties": {"paragraphs": paragraphs}}]},
+            "visualContainerObjects": {
+                "general": [{"properties": {"altText": literal("Page title: " + lines[0][0])}}],
+                "background": [{"properties": {"show": {"expr": {"Literal": {"Value": "false"}}}}}],
+                "border": [{"properties": {"show": {"expr": {"Literal": {"Value": "false"}}}}}],
+                "padding": [{"properties": {
+                    side: {"expr": {"Literal": {"Value": "0D"}}}
+                    for side in ("top", "bottom", "left", "right")
+                }}],
+            },
+        },
+    }
+
+
+def page_navigator(z: int = 500) -> dict:
+    return {
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+        "name": "page_navigator",
+        "position": {"x": 24, "y": 16, "z": z, "height": 40, "width": 1232, "tabOrder": z},
+        "visual": {
+            "visualType": "pageNavigator",
+            "objects": {
+                "pages": [{"properties": {
+                    "showHiddenPages": {"expr": {"Literal": {"Value": "false"}}},
+                    "showTooltipPages": {"expr": {"Literal": {"Value": "false"}}},
+                    "showByDefault": {"expr": {"Literal": {"Value": "true"}}},
+                }}],
+                "layout": [{"properties": {
+                    "orientation": {"expr": {"Literal": {"Value": "0D"}}},
+                    "rowCount": {"expr": {"Literal": {"Value": "1L"}}},
+                    "cellPadding": {"expr": {"Literal": {"Value": "4L"}}},
+                }}],
+            },
+            "visualContainerObjects": {
+                "general": [{"properties": {"altText": literal("Navigate report pages")}}],
+                "title": [{"properties": {"show": {"expr": {"Literal": {"Value": "false"}}}}}],
+                "background": [{"properties": {"show": {"expr": {"Literal": {"Value": "false"}}}}}],
+                "border": [{"properties": {"show": {"expr": {"Literal": {"Value": "false"}}}}}],
+                "padding": [{"properties": {
+                    side: {"expr": {"Literal": {"Value": "0D"}}}
+                    for side in ("top", "bottom", "left", "right")
+                }}],
+            },
+        },
+    }
+
+
+def action_button(name: str, label: str, action_type: str, x: int, y: int, width: int, height: int, z: int) -> dict:
+    text_properties = {
+        "show": {"expr": {"Literal": {"Value": "true"}}},
+        "text": literal(label),
+        "fontSize": {"expr": {"Literal": {"Value": "11D"}}},
+        "bold": {"expr": {"Literal": {"Value": "true"}}},
+        "fontColor": {"solid": {"color": literal("#102A43")}},
+    }
+    return {
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+        "name": name,
+        "position": {"x": x, "y": y, "z": z, "height": height, "width": width, "tabOrder": z},
+        "visual": {
+            "visualType": "actionButton",
+            "objects": {"text": [
+                {"properties": text_properties},
+                {"properties": text_properties, "selector": {"id": "default"}},
+            ]},
+            "visualContainerObjects": {
+                "general": [{"properties": {"altText": literal(label)}}],
+                "title": [{"properties": {"show": {"expr": {"Literal": {"Value": "false"}}}}}],
+                "visualLink": [{"properties": {
+                    "show": {"expr": {"Literal": {"Value": "true"}}},
+                    "type": literal(action_type),
+                    "enabledTooltip": literal(label),
+                }}],
+            },
+        },
+    }
+
+
 def global_slicers(z: int = 1000) -> list[dict]:
     models = "semantic_models"
     return [
-        visual("workspace_filter", "slicer", 30, 22, 220, 88,
+        visual("workspace_filter", "slicer", 496, 64, 232, 72,
                {"Values": [field_column(models, "workspace_name", "Workspace")]},
                "Workspace", z, sync_group="SMO_Workspace"),
-        visual("semantic_model_filter", "slicer", 265, 22, 250, 88,
+        visual("semantic_model_filter", "slicer", 744, 64, 232, 72,
                {"Values": [field_column(models, "semantic_model_name", "Semantic model")]},
-               "Semantic model", z + 1, sync_group="SMO_SemanticModel"),
-        visual("analysis_filter", "slicer", 530, 22, 265, 88,
+               "Model · validation preset", z + 1, sync_group="SMO_SemanticModel",
+               selected_values=(models, "semantic_model_name", ["SMO_Optimization1"])),
+        visual("analysis_filter", "slicer", 992, 64, 264, 72,
                {"Values": [field_column(models, "latest_analysis_id", "Latest analysis ID")]},
                "Latest analysis ID", z + 2, sync_group="SMO_Analysis"),
-        visual("selected_scope", "cardVisual", 810, 22, 420, 88,
-               {"Data": [field_measure("Selected analysis context", "Analysis context")]},
-               "Current analysis context", z + 3),
     ]
+
+
+def analysis_context_bar(z: int = 1100) -> dict:
+    models = "semantic_models"
+    return visual("selected_scope", "tableEx", 24, 144, 1232, 56, {"Values": [
+        field_column(models, "workspace_name", "Workspace"),
+        field_column(models, "semantic_model_name", "Model"),
+        field_column(models, "latest_analysis_status", "Status"),
+        field_column(models, "latest_analysis_at", "Completed"),
+        field_column(models, "scanner_version", "Scanner"),
+        field_column(models, "latest_analysis_id", "Analysis ID"),
+    ]}, "Current analysis scope", z, show_title=False)
+
+
+def report_header(title: str, subtitle: str) -> list[dict]:
+    return [
+        page_navigator(),
+        textbox("page_title", 24, 64, 448, 72, [
+            (title, "20px", "#102A43"),
+            (subtitle, "11px", "#486581"),
+        ], 600),
+        *global_slicers(),
+        analysis_context_bar(),
+    ]
+
+
+def object_slicer(name: str, prop: str, title: str, y: int, z: int, *, sync_group: str | None = None) -> dict:
+    findings = "semantic_model_optimization_findings"
+    return visual(name, "slicer", 24, y, 232, 72,
+                  {"Values": [field_column(findings, prop, title)]}, title, z, sync_group=sync_group)
 
 
 def drillthrough_config(entity: str, prop: str) -> dict:
@@ -599,143 +786,178 @@ def write_report() -> None:
     storage = "semantic_model_column_storage"
     table_storage = "semantic_model_table_storage"
 
-    write_page("overview", "Optimization overview", global_slicers() + [
-        visual("optimization_kpis", "cardVisual", 30, 130, 1200, 110, {"Data": [
-            field_measure("Models scanned", "Models scanned"), field_measure("Total opportunities", "Opportunities"),
-            field_measure("Total recommendations", "Recommendations"), field_measure("Total findings", "Raw findings"),
-            field_measure("Actionable recommendations", "Actionable"),
-            field_measure("Review required recommendations", "Review required"),
-            field_measure("Suppressed findings", "Suppressed"),
-        ]}, "Decision summary — findings are evidence; recommendations are user work items", 2000),
-        visual("findings_by_severity", "tableEx", 30, 260, 735, 420, {"Values": [
-            field_column(opportunities, "priority_score", "Priority score"),
-            field_column(opportunities, "priority_band", "Priority band"),
-            field_column(opportunities, "actionability_status", "Actionability"),
-            field_column(opportunities, "opportunity_title", "Opportunity / root cause"),
-            field_column(opportunities, "optimization_domain", "Domain"),
-            field_column(opportunities, "recommendation_count", "Work items"),
-            field_column(opportunities, "finding_count", "Evidence rows"),
-        ]}, "Top priority opportunities — right-click a root cause for recommendations and evidence", 3000,
-               conditional_color=(f"{opportunities}.actionability_status", "actionability"),
-               sort_by=(opportunities, "priority_score")),
-        visual("analysis_coverage", "tableEx", 785, 260, 445, 420, {"Values": [
-            field_column(overview, "semantic_model_name", "Semantic model"), field_column(overview, "analysis_status", "Analysis status"),
-            field_column(overview, "analysis_completed_at", "Completed at"), field_column(overview, "scanner_version", "Scanner"),
-            field_column(overview, "data_availability_explanation", "Data availability explanation"),
-        ]}, "Scope freshness and explicit data availability", 4000),
-    ])
-
-    write_page("opportunities", "Optimization opportunities", global_slicers() + [
-        visual("severity_slicer", "slicer", 30, 130, 250, 88,
-               {"Values": [field_column(opportunities, "highest_severity", "Severity")]}, "Severity", 2000),
-        visual("domain_slicer", "slicer", 300, 130, 360, 88,
-               {"Values": [field_column(opportunities, "optimization_domain", "Optimization domain")]}, "Optimization domain", 2001),
-        visual("opportunities_table", "tableEx", 30, 240, 1200, 440, {"Values": [
-            field_column(opportunities, "opportunity_title", "Opportunity"), field_column(opportunities, "highest_severity", "Severity"),
-            field_column(opportunities, "priority_score", "Priority score"), field_column(opportunities, "priority_band", "Priority band"),
-            field_column(opportunities, "actionability_status", "Actionability"),
-            field_column(opportunities, "optimization_domain", "Domain"), field_column(opportunities, "finding_count", "Findings"),
-            field_column(opportunities, "recommendation_count", "Recommendations"), field_column(opportunities, "change_risk", "Change risk"),
-            field_column(opportunities, "opportunity_summary", "Summary"),
-        ]}, "Opportunities = grouped root causes — right-click one to open recommendations and raw evidence", 3000,
+    write_page("overview", "Start here", report_header(
+        "What should I fix first?",
+        "Default validation preset: SMO_Optimization1 (intentionally degraded). Follow Issues → Actions → Evidence.",
+    ) + [
+        visual("optimization_kpis", "cardVisual", 24, 216, 1232, 112, {"Data": [
+            field_measure("Total opportunities", "Root causes"),
+            field_measure("Total recommendations", "Actions"),
+            field_measure("High findings", "High-severity evidence"),
+            field_measure("Review required recommendations", "Need review"),
+        ]}, "", 2000, show_title=False),
+        visual("findings_by_severity", "tableEx", 24, 344, 1232, 352, {"Values": [
+            field_column(opportunities, "priority_band", "Priority"),
+            field_column(opportunities, "actionability_status", "Decision"),
+            field_column(opportunities, "opportunity_title", "Root cause"),
+            field_column(opportunities, "optimization_domain", "Area"),
+            field_column(opportunities, "highest_severity", "Severity"),
+            field_column(opportunities, "finding_count", "Evidence"),
+            field_column(opportunities, "recommendation_count", "Actions"),
+        ]}, "Start with the highest-priority root causes — right-click one for full detail", 3000,
                conditional_color=(f"{opportunities}.actionability_status", "actionability"),
                sort_by=(opportunities, "priority_score")),
     ])
 
-    write_page("recommendations", "Recommendations", global_slicers() + [
-        visual("recommendation_quality_kpis", "cardVisual", 30, 130, 1200, 85, {"Data": [
-            field_measure("Total recommendations", "All recommendations"),
-            field_measure("Actionable recommendations", "Actionable"),
-            field_measure("Review required recommendations", "Review required"),
-            field_measure("Suppressed findings", "Suppressed findings"),
-        ]}, "Recommendation action queue", 2000),
-        visual("actionability_slicer", "slicer", 30, 230, 360, 88,
-               {"Values": [field_column(recommendations, "actionability_status", "Actionability")]}, "Actionability", 2100,
+    write_page("opportunities", "1 · Issues", report_header(
+        "Where are the model problems?",
+        "Filter by object type, table, or object. Each row is one grouped root cause, not a duplicate action.",
+    ) + [
+        object_slicer("object_type_slicer", "affected_object_type", "Object type", 216, 2000,
+                      sync_group="SMO_ObjectType"),
+        object_slicer("table_slicer", "affected_table_name", "Table", 304, 2001,
+                      sync_group="SMO_AffectedTable"),
+        object_slicer("object_slicer", "affected_object_name", "Object", 392, 2002,
+                      sync_group="SMO_AffectedObject"),
+        object_slicer("severity_slicer", "severity", "Severity", 480, 2003),
+        visual("domain_slicer", "slicer", 24, 568, 232, 72,
+               {"Values": [field_column(opportunities, "optimization_domain", "Area")]}, "Area", 2004),
+        visual("opportunities_table", "tableEx", 280, 216, 976, 480, {"Values": [
+            field_column(opportunities, "priority_band", "Priority"),
+            field_column(opportunities, "actionability_status", "Decision"),
+            field_column(opportunities, "opportunity_title", "Root cause"),
+            field_column(opportunities, "optimization_domain", "Area"),
+            field_column(opportunities, "highest_severity", "Severity"),
+            field_column(opportunities, "finding_count", "Evidence"),
+            field_column(opportunities, "recommendation_count", "Actions"),
+            field_column(opportunities, "change_risk", "Risk"),
+        ]}, "Issues = grouped root causes — right-click Root cause for actions and evidence", 3000,
+               conditional_color=(f"{opportunities}.actionability_status", "actionability"),
+               sort_by=(opportunities, "priority_score")),
+    ])
+
+    write_page("recommendations", "2 · Actions", report_header(
+        "What should I do next?",
+        "This page contains work items only. It defaults to P2 actionable/review work; detail holds why, validation, and rollback.",
+    ) + [
+        object_slicer("object_type_slicer", "affected_object_type", "Object type", 216, 2000,
+                      sync_group="SMO_ObjectType"),
+        object_slicer("table_slicer", "affected_table_name", "Table", 304, 2001,
+                      sync_group="SMO_AffectedTable"),
+        object_slicer("object_slicer", "affected_object_name", "Object", 392, 2002,
+                      sync_group="SMO_AffectedObject"),
+        visual("actionability_slicer", "slicer", 24, 480, 232, 72,
+               {"Values": [field_column(recommendations, "actionability_status", "Decision")]}, "Decision", 2100,
                selected_values=(recommendations, "actionability_status", ["ACTIONABLE", "REVIEW_REQUIRED"])),
-        visual("priority_band_slicer", "slicer", 410, 230, 360, 88,
-               {"Values": [field_column(recommendations, "recommendation_priority_band", "Priority band")]}, "Priority band", 2101,
+        visual("priority_band_slicer", "slicer", 24, 568, 232, 72,
+               {"Values": [field_column(recommendations, "recommendation_priority_band", "Priority")]}, "Priority", 2101,
                selected_values=(recommendations, "recommendation_priority_band", ["P2_HIGH"])),
-        visual("risk_slicer", "slicer", 790, 230, 440, 88,
-               {"Values": [field_column(recommendations, "change_risk", "Change risk")]}, "Change risk", 2102),
-        visual("top_actionable_recommendations", "tableEx", 30, 335, 1200, 345, {"Values": [
-            field_column(recommendations, "recommendation_priority_score", "Priority score"),
-            field_column(recommendations, "actionability_status", "Actionability"),
-            field_column(recommendations, "recommendation_title", "Recommendation"),
-            field_column(opportunities, "opportunity_title", "Opportunity / root cause"),
-            field_column(recommendations, "why_it_matters", "Why it matters"),
-            field_column(recommendations, "change_risk", "Change risk"),
+        visual("top_actionable_recommendations", "tableEx", 280, 216, 976, 480, {"Values": [
+            field_column(recommendations, "recommendation_priority_band", "Priority"),
+            field_column(recommendations, "actionability_status", "Decision"),
+            field_column(recommendations, "recommendation_title", "Action"),
+            field_column(opportunities, "opportunity_title", "Root cause"),
+            field_column(recommendations, "change_risk", "Risk"),
             field_column(recommendations, "automation_eligibility", "Automation"),
-            field_column(recommendations, "affected_finding_count", "Evidence rows"),
-        ]}, "Recommendations = user work items — P2 Actionable and Review Required by default; right-click Opportunity for evidence", 3000,
+            field_column(recommendations, "affected_finding_count", "Evidence"),
+        ]}, "Actions = user work items — right-click Root cause for why, validation, rollback, and evidence", 3000,
                conditional_color=(f"{recommendations}.actionability_status", "actionability"),
                sort_by=(recommendations, "recommendation_priority_score")),
     ])
 
-    write_page("findings", "Detailed findings", global_slicers() + [
-        visual("finding_severity_slicer", "slicer", 30, 130, 250, 88,
-               {"Values": [field_column(findings, "severity", "Severity")]}, "Severity", 2000),
-        visual("findings_by_rule", "clusteredBarChart", 300, 130, 930, 210,
-               {"Category": [field_column(findings, "rule_name", "Rule")], "Y": [field_measure("Total findings", "Findings")]},
-               "Findings by rule", 2001),
-        visual("findings_table", "tableEx", 30, 365, 1200, 315, {"Values": [
-            field_column(findings, "finding_priority_score", "Priority score"),
-            field_column(findings, "finding_priority_band", "Priority band"),
-            field_column(findings, "actionability_status", "Actionability"),
-            field_column(findings, "severity", "Severity"), field_column(findings, "rule_name", "Rule"),
-            field_column(findings, "affected_table_name", "Table"), field_column(findings, "affected_object_name", "Affected object"),
-            field_column(findings, "finding_description", "Finding"), field_column(findings, "recommended_action", "Recommended action"),
-            field_column(findings, "suppression_reason", "Suppression reason"),
-        ]}, "Findings = raw scanner evidence by affected object", 3000,
+    write_page("findings", "3 · Evidence", report_header(
+        "Which object proves the problem?",
+        "Use this as the evidence locator. Filter to an object, then right-click Root cause for full descriptions and technical evidence.",
+    ) + [
+        object_slicer("object_type_slicer", "affected_object_type", "Object type", 216, 2000,
+                      sync_group="SMO_ObjectType"),
+        object_slicer("table_slicer", "affected_table_name", "Table", 304, 2001,
+                      sync_group="SMO_AffectedTable"),
+        object_slicer("object_slicer", "affected_object_name", "Object", 392, 2002,
+                      sync_group="SMO_AffectedObject"),
+        object_slicer("finding_severity_slicer", "severity", "Severity", 480, 2003),
+        object_slicer("finding_source_slicer", "finding_source", "Source", 568, 2004),
+        visual("findings_table", "tableEx", 280, 216, 976, 480, {"Values": [
+            field_column(findings, "finding_priority_band", "Priority"),
+            field_column(findings, "severity", "Severity"),
+            field_column(findings, "affected_object_type", "Object type"),
+            field_column(findings, "affected_table_name", "Table"),
+            field_column(findings, "affected_object_name", "Object"),
+            field_column(findings, "rule_name", "Rule"),
+            field_column(findings, "actionability_status", "Decision"),
+            field_column(opportunities, "opportunity_title", "Root cause"),
+        ]}, "Evidence locator — raw descriptions and technical evidence are one drillthrough away", 3000,
                conditional_color=(f"{findings}.severity", "severity"),
                sort_by=(findings, "finding_priority_score")),
     ])
 
-    write_page("storage", "Storage analysis", global_slicers() + [
-        visual("top_columns", "clusteredBarChart", 30, 130, 560, 220,
+    write_page("storage", "Storage", report_header(
+        "Which tables and columns consume model storage?",
+        "Storage is a separate analysis lens. Use the table filter to isolate one part of the model.",
+    ) + [
+        visual("storage_table_slicer", "slicer", 24, 216, 232, 72,
+               {"Values": [field_column(storage, "table_name", "Table")]}, "Table", 2000),
+        visual("top_columns", "clusteredBarChart", 280, 216, 456, 216,
                {"Category": [field_column(storage, "column_name", "Column")], "Y": [field_measure("Total column storage MB", "Storage MB")]},
-               "Largest columns by storage", 2000),
-        visual("top_tables", "clusteredBarChart", 610, 130, 620, 220,
+               "Largest columns", 2001),
+        visual("top_tables", "clusteredBarChart", 752, 216, 504, 216,
                {"Category": [field_column(table_storage, "table_name", "Table")], "Y": [field_sum(table_storage, "total_size_bytes", "Total bytes")]},
-               "Largest tables by storage", 2001),
-        visual("storage_table", "tableEx", 30, 375, 1200, 305, {"Values": [
+               "Largest tables", 2002),
+        visual("storage_table", "tableEx", 24, 448, 1232, 248, {"Values": [
             field_column(storage, "table_name", "Table"), field_column(storage, "column_name", "Column"),
             field_column(storage, "data_type", "Data type"), field_column(storage, "encoding", "Encoding"),
             field_column(storage, "cardinality", "Cardinality"), field_column(storage, "total_size_bytes", "Total bytes"),
             field_column(storage, "percentage_of_semantic_model_size", "% of model"),
-        ]}, "Complete column storage evidence", 3000),
+        ]}, "Column storage evidence", 3000),
     ])
 
-    write_page("opportunity_detail", "Opportunity details", global_slicers() + [
-        visual("opportunity_summary", "tableEx", 30, 130, 1200, 120, {"Values": [
-            field_column(opportunities, "priority_band", "Priority band"),
-            field_column(opportunities, "actionability_status", "Actionability"),
-            field_column(opportunities, "opportunity_title", "Opportunity / root cause"),
+    write_page("opportunity_detail", "Issue detail", [
+        action_button("back_button", "Back", "Back", 24, 16, 112, 40, 500),
+        textbox("page_title", 152, 16, 728, 48, [
+            ("Issue detail — action and evidence", "20px", "#102A43"),
+        ], 600),
+        visual("semantic_model_filter", "slicer", 896, 8, 360, 72,
+               {"Values": [field_column("semantic_models", "semantic_model_name", "Semantic model")]},
+               "Model", 1000, sync_group="SMO_SemanticModel",
+               selected_values=("semantic_models", "semantic_model_name", ["SMO_Optimization1"])),
+        visual("selected_scope", "tableEx", 24, 88, 1232, 56, {"Values": [
+            field_column("semantic_models", "workspace_name", "Workspace"),
+            field_column("semantic_models", "semantic_model_name", "Model"),
+            field_column("semantic_models", "latest_analysis_status", "Status"),
+            field_column("semantic_models", "latest_analysis_at", "Completed"),
+            field_column("semantic_models", "scanner_version", "Scanner"),
+            field_column("semantic_models", "latest_analysis_id", "Analysis ID"),
+        ]}, "Current analysis scope", 1100, show_title=False),
+        visual("opportunity_summary", "tableEx", 24, 160, 1232, 104, {"Values": [
+            field_column(opportunities, "priority_band", "Priority"),
+            field_column(opportunities, "actionability_status", "Decision"),
+            field_column(opportunities, "opportunity_title", "Root cause"),
             field_column(opportunities, "highest_severity", "Severity"),
-            field_column(opportunities, "change_risk", "Change risk"),
+            field_column(opportunities, "change_risk", "Risk"),
             field_column(opportunities, "opportunity_summary", "Summary"),
-        ]}, "Opportunity = grouped root cause", 2000,
+        ]}, "Issue summary", 2000,
                conditional_color=(f"{opportunities}.actionability_status", "actionability")),
-        visual("related_recommendations", "tableEx", 30, 270, 1200, 200, {"Values": [
-            field_column(recommendations, "recommendation_priority_band", "Priority band"),
-            field_column(recommendations, "actionability_status", "Actionability"),
-            field_column(recommendations, "recommendation_title", "Recommendation"),
+        visual("related_recommendations", "tableEx", 24, 280, 1232, 192, {"Values": [
+            field_column(recommendations, "actionability_status", "Decision"),
+            field_column(recommendations, "recommendation_title", "Action"),
             field_column(recommendations, "why_it_matters", "Why it matters"),
             field_column(recommendations, "recommended_action", "Recommended action"),
-            field_column(recommendations, "change_risk", "Change risk"),
+            field_column(recommendations, "change_risk", "Risk"),
             field_column(recommendations, "automation_eligibility", "Automation"),
             field_column(recommendations, "validation_method", "Validation method"),
             field_column(recommendations, "rollback_guidance", "Rollback guidance"),
-        ]}, "Recommendation = user work item with implementation controls", 3000,
+        ]}, "Action controls", 3000,
                conditional_color=(f"{recommendations}.actionability_status", "actionability")),
-        visual("related_findings", "tableEx", 30, 490, 1200, 190, {"Values": [
+        visual("related_findings", "tableEx", 24, 488, 1232, 208, {"Values": [
             field_column(findings, "severity", "Severity"),
             field_column(findings, "finding_source", "Source"),
-            field_column(findings, "confidence", "Confidence"),
             field_column(findings, "rule_name", "Rule"),
-            field_column(findings, "affected_object_name", "Affected object"),
+            field_column(findings, "affected_object_type", "Object type"),
+            field_column(findings, "affected_table_name", "Table"),
+            field_column(findings, "affected_object_name", "Object"),
             field_column(findings, "finding_description", "Finding"),
             field_column(findings, "technical_evidence", "Technical evidence"),
-        ]}, "Finding = preserved raw scanner evidence", 4000,
+        ]}, "Preserved raw evidence", 4000,
                conditional_color=(f"{findings}.severity", "severity")),
     # Drillthrough must bind to a field that is present in the source table visual.
     # The synchronized semantic-model slicer preserves model scope, so the visible
@@ -744,7 +966,7 @@ def write_report() -> None:
 
     (PAGES / "pages.json").write_text(json.dumps({
         "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.0.0/schema.json",
-        "pageOrder": ["overview", "recommendations", "opportunities", "findings", "storage", "opportunity_detail"],
+        "pageOrder": ["overview", "opportunities", "recommendations", "findings", "storage", "opportunity_detail"],
         "activePageName": "overview",
     }, indent=2) + "\n", encoding="utf-8")
 

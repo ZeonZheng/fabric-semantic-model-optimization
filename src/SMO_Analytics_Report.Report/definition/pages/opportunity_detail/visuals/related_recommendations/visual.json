@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "related_recommendations",
   "position": {
-    "x": 30,
-    "y": 270,
+    "x": 24,
+    "y": 280,
     "z": 3000,
-    "height": 200,
-    "width": 1200,
+    "height": 192,
+    "width": 1232,
     "tabOrder": 3000
   },
   "visual": {
@@ -23,27 +23,12 @@
                       "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
-                  "Property": "recommendation_priority_band"
-                }
-              },
-              "queryRef": "semantic_model_optimization_recommendations.recommendation_priority_band",
-              "nativeQueryRef": "Priority band",
-              "displayName": "Priority band"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_recommendations"
-                    }
-                  },
                   "Property": "actionability_status"
                 }
               },
               "queryRef": "semantic_model_optimization_recommendations.actionability_status",
-              "nativeQueryRef": "Actionability",
-              "displayName": "Actionability"
+              "nativeQueryRef": "Decision",
+              "displayName": "Decision"
             },
             {
               "field": {
@@ -57,8 +42,8 @@
                 }
               },
               "queryRef": "semantic_model_optimization_recommendations.recommendation_title",
-              "nativeQueryRef": "Recommendation",
-              "displayName": "Recommendation"
+              "nativeQueryRef": "Action",
+              "displayName": "Action"
             },
             {
               "field": {
@@ -102,8 +87,8 @@
                 }
               },
               "queryRef": "semantic_model_optimization_recommendations.change_risk",
-              "nativeQueryRef": "Change risk",
-              "displayName": "Change risk"
+              "nativeQueryRef": "Risk",
+              "displayName": "Risk"
             },
             {
               "field": {
@@ -168,7 +153,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Recommendation = user work item with implementation controls'"
+                  "Value": "'Action controls'"
                 }
               }
             },
@@ -180,6 +165,26 @@
                       "Value": "'#102A43'"
                     }
                   }
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Action controls'"
                 }
               }
             }
@@ -227,6 +232,13 @@
                 }
               }
             },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "9D"
+                }
+              }
+            },
             "autoSizeColumnWidth": {
               "expr": {
                 "Literal": {
@@ -238,6 +250,13 @@
               "expr": {
                 "Literal": {
                   "Value": "'growToFit'"
+                }
+              }
+            },
+            "wordWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }
@@ -288,6 +307,20 @@
                       "Value": "'#102A43'"
                     }
                   }
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "9D"
+                }
+              }
+            },
+            "wordWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }

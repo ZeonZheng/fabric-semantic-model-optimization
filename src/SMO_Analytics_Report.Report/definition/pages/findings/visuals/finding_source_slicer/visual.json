@@ -1,19 +1,19 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
-  "name": "findings_by_rule",
+  "name": "finding_source_slicer",
   "position": {
-    "x": 300,
-    "y": 130,
-    "z": 2001,
-    "height": 210,
-    "width": 930,
-    "tabOrder": 2001
+    "x": 24,
+    "y": 568,
+    "z": 2004,
+    "height": 80,
+    "width": 232,
+    "tabOrder": 2004
   },
   "visual": {
-    "visualType": "clusteredBarChart",
+    "visualType": "slicer",
     "query": {
       "queryState": {
-        "Category": {
+        "Values": {
           "projections": [
             {
               "field": {
@@ -23,31 +23,12 @@
                       "Entity": "semantic_model_optimization_findings"
                     }
                   },
-                  "Property": "rule_name"
+                  "Property": "finding_source"
                 }
               },
-              "queryRef": "semantic_model_optimization_findings.rule_name",
-              "nativeQueryRef": "Rule",
-              "displayName": "Rule"
-            }
-          ]
-        },
-        "Y": {
-          "projections": [
-            {
-              "field": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "Metrics"
-                    }
-                  },
-                  "Property": "Total findings"
-                }
-              },
-              "queryRef": "Metrics.Total findings",
-              "nativeQueryRef": "Findings",
-              "displayName": "Findings"
+              "queryRef": "semantic_model_optimization_findings.finding_source",
+              "nativeQueryRef": "Source",
+              "displayName": "Source"
             }
           ]
         }
@@ -67,7 +48,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Findings by rule'"
+                  "Value": "'Source'"
                 }
               }
             },
@@ -81,35 +62,58 @@
                   }
                 }
               }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
             }
           }
         }
       ],
-      "background": [
+      "general": [
         {
           "properties": {
-            "show": {
+            "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "'Source'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "padding": [
+        {
+          "properties": {
+            "top": {
+              "expr": {
+                "Literal": {
+                  "Value": "4D"
                 }
               }
             },
-            "color": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#FFFFFF'"
-                    }
-                  }
+            "bottom": {
+              "expr": {
+                "Literal": {
+                  "Value": "4D"
                 }
               }
             },
-            "transparency": {
+            "left": {
               "expr": {
                 "Literal": {
-                  "Value": "0D"
+                  "Value": "4D"
+                }
+              }
+            },
+            "right": {
+              "expr": {
+                "Literal": {
+                  "Value": "4D"
                 }
               }
             }
@@ -117,6 +121,21 @@
         }
       ]
     },
-    "drillFilterOtherVisuals": true
+    "drillFilterOtherVisuals": true,
+    "objects": {
+      "data": [
+        {
+          "properties": {
+            "mode": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Dropdown'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
   }
 }

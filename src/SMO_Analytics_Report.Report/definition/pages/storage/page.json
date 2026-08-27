@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.3.0/schema.json",
   "name": "storage",
-  "displayName": "Storage analysis",
+  "displayName": "Storage",
   "displayOption": "FitToPage",
   "height": 720,
   "width": 1280

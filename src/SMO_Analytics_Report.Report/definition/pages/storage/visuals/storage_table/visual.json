@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "storage_table",
   "position": {
-    "x": 30,
-    "y": 375,
+    "x": 24,
+    "y": 448,
     "z": 3000,
-    "height": 305,
-    "width": 1200,
+    "height": 248,
+    "width": 1232,
     "tabOrder": 3000
   },
   "visual": {
@@ -138,7 +138,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Complete column storage evidence'"
+                  "Value": "'Column storage evidence'"
                 }
               }
             },
@@ -150,6 +150,26 @@
                       "Value": "'#102A43'"
                     }
                   }
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Column storage evidence'"
                 }
               }
             }
@@ -197,6 +217,13 @@
                 }
               }
             },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "9D"
+                }
+              }
+            },
             "autoSizeColumnWidth": {
               "expr": {
                 "Literal": {
@@ -208,6 +235,13 @@
               "expr": {
                 "Literal": {
                   "Value": "'growToFit'"
+                }
+              }
+            },
+            "wordWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }
@@ -258,6 +292,20 @@
                       "Value": "'#102A43'"
                     }
                   }
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "9D"
+                }
+              }
+            },
+            "wordWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }

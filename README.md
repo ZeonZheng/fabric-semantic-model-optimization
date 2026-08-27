@@ -107,10 +107,12 @@ Cross-source root-cause consolidation is documented in
 [`docs/m6-5-6-root-cause-consolidation.md`](docs/m6-5-6-root-cause-consolidation.md).
 The M6.6 report-consumption contract is documented in
 [`docs/m6-6-report-consumption-review.md`](docs/m6-6-report-consumption-review.md).
+The M6.6.1 Viewer UX redesign is documented in
+[`docs/m6-6-1-viewer-ux-redesign.md`](docs/m6-6-1-viewer-ux-redesign.md).
 
 ## Current stage
 
-Version `0.6.6` implements the M6.6 P0 Report / Consumption Experience on the
+Version `0.6.7` implements the M6.6.1 Viewer UX redesign on the
 validated TEST-tenant baseline. Scanner `2.6.1` is unchanged and retains the M6.4 production-stabilization
 contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
@@ -182,5 +184,11 @@ volume. The recommendation queue defaults to `P2_HIGH` plus `ACTIONABLE` and
 Recommendation rows carry their related opportunity so users can drill through to
 implementation controls and preserved raw technical evidence. The report uses the
 existing latest TEST analyses; no rescan or realized-benefit claim is part of M6.6.
-The live TEST gate passed for saved queue filters, cross-page context synchronization,
-dual-model baseline counts, and Opportunity drillthrough, so M6.6 is complete.
+The original M6.6 technical gate passed for saved queue filters, cross-page
+context synchronization, dual-model baseline counts, and Opportunity
+drillthrough. Viewer review then reopened the milestone for M6.6.1 because the
+page roles were unclear, object-level problem location was missing, KPI/context
+visuals clipped in Service, and drillthrough had no Back action. M6.6.1 replaces
+the inventory-style layout with Start here → Issues → Actions → Evidence,
+adds synchronized object locators and the adverse-model validation preset, and
+retains the existing TEST analyses without rescanning.

@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
-  "name": "analysis_filter",
+  "name": "object_type_slicer",
   "position": {
-    "x": 530,
-    "y": 22,
-    "z": 1002,
-    "height": 88,
-    "width": 265,
-    "tabOrder": 1002
+    "x": 24,
+    "y": 216,
+    "z": 2000,
+    "height": 80,
+    "width": 232,
+    "tabOrder": 2000
   },
   "visual": {
     "visualType": "slicer",
@@ -20,15 +20,15 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_models"
+                      "Entity": "semantic_model_optimization_findings"
                     }
                   },
-                  "Property": "latest_analysis_id"
+                  "Property": "affected_object_type"
                 }
               },
-              "queryRef": "semantic_models.latest_analysis_id",
-              "nativeQueryRef": "Latest analysis ID",
-              "displayName": "Latest analysis ID"
+              "queryRef": "semantic_model_optimization_findings.affected_object_type",
+              "nativeQueryRef": "Object type",
+              "displayName": "Object type"
             }
           ]
         }
@@ -48,7 +48,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Latest analysis ID'"
+                  "Value": "'Object type'"
                 }
               }
             },
@@ -62,6 +62,26 @@
                   }
                 }
               }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Object type'"
+                }
+              }
             }
           }
         }
@@ -72,28 +92,28 @@
             "top": {
               "expr": {
                 "Literal": {
-                  "Value": "8D"
+                  "Value": "4D"
                 }
               }
             },
             "bottom": {
               "expr": {
                 "Literal": {
-                  "Value": "8D"
+                  "Value": "4D"
                 }
               }
             },
             "left": {
               "expr": {
                 "Literal": {
-                  "Value": "8D"
+                  "Value": "4D"
                 }
               }
             },
             "right": {
               "expr": {
                 "Literal": {
-                  "Value": "8D"
+                  "Value": "4D"
                 }
               }
             }
@@ -118,7 +138,7 @@
       ]
     },
     "syncGroup": {
-      "groupName": "SMO_Analysis",
+      "groupName": "SMO_ObjectType",
       "fieldChanges": true,
       "filterChanges": true
     }
