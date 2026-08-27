@@ -36,16 +36,21 @@
           "projections": [
             {
               "field": {
-                "Column": {
+                "Aggregation": {
                   "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_table_storage"
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "semantic_model_table_storage"
+                        }
+                      },
+                      "Property": "total_size_bytes"
                     }
                   },
-                  "Property": "total_size_bytes"
+                  "Function": 0
                 }
               },
-              "queryRef": "semantic_model_table_storage.total_size_bytes",
+              "queryRef": "Sum(semantic_model_table_storage.total_size_bytes)",
               "nativeQueryRef": "Total bytes",
               "displayName": "Total bytes"
             }

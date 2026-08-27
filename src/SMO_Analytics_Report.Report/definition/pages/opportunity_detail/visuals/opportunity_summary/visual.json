@@ -5,7 +5,7 @@
     "x": 30,
     "y": 130,
     "z": 2000,
-    "height": 140,
+    "height": 120,
     "width": 1200,
     "tabOrder": 2000
   },
@@ -23,12 +23,42 @@
                       "Entity": "semantic_model_optimization_opportunities"
                     }
                   },
+                  "Property": "priority_band"
+                }
+              },
+              "queryRef": "semantic_model_optimization_opportunities.priority_band",
+              "nativeQueryRef": "Priority band",
+              "displayName": "Priority band"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_opportunities"
+                    }
+                  },
+                  "Property": "actionability_status"
+                }
+              },
+              "queryRef": "semantic_model_optimization_opportunities.actionability_status",
+              "nativeQueryRef": "Actionability",
+              "displayName": "Actionability"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_opportunities"
+                    }
+                  },
                   "Property": "opportunity_title"
                 }
               },
               "queryRef": "semantic_model_optimization_opportunities.opportunity_title",
-              "nativeQueryRef": "Opportunity",
-              "displayName": "Opportunity"
+              "nativeQueryRef": "Opportunity / root cause",
+              "displayName": "Opportunity / root cause"
             },
             {
               "field": {
@@ -93,7 +123,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Selected opportunity'"
+                  "Value": "'Opportunity = grouped root cause'"
                 }
               }
             },
@@ -216,6 +246,145 @@
                 }
               }
             }
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "actionability_status"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'ACTIONABLE'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#D9EAD3'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "actionability_status"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'REVIEW_REQUIRED'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#FCE8B2'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "actionability_status"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'INFORMATIONAL'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#D9EAF7'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "actionability_status"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'SUPPRESSED'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#E5E7EB'"
+                            }
+                          }
+                        }
+                      ],
+                      "DefaultValue": {
+                        "Literal": {
+                          "Value": "'#FFFFFF'"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "semantic_model_optimization_opportunities.actionability_status"
           }
         }
       ]

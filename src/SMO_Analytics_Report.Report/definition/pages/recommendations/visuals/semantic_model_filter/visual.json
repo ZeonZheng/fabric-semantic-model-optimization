@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "semantic_model_filter",
   "position": {
-    "x": 310,
+    "x": 265,
     "y": 22,
     "z": 1001,
     "height": 88,
-    "width": 330,
+    "width": 250,
     "tabOrder": 1001
   },
   "visual": {

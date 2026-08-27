@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "analysis_coverage",
   "position": {
-    "x": 520,
+    "x": 785,
     "y": 260,
     "z": 4000,
     "height": 420,
-    "width": 710,
+    "width": 445,
     "tabOrder": 4000
   },
   "visual": {
@@ -53,12 +53,12 @@
                       "Entity": "semantic_model_optimization_overview"
                     }
                   },
-                  "Property": "refresh_history_status"
+                  "Property": "analysis_completed_at"
                 }
               },
-              "queryRef": "semantic_model_optimization_overview.refresh_history_status",
-              "nativeQueryRef": "Refresh history",
-              "displayName": "Refresh history"
+              "queryRef": "semantic_model_optimization_overview.analysis_completed_at",
+              "nativeQueryRef": "Completed at",
+              "displayName": "Completed at"
             },
             {
               "field": {
@@ -68,27 +68,12 @@
                       "Entity": "semantic_model_optimization_overview"
                     }
                   },
-                  "Property": "object_usage_analysis_status"
+                  "Property": "scanner_version"
                 }
               },
-              "queryRef": "semantic_model_optimization_overview.object_usage_analysis_status",
-              "nativeQueryRef": "Object usage",
-              "displayName": "Object usage"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_overview"
-                    }
-                  },
-                  "Property": "direct_lake_analysis_status"
-                }
-              },
-              "queryRef": "semantic_model_optimization_overview.direct_lake_analysis_status",
-              "nativeQueryRef": "Direct Lake",
-              "displayName": "Direct Lake"
+              "queryRef": "semantic_model_optimization_overview.scanner_version",
+              "nativeQueryRef": "Scanner",
+              "displayName": "Scanner"
             },
             {
               "field": {
@@ -123,7 +108,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Coverage and explicit data availability'"
+                  "Value": "'Scope freshness and explicit data availability'"
                 }
               }
             },

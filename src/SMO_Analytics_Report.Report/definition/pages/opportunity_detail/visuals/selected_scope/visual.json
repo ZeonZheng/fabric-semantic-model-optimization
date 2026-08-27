@@ -2,12 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "selected_scope",
   "position": {
-    "x": 665,
+    "x": 810,
     "y": 22,
-    "z": 1002,
+    "z": 1003,
     "height": 88,
-    "width": 565,
-    "tabOrder": 1002
+    "width": 420,
+    "tabOrder": 1003
   },
   "visual": {
     "visualType": "cardVisual",
@@ -23,12 +23,12 @@
                       "Entity": "Metrics"
                     }
                   },
-                  "Property": "Selected scope title"
+                  "Property": "Selected analysis context"
                 }
               },
-              "queryRef": "Metrics.Selected scope title",
-              "nativeQueryRef": "Current scope",
-              "displayName": "Current scope"
+              "queryRef": "Metrics.Selected analysis context",
+              "nativeQueryRef": "Analysis context",
+              "displayName": "Analysis context"
             }
           ]
         }
@@ -48,7 +48,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Current report scope'"
+                  "Value": "'Current analysis context'"
                 }
               }
             },

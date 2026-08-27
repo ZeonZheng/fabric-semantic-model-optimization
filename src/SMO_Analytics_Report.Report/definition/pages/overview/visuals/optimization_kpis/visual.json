@@ -53,12 +53,12 @@
                       "Entity": "Metrics"
                     }
                   },
-                  "Property": "Total findings"
+                  "Property": "Total recommendations"
                 }
               },
-              "queryRef": "Metrics.Total findings",
-              "nativeQueryRef": "Findings",
-              "displayName": "Findings"
+              "queryRef": "Metrics.Total recommendations",
+              "nativeQueryRef": "Recommendations",
+              "displayName": "Recommendations"
             },
             {
               "field": {
@@ -68,12 +68,12 @@
                       "Entity": "Metrics"
                     }
                   },
-                  "Property": "High findings"
+                  "Property": "Total findings"
                 }
               },
-              "queryRef": "Metrics.High findings",
-              "nativeQueryRef": "High findings",
-              "displayName": "High findings"
+              "queryRef": "Metrics.Total findings",
+              "nativeQueryRef": "Raw findings",
+              "displayName": "Raw findings"
             },
             {
               "field": {
@@ -138,7 +138,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Current optimization analysis'"
+                  "Value": "'Decision summary \u2014 findings are evidence; recommendations are user work items'"
                 }
               }
             },

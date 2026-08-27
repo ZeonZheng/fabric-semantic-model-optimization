@@ -273,10 +273,18 @@ METRICS = """table Metrics
 \t\tformatString: General Date
 \t\tdisplayFolder: Overview
 
-\tmeasure 'Selected scope title' =
+\tmeasure 'Selected analysis context' =
 \t\t\tVAR WorkspaceName = SELECTEDVALUE(semantic_models[workspace_name], "All workspaces")
 \t\t\tVAR ModelName = SELECTEDVALUE(semantic_models[semantic_model_name], "All semantic models")
-\t\t\tRETURN WorkspaceName & " · " & ModelName
+\t\t\tVAR AnalysisId = SELECTEDVALUE(semantic_models[latest_analysis_id], "Multiple latest analyses")
+\t\t\tVAR AnalysisStatus = SELECTEDVALUE(semantic_models[latest_analysis_status], "Mixed analysis status")
+\t\t\tVAR AnalysisAt = SELECTEDVALUE(semantic_models[latest_analysis_at])
+\t\t\tVAR AnalysisTimestamp = IF(NOT ISBLANK(AnalysisAt), FORMAT(AnalysisAt, "yyyy-mm-dd HH:mm"), "No completed analysis")
+\t\t\tVAR ScannerVersion = SELECTEDVALUE(semantic_models[scanner_version], "Multiple scanner versions")
+\t\t\tRETURN
+\t\t\t\tWorkspaceName & " · " & ModelName & UNICHAR(10) &
+\t\t\t\tAnalysisStatus & " · " & AnalysisTimestamp & " · Scanner " & ScannerVersion & UNICHAR(10) &
+\t\t\t\tAnalysisId
 \t\tdisplayFolder: Report experience
 
 \tmeasure 'Severity color' =
@@ -369,6 +377,18 @@ def field_measure(prop: str, display: str) -> dict:
     }
 
 
+def field_sum(entity: str, prop: str, display: str) -> dict:
+    return {
+        "field": {"Aggregation": {
+            "Expression": {"Column": {
+                "Expression": {"SourceRef": {"Entity": entity}}, "Property": prop,
+            }},
+            "Function": 0,
+        }},
+        "queryRef": f"Sum({entity}.{prop})", "nativeQueryRef": display, "displayName": display,
+    }
+
+
 def literal(value: str) -> dict:
     return {"expr": {"Literal": {"Value": repr(value)}}}
 
@@ -392,11 +412,50 @@ def table_formatting() -> tuple[dict, dict]:
     return objects, vcos
 
 
+def categorical_slicer_filter(entity: str, prop: str, values: list[str], alias: str = "s") -> dict:
+    source_column = {
+        "Column": {"Expression": {"SourceRef": {"Source": alias}}, "Property": prop}
+    }
+    return {
+        "properties": {
+            "filter": {
+                "filter": {
+                    "Version": 2,
+                    "From": [{"Name": alias, "Entity": entity, "Type": 0}],
+                    "Where": [{
+                        "Condition": {
+                            "In": {
+                                "Expressions": [source_column],
+                                "Values": [[{"Literal": {"Value": repr(value)}}] for value in values],
+                            }
+                        },
+                        "Annotations": {
+                            "filterExpressionMetadata": {
+                                "expressions": [source_column],
+                                "decomposedIdentities": {
+                                    "values": [
+                                        [{"0": [{"Literal": {"Value": repr(value)}}]}]
+                                        for value in values
+                                    ],
+                                    "columns": [{"value": source_column}],
+                                },
+                                "valueMap": [{"0": value} for value in values],
+                            }
+                        },
+                    }],
+                }
+            }
+        },
+        "selector": {"metadata": f"{entity}.{prop}"},
+    }
+
+
 def visual(
     name: str, visual_type: str, x: int, y: int, width: int, height: int,
     roles: dict, title: str, z: int, *, sync_group: str | None = None,
     conditional_color: tuple[str, str] | None = None,
     sort_by: tuple[str, str] | None = None,
+    selected_values: tuple[str, str, list[str]] | None = None,
 ) -> dict:
     title_objects = {"title": [{"properties": {
         "show": {"expr": {"Literal": {"Value": "true"}}},
@@ -425,6 +484,9 @@ def visual(
         }
     if visual_type == "slicer":
         result["visual"]["objects"] = {"data": [{"properties": {"mode": literal("Dropdown")}}]}
+        if selected_values:
+            entity, prop, values = selected_values
+            result["visual"]["objects"]["general"] = [categorical_slicer_filter(entity, prop, values)]
         result["visual"]["visualContainerObjects"]["padding"] = [{"properties": {
             side: {"expr": {"Literal": {"Value": "8D"}}} for side in ("top", "bottom", "left", "right")
         }}]
@@ -483,15 +545,18 @@ def visual(
 def global_slicers(z: int = 1000) -> list[dict]:
     models = "semantic_models"
     return [
-        visual("workspace_filter", "slicer", 30, 22, 260, 88,
+        visual("workspace_filter", "slicer", 30, 22, 220, 88,
                {"Values": [field_column(models, "workspace_name", "Workspace")]},
                "Workspace", z, sync_group="SMO_Workspace"),
-        visual("semantic_model_filter", "slicer", 310, 22, 330, 88,
+        visual("semantic_model_filter", "slicer", 265, 22, 250, 88,
                {"Values": [field_column(models, "semantic_model_name", "Semantic model")]},
                "Semantic model", z + 1, sync_group="SMO_SemanticModel"),
-        visual("selected_scope", "cardVisual", 665, 22, 565, 88,
-               {"Data": [field_measure("Selected scope title", "Current scope")]},
-               "Current report scope", z + 2),
+        visual("analysis_filter", "slicer", 530, 22, 265, 88,
+               {"Values": [field_column(models, "latest_analysis_id", "Latest analysis ID")]},
+               "Latest analysis ID", z + 2, sync_group="SMO_Analysis"),
+        visual("selected_scope", "cardVisual", 810, 22, 420, 88,
+               {"Data": [field_measure("Selected analysis context", "Analysis context")]},
+               "Current analysis context", z + 3),
     ]
 
 
@@ -537,20 +602,27 @@ def write_report() -> None:
     write_page("overview", "Optimization overview", global_slicers() + [
         visual("optimization_kpis", "cardVisual", 30, 130, 1200, 110, {"Data": [
             field_measure("Models scanned", "Models scanned"), field_measure("Total opportunities", "Opportunities"),
-            field_measure("Total findings", "Findings"), field_measure("High findings", "High findings"),
+            field_measure("Total recommendations", "Recommendations"), field_measure("Total findings", "Raw findings"),
             field_measure("Actionable recommendations", "Actionable"),
             field_measure("Review required recommendations", "Review required"),
             field_measure("Suppressed findings", "Suppressed"),
-        ]}, "Current optimization analysis", 2000),
-        visual("findings_by_severity", "clusteredColumnChart", 30, 260, 470, 420,
-               {"Category": [field_column(findings, "severity", "Severity")], "Y": [field_measure("Total findings", "Findings")]},
-               "Findings by severity", 3000),
-        visual("analysis_coverage", "tableEx", 520, 260, 710, 420, {"Values": [
+        ]}, "Decision summary — findings are evidence; recommendations are user work items", 2000),
+        visual("findings_by_severity", "tableEx", 30, 260, 735, 420, {"Values": [
+            field_column(opportunities, "priority_score", "Priority score"),
+            field_column(opportunities, "priority_band", "Priority band"),
+            field_column(opportunities, "actionability_status", "Actionability"),
+            field_column(opportunities, "opportunity_title", "Opportunity / root cause"),
+            field_column(opportunities, "optimization_domain", "Domain"),
+            field_column(opportunities, "recommendation_count", "Work items"),
+            field_column(opportunities, "finding_count", "Evidence rows"),
+        ]}, "Top priority opportunities — right-click a root cause for recommendations and evidence", 3000,
+               conditional_color=(f"{opportunities}.actionability_status", "actionability"),
+               sort_by=(opportunities, "priority_score")),
+        visual("analysis_coverage", "tableEx", 785, 260, 445, 420, {"Values": [
             field_column(overview, "semantic_model_name", "Semantic model"), field_column(overview, "analysis_status", "Analysis status"),
-            field_column(overview, "refresh_history_status", "Refresh history"), field_column(overview, "object_usage_analysis_status", "Object usage"),
-            field_column(overview, "direct_lake_analysis_status", "Direct Lake"),
+            field_column(overview, "analysis_completed_at", "Completed at"), field_column(overview, "scanner_version", "Scanner"),
             field_column(overview, "data_availability_explanation", "Data availability explanation"),
-        ]}, "Coverage and explicit data availability", 4000),
+        ]}, "Scope freshness and explicit data availability", 4000),
     ])
 
     write_page("opportunities", "Optimization opportunities", global_slicers() + [
@@ -565,7 +637,8 @@ def write_report() -> None:
             field_column(opportunities, "optimization_domain", "Domain"), field_column(opportunities, "finding_count", "Findings"),
             field_column(opportunities, "recommendation_count", "Recommendations"), field_column(opportunities, "change_risk", "Change risk"),
             field_column(opportunities, "opportunity_summary", "Summary"),
-        ]}, "Right-click an opportunity to drill through to all related details", 3000,
+        ]}, "Opportunities = grouped root causes — right-click one to open recommendations and raw evidence", 3000,
+               conditional_color=(f"{opportunities}.actionability_status", "actionability"),
                sort_by=(opportunities, "priority_score")),
     ])
 
@@ -577,24 +650,23 @@ def write_report() -> None:
             field_measure("Suppressed findings", "Suppressed findings"),
         ]}, "Recommendation action queue", 2000),
         visual("actionability_slicer", "slicer", 30, 230, 360, 88,
-               {"Values": [field_column(recommendations, "actionability_status", "Actionability")]}, "Actionability", 2100),
+               {"Values": [field_column(recommendations, "actionability_status", "Actionability")]}, "Actionability", 2100,
+               selected_values=(recommendations, "actionability_status", ["ACTIONABLE", "REVIEW_REQUIRED"])),
         visual("priority_band_slicer", "slicer", 410, 230, 360, 88,
-               {"Values": [field_column(recommendations, "recommendation_priority_band", "Priority band")]}, "Priority band", 2101),
+               {"Values": [field_column(recommendations, "recommendation_priority_band", "Priority band")]}, "Priority band", 2101,
+               selected_values=(recommendations, "recommendation_priority_band", ["P2_HIGH"])),
         visual("risk_slicer", "slicer", 790, 230, 440, 88,
                {"Values": [field_column(recommendations, "change_risk", "Change risk")]}, "Change risk", 2102),
         visual("top_actionable_recommendations", "tableEx", 30, 335, 1200, 345, {"Values": [
             field_column(recommendations, "recommendation_priority_score", "Priority score"),
-            field_column(recommendations, "recommendation_priority_band", "Priority band"),
             field_column(recommendations, "actionability_status", "Actionability"),
             field_column(recommendations, "recommendation_title", "Recommendation"),
+            field_column(opportunities, "opportunity_title", "Opportunity / root cause"),
             field_column(recommendations, "why_it_matters", "Why it matters"),
-            field_column(recommendations, "recommended_action", "Recommended action"),
-            field_column(recommendations, "validation_method", "Validation method"),
-            field_column(recommendations, "automation_eligibility", "Automation eligibility"),
             field_column(recommendations, "change_risk", "Change risk"),
-            field_column(recommendations, "actionable_finding_count", "Actionable findings"),
-            field_column(recommendations, "suppressed_finding_count", "Suppressed findings"),
-        ]}, "Top actionable recommendations — use Actionability and Priority band to focus the queue", 3000,
+            field_column(recommendations, "automation_eligibility", "Automation"),
+            field_column(recommendations, "affected_finding_count", "Evidence rows"),
+        ]}, "Recommendations = user work items — P2 Actionable and Review Required by default; right-click Opportunity for evidence", 3000,
                conditional_color=(f"{recommendations}.actionability_status", "actionability"),
                sort_by=(recommendations, "recommendation_priority_score")),
     ])
@@ -613,7 +685,7 @@ def write_report() -> None:
             field_column(findings, "affected_table_name", "Table"), field_column(findings, "affected_object_name", "Affected object"),
             field_column(findings, "finding_description", "Finding"), field_column(findings, "recommended_action", "Recommended action"),
             field_column(findings, "suppression_reason", "Suppression reason"),
-        ]}, "Affected objects and findings", 3000,
+        ]}, "Findings = raw scanner evidence by affected object", 3000,
                conditional_color=(f"{findings}.severity", "severity"),
                sort_by=(findings, "finding_priority_score")),
     ])
@@ -623,7 +695,7 @@ def write_report() -> None:
                {"Category": [field_column(storage, "column_name", "Column")], "Y": [field_measure("Total column storage MB", "Storage MB")]},
                "Largest columns by storage", 2000),
         visual("top_tables", "clusteredBarChart", 610, 130, 620, 220,
-               {"Category": [field_column(table_storage, "table_name", "Table")], "Y": [field_column(table_storage, "total_size_bytes", "Total bytes")]},
+               {"Category": [field_column(table_storage, "table_name", "Table")], "Y": [field_sum(table_storage, "total_size_bytes", "Total bytes")]},
                "Largest tables by storage", 2001),
         visual("storage_table", "tableEx", 30, 375, 1200, 305, {"Values": [
             field_column(storage, "table_name", "Table"), field_column(storage, "column_name", "Column"),
@@ -634,19 +706,36 @@ def write_report() -> None:
     ])
 
     write_page("opportunity_detail", "Opportunity details", global_slicers() + [
-        visual("opportunity_summary", "tableEx", 30, 130, 1200, 140, {"Values": [
-            field_column(opportunities, "opportunity_title", "Opportunity"), field_column(opportunities, "highest_severity", "Severity"),
-            field_column(opportunities, "change_risk", "Change risk"), field_column(opportunities, "opportunity_summary", "Summary"),
-        ]}, "Selected opportunity", 2000),
-        visual("related_recommendations", "tableEx", 30, 290, 1200, 170, {"Values": [
+        visual("opportunity_summary", "tableEx", 30, 130, 1200, 120, {"Values": [
+            field_column(opportunities, "priority_band", "Priority band"),
+            field_column(opportunities, "actionability_status", "Actionability"),
+            field_column(opportunities, "opportunity_title", "Opportunity / root cause"),
+            field_column(opportunities, "highest_severity", "Severity"),
+            field_column(opportunities, "change_risk", "Change risk"),
+            field_column(opportunities, "opportunity_summary", "Summary"),
+        ]}, "Opportunity = grouped root cause", 2000,
+               conditional_color=(f"{opportunities}.actionability_status", "actionability")),
+        visual("related_recommendations", "tableEx", 30, 270, 1200, 200, {"Values": [
+            field_column(recommendations, "recommendation_priority_band", "Priority band"),
+            field_column(recommendations, "actionability_status", "Actionability"),
             field_column(recommendations, "recommendation_title", "Recommendation"),
-            field_column(recommendations, "recommended_action", "Recommended action"), field_column(recommendations, "change_risk", "Change risk"),
-        ]}, "Related recommendations", 3000,
-               conditional_color=(f"{recommendations}.change_risk", "risk")),
-        visual("related_findings", "tableEx", 30, 480, 1200, 200, {"Values": [
-            field_column(findings, "severity", "Severity"), field_column(findings, "rule_name", "Rule"),
-            field_column(findings, "affected_object_name", "Affected object"), field_column(findings, "finding_description", "Finding"),
-        ]}, "Related detailed findings", 4000,
+            field_column(recommendations, "why_it_matters", "Why it matters"),
+            field_column(recommendations, "recommended_action", "Recommended action"),
+            field_column(recommendations, "change_risk", "Change risk"),
+            field_column(recommendations, "automation_eligibility", "Automation"),
+            field_column(recommendations, "validation_method", "Validation method"),
+            field_column(recommendations, "rollback_guidance", "Rollback guidance"),
+        ]}, "Recommendation = user work item with implementation controls", 3000,
+               conditional_color=(f"{recommendations}.actionability_status", "actionability")),
+        visual("related_findings", "tableEx", 30, 490, 1200, 190, {"Values": [
+            field_column(findings, "severity", "Severity"),
+            field_column(findings, "finding_source", "Source"),
+            field_column(findings, "confidence", "Confidence"),
+            field_column(findings, "rule_name", "Rule"),
+            field_column(findings, "affected_object_name", "Affected object"),
+            field_column(findings, "finding_description", "Finding"),
+            field_column(findings, "technical_evidence", "Technical evidence"),
+        ]}, "Finding = preserved raw scanner evidence", 4000,
                conditional_color=(f"{findings}.severity", "severity")),
     # Drillthrough must bind to a field that is present in the source table visual.
     # The synchronized semantic-model slicer preserves model scope, so the visible
@@ -655,7 +744,7 @@ def write_report() -> None:
 
     (PAGES / "pages.json").write_text(json.dumps({
         "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.0.0/schema.json",
-        "pageOrder": ["overview", "opportunities", "recommendations", "findings", "storage", "opportunity_detail"],
+        "pageOrder": ["overview", "recommendations", "opportunities", "findings", "storage", "opportunity_detail"],
         "activePageName": "overview",
     }, indent=2) + "\n", encoding="utf-8")
 

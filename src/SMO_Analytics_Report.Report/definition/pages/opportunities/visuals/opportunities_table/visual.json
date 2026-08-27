@@ -201,7 +201,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Right-click an opportunity to drill through to all related details'"
+                  "Value": "'Opportunities = grouped root causes \u2014 right-click one to open recommendations and raw evidence'"
                 }
               }
             },
@@ -324,6 +324,145 @@
                 }
               }
             }
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "actionability_status"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'ACTIONABLE'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#D9EAD3'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "actionability_status"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'REVIEW_REQUIRED'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#FCE8B2'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "actionability_status"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'INFORMATIONAL'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#D9EAF7'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "actionability_status"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'SUPPRESSED'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#E5E7EB'"
+                            }
+                          }
+                        }
+                      ],
+                      "DefaultValue": {
+                        "Literal": {
+                          "Value": "'#FFFFFF'"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "semantic_model_optimization_opportunities.actionability_status"
           }
         }
       ]

@@ -38,21 +38,6 @@
                       "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
-                  "Property": "recommendation_priority_band"
-                }
-              },
-              "queryRef": "semantic_model_optimization_recommendations.recommendation_priority_band",
-              "nativeQueryRef": "Priority band",
-              "displayName": "Priority band"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_recommendations"
-                    }
-                  },
                   "Property": "actionability_status"
                 }
               },
@@ -80,6 +65,21 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
+                      "Entity": "semantic_model_optimization_opportunities"
+                    }
+                  },
+                  "Property": "opportunity_title"
+                }
+              },
+              "queryRef": "semantic_model_optimization_opportunities.opportunity_title",
+              "nativeQueryRef": "Opportunity / root cause",
+              "displayName": "Opportunity / root cause"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
                       "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
@@ -89,51 +89,6 @@
               "queryRef": "semantic_model_optimization_recommendations.why_it_matters",
               "nativeQueryRef": "Why it matters",
               "displayName": "Why it matters"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_recommendations"
-                    }
-                  },
-                  "Property": "recommended_action"
-                }
-              },
-              "queryRef": "semantic_model_optimization_recommendations.recommended_action",
-              "nativeQueryRef": "Recommended action",
-              "displayName": "Recommended action"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_recommendations"
-                    }
-                  },
-                  "Property": "validation_method"
-                }
-              },
-              "queryRef": "semantic_model_optimization_recommendations.validation_method",
-              "nativeQueryRef": "Validation method",
-              "displayName": "Validation method"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_recommendations"
-                    }
-                  },
-                  "Property": "automation_eligibility"
-                }
-              },
-              "queryRef": "semantic_model_optimization_recommendations.automation_eligibility",
-              "nativeQueryRef": "Automation eligibility",
-              "displayName": "Automation eligibility"
             },
             {
               "field": {
@@ -158,12 +113,12 @@
                       "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
-                  "Property": "actionable_finding_count"
+                  "Property": "automation_eligibility"
                 }
               },
-              "queryRef": "semantic_model_optimization_recommendations.actionable_finding_count",
-              "nativeQueryRef": "Actionable findings",
-              "displayName": "Actionable findings"
+              "queryRef": "semantic_model_optimization_recommendations.automation_eligibility",
+              "nativeQueryRef": "Automation",
+              "displayName": "Automation"
             },
             {
               "field": {
@@ -173,12 +128,12 @@
                       "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
-                  "Property": "suppressed_finding_count"
+                  "Property": "affected_finding_count"
                 }
               },
-              "queryRef": "semantic_model_optimization_recommendations.suppressed_finding_count",
-              "nativeQueryRef": "Suppressed findings",
-              "displayName": "Suppressed findings"
+              "queryRef": "semantic_model_optimization_recommendations.affected_finding_count",
+              "nativeQueryRef": "Evidence rows",
+              "displayName": "Evidence rows"
             }
           ]
         }
@@ -216,7 +171,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Top actionable recommendations \u2014 use Actionability and Priority band to focus the queue'"
+                  "Value": "'Recommendations = user work items \u2014 P2 Actionable and Review Required by default; right-click Opportunity for evidence'"
                 }
               }
             },

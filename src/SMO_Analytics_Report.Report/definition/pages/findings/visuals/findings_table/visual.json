@@ -201,7 +201,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Affected objects and findings'"
+                  "Value": "'Findings = raw scanner evidence by affected object'"
                 }
               }
             },

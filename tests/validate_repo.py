@@ -289,13 +289,14 @@ def validate_report() -> None:
     if "44444444-4444-4444-4444-444444444444" not in connection:
         fail("Report semantic-model placeholder is missing.")
     pages = json.loads((report_root / "definition/pages/pages.json").read_text())
-    expected_pages = ["overview", "opportunities", "recommendations", "findings", "storage", "opportunity_detail"]
+    expected_pages = ["overview", "recommendations", "opportunities", "findings", "storage", "opportunity_detail"]
     if pages["pageOrder"] != expected_pages:
         fail("The report must retain five visible pages plus one hidden drillthrough detail page.")
     visual_count = 0
     visible_pages = []
     workspace_sync_count = 0
     model_sync_count = 0
+    analysis_sync_count = 0
     model_tables = ROOT / "src/SMO_Analytics_SM.SemanticModel/definition/tables"
     semantic_fields = {}
     for table_path in model_tables.glob("*.tmdl"):
@@ -336,8 +337,9 @@ def validate_report() -> None:
             sync_group = visual_definition.get("visual", {}).get("syncGroup", {}).get("groupName")
             workspace_sync_count += sync_group == "SMO_Workspace"
             model_sync_count += sync_group == "SMO_SemanticModel"
+            analysis_sync_count += sync_group == "SMO_Analysis"
         visual_count += len(visuals)
-    if visible_pages != ["overview", "opportunities", "recommendations", "findings", "storage"]:
+    if visible_pages != ["overview", "recommendations", "opportunities", "findings", "storage"]:
         fail(f"The report must expose exactly the approved five visible pages, found {visible_pages}.")
     detail_page = json.loads((report_root / "definition/pages/opportunity_detail/page.json").read_text())
     if detail_page.get("pageBinding", {}).get("type") != "Drillthrough":
@@ -353,21 +355,56 @@ def validate_report() -> None:
     )
     if drill_property != "opportunity_title":
         fail("Opportunity drillthrough must use the visible opportunity title from the source table.")
-    if workspace_sync_count != 6 or model_sync_count != 6:
-        fail("Workspace and semantic-model slicers must be synchronized across every report page.")
-    if visual_count != 38:
-        fail(f"The M6.5.1 report contract requires 38 visuals, found {visual_count}.")
+    if workspace_sync_count != 6 or model_sync_count != 6 or analysis_sync_count != 6:
+        fail("Workspace, semantic-model, and latest-analysis slicers must be synchronized across every report page.")
+    if visual_count != 44:
+        fail(f"The M6.6 report contract requires 44 visuals, found {visual_count}.")
+    metrics_text = (model_tables / "Metrics.tmdl").read_text(encoding="utf-8")
+    for context_field in (
+        "measure 'Selected analysis context'", "latest_analysis_id", "latest_analysis_status",
+        "latest_analysis_at", "scanner_version",
+    ):
+        if context_field not in metrics_text:
+            fail(f"The current analysis context is missing {context_field}.")
+    overview_queue = report_root / "definition/pages/overview/visuals/findings_by_severity/visual.json"
+    overview_queue_text = overview_queue.read_text(encoding="utf-8")
+    for field in ("opportunity_title", "priority_score", "actionability_status", "recommendation_count"):
+        if field not in overview_queue_text:
+            fail(f"The overview decision queue is missing {field}.")
     top_queue = report_root / "definition/pages/recommendations/visuals/top_actionable_recommendations/visual.json"
     if not top_queue.exists():
         fail("Recommendations must expose the Top actionable recommendations queue.")
     top_queue_text = top_queue.read_text(encoding="utf-8")
-    for field in ("recommendation_priority_score", "actionability_status", "why_it_matters", "validation_method"):
+    for field in (
+        "recommendation_priority_score", "actionability_status", "why_it_matters",
+        "opportunity_title", "automation_eligibility", "affected_finding_count",
+    ):
         if field not in top_queue_text:
             fail(f"Top actionable recommendations is missing {field}.")
     top_queue_definition = json.loads(top_queue_text)
     top_sort = top_queue_definition["visual"]["query"].get("sortDefinition", {}).get("sort", [])
     if not top_sort or top_sort[0].get("direction") != "Descending":
         fail("Top actionable recommendations must be sorted by priority descending.")
+    actionability_slicer = json.loads((
+        report_root / "definition/pages/recommendations/visuals/actionability_slicer/visual.json"
+    ).read_text(encoding="utf-8"))
+    priority_slicer = json.loads((
+        report_root / "definition/pages/recommendations/visuals/priority_band_slicer/visual.json"
+    ).read_text(encoding="utf-8"))
+    actionability_filter = json.dumps(actionability_slicer.get("visual", {}).get("objects", {}).get("general", []))
+    priority_filter = json.dumps(priority_slicer.get("visual", {}).get("objects", {}).get("general", []))
+    for selected_status in ("ACTIONABLE", "REVIEW_REQUIRED"):
+        if selected_status not in actionability_filter:
+            fail(f"The recommendation queue default selection is missing {selected_status}.")
+    if "P2_HIGH" not in priority_filter:
+        fail("The recommendation queue must default to P2_HIGH.")
+    detail_text = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (report_root / "definition/pages/opportunity_detail/visuals").glob("*/visual.json")
+    )
+    for field in ("technical_evidence", "finding_source", "validation_method", "rollback_guidance"):
+        if field not in detail_text:
+            fail(f"The recommendation-to-evidence drillthrough is missing {field}.")
 
 
 def validate_quality_rules() -> None:

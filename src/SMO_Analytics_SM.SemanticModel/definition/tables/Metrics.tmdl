@@ -81,10 +81,18 @@ table Metrics
 		formatString: General Date
 		displayFolder: Overview
 
-	measure 'Selected scope title' =
+	measure 'Selected analysis context' =
 			VAR WorkspaceName = SELECTEDVALUE(semantic_models[workspace_name], "All workspaces")
 			VAR ModelName = SELECTEDVALUE(semantic_models[semantic_model_name], "All semantic models")
-			RETURN WorkspaceName & " · " & ModelName
+			VAR AnalysisId = SELECTEDVALUE(semantic_models[latest_analysis_id], "Multiple latest analyses")
+			VAR AnalysisStatus = SELECTEDVALUE(semantic_models[latest_analysis_status], "Mixed analysis status")
+			VAR AnalysisAt = SELECTEDVALUE(semantic_models[latest_analysis_at])
+			VAR AnalysisTimestamp = IF(NOT ISBLANK(AnalysisAt), FORMAT(AnalysisAt, "yyyy-mm-dd HH:mm"), "No completed analysis")
+			VAR ScannerVersion = SELECTEDVALUE(semantic_models[scanner_version], "Multiple scanner versions")
+			RETURN
+				WorkspaceName & " · " & ModelName & UNICHAR(10) &
+				AnalysisStatus & " · " & AnalysisTimestamp & " · Scanner " & ScannerVersion & UNICHAR(10) &
+				AnalysisId
 		displayFolder: Report experience
 
 	measure 'Severity color' =

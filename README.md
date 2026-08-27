@@ -105,11 +105,13 @@ Priority and remediation-queue calibration is documented in
 [`docs/m6-5-5-actionability-calibration.md`](docs/m6-5-5-actionability-calibration.md).
 Cross-source root-cause consolidation is documented in
 [`docs/m6-5-6-root-cause-consolidation.md`](docs/m6-5-6-root-cause-consolidation.md).
+The M6.6 report-consumption contract is documented in
+[`docs/m6-6-report-consumption-review.md`](docs/m6-6-report-consumption-review.md).
 
 ## Current stage
 
-Version `0.6.5` completes M6.5.6 Cross-source Root-cause Consolidation on the
-validated TEST-tenant baseline. Scanner `2.6.1` retains the M6.4 production-stabilization
+Version `0.6.6` implements the M6.6 P0 Report / Consumption Experience on the
+validated TEST-tenant baseline. Scanner `2.6.1` is unchanged and retains the M6.4 production-stabilization
 contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
 current identity and workspace-scoped APIs only. It does not enumerate tenant
@@ -170,3 +172,13 @@ models: the control model retained 138 findings and 9 detected MQ rules while it
 recommendations fell from 28 to 25; the adverse model retained 1,021 findings and
 30/30 MQ coverage while its recommendations fell from 56 to 54. Each model now has
 exactly one Auto Date/Time opportunity and one recommendation, so M6.5.6 is complete.
+
+M6.6 changes the report from a result inventory into a decision path. Workspace,
+semantic-model, and latest-analysis filters are synchronized across every page, and
+the scope card exposes analysis status, completion time, scanner version, and latest
+analysis ID. The overview prioritizes grouped root causes instead of raw finding
+volume. The recommendation queue defaults to `P2_HIGH` plus `ACTIONABLE` and
+`REVIEW_REQUIRED`, while users can clear the slicers to inspect the complete queue.
+Recommendation rows carry their related opportunity so users can drill through to
+implementation controls and preserved raw technical evidence. The report uses the
+existing latest TEST analyses; no rescan or realized-benefit claim is part of M6.6.

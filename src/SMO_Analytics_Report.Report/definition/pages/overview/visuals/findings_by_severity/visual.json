@@ -6,51 +6,140 @@
     "y": 260,
     "z": 3000,
     "height": 420,
-    "width": 470,
+    "width": 735,
     "tabOrder": 3000
   },
   "visual": {
-    "visualType": "clusteredColumnChart",
+    "visualType": "tableEx",
     "query": {
       "queryState": {
-        "Category": {
+        "Values": {
           "projections": [
             {
               "field": {
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_model_optimization_findings"
+                      "Entity": "semantic_model_optimization_opportunities"
                     }
                   },
-                  "Property": "severity"
+                  "Property": "priority_score"
                 }
               },
-              "queryRef": "semantic_model_optimization_findings.severity",
-              "nativeQueryRef": "Severity",
-              "displayName": "Severity"
-            }
-          ]
-        },
-        "Y": {
-          "projections": [
+              "queryRef": "semantic_model_optimization_opportunities.priority_score",
+              "nativeQueryRef": "Priority score",
+              "displayName": "Priority score"
+            },
             {
               "field": {
-                "Measure": {
+                "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Metrics"
+                      "Entity": "semantic_model_optimization_opportunities"
                     }
                   },
-                  "Property": "Total findings"
+                  "Property": "priority_band"
                 }
               },
-              "queryRef": "Metrics.Total findings",
-              "nativeQueryRef": "Findings",
-              "displayName": "Findings"
+              "queryRef": "semantic_model_optimization_opportunities.priority_band",
+              "nativeQueryRef": "Priority band",
+              "displayName": "Priority band"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_opportunities"
+                    }
+                  },
+                  "Property": "actionability_status"
+                }
+              },
+              "queryRef": "semantic_model_optimization_opportunities.actionability_status",
+              "nativeQueryRef": "Actionability",
+              "displayName": "Actionability"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_opportunities"
+                    }
+                  },
+                  "Property": "opportunity_title"
+                }
+              },
+              "queryRef": "semantic_model_optimization_opportunities.opportunity_title",
+              "nativeQueryRef": "Opportunity / root cause",
+              "displayName": "Opportunity / root cause"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_opportunities"
+                    }
+                  },
+                  "Property": "optimization_domain"
+                }
+              },
+              "queryRef": "semantic_model_optimization_opportunities.optimization_domain",
+              "nativeQueryRef": "Domain",
+              "displayName": "Domain"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_opportunities"
+                    }
+                  },
+                  "Property": "recommendation_count"
+                }
+              },
+              "queryRef": "semantic_model_optimization_opportunities.recommendation_count",
+              "nativeQueryRef": "Work items",
+              "displayName": "Work items"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_opportunities"
+                    }
+                  },
+                  "Property": "finding_count"
+                }
+              },
+              "queryRef": "semantic_model_optimization_opportunities.finding_count",
+              "nativeQueryRef": "Evidence rows",
+              "displayName": "Evidence rows"
             }
           ]
         }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "semantic_model_optimization_opportunities"
+                  }
+                },
+                "Property": "priority_score"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": false
       }
     },
     "visualContainerObjects": {
@@ -67,7 +156,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Findings by severity'"
+                  "Value": "'Top priority opportunities \u2014 right-click a root cause for recommendations and evidence'"
                 }
               }
             },
@@ -85,17 +174,26 @@
           }
         }
       ],
-      "background": [
+      "stylePreset": [
         {
           "properties": {
-            "show": {
+            "name": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "'None'"
                 }
               }
-            },
-            "color": {
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true,
+    "objects": {
+      "columnHeaders": [
+        {
+          "properties": {
+            "fontColor": {
               "solid": {
                 "color": {
                   "expr": {
@@ -106,17 +204,223 @@
                 }
               }
             },
-            "transparency": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#243B53'"
+                    }
+                  }
+                }
+              }
+            },
+            "autoSizeColumnWidth": {
               "expr": {
                 "Literal": {
-                  "Value": "0D"
+                  "Value": "true"
+                }
+              }
+            },
+            "columnAdjustment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'growToFit'"
                 }
               }
             }
           }
         }
+      ],
+      "values": [
+        {
+          "properties": {
+            "backColorPrimary": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#FFFFFF'"
+                    }
+                  }
+                }
+              }
+            },
+            "backColorSecondary": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#F4F7FA'"
+                    }
+                  }
+                }
+              }
+            },
+            "fontColorPrimary": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#102A43'"
+                    }
+                  }
+                }
+              }
+            },
+            "fontColorSecondary": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#102A43'"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "actionability_status"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'ACTIONABLE'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#D9EAD3'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "actionability_status"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'REVIEW_REQUIRED'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#FCE8B2'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "actionability_status"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'INFORMATIONAL'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#D9EAF7'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "actionability_status"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'SUPPRESSED'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#E5E7EB'"
+                            }
+                          }
+                        }
+                      ],
+                      "DefaultValue": {
+                        "Literal": {
+                          "Value": "'#FFFFFF'"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "semantic_model_optimization_opportunities.actionability_status"
+          }
+        }
       ]
-    },
-    "drillFilterOtherVisuals": true
+    }
   }
 }

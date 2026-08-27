@@ -3,9 +3,9 @@
   "name": "related_recommendations",
   "position": {
     "x": 30,
-    "y": 290,
+    "y": 270,
     "z": 3000,
-    "height": 170,
+    "height": 200,
     "width": 1200,
     "tabOrder": 3000
   },
@@ -23,12 +23,57 @@
                       "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
+                  "Property": "recommendation_priority_band"
+                }
+              },
+              "queryRef": "semantic_model_optimization_recommendations.recommendation_priority_band",
+              "nativeQueryRef": "Priority band",
+              "displayName": "Priority band"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_recommendations"
+                    }
+                  },
+                  "Property": "actionability_status"
+                }
+              },
+              "queryRef": "semantic_model_optimization_recommendations.actionability_status",
+              "nativeQueryRef": "Actionability",
+              "displayName": "Actionability"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_recommendations"
+                    }
+                  },
                   "Property": "recommendation_title"
                 }
               },
               "queryRef": "semantic_model_optimization_recommendations.recommendation_title",
               "nativeQueryRef": "Recommendation",
               "displayName": "Recommendation"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_recommendations"
+                    }
+                  },
+                  "Property": "why_it_matters"
+                }
+              },
+              "queryRef": "semantic_model_optimization_recommendations.why_it_matters",
+              "nativeQueryRef": "Why it matters",
+              "displayName": "Why it matters"
             },
             {
               "field": {
@@ -59,6 +104,51 @@
               "queryRef": "semantic_model_optimization_recommendations.change_risk",
               "nativeQueryRef": "Change risk",
               "displayName": "Change risk"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_recommendations"
+                    }
+                  },
+                  "Property": "automation_eligibility"
+                }
+              },
+              "queryRef": "semantic_model_optimization_recommendations.automation_eligibility",
+              "nativeQueryRef": "Automation",
+              "displayName": "Automation"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_recommendations"
+                    }
+                  },
+                  "Property": "validation_method"
+                }
+              },
+              "queryRef": "semantic_model_optimization_recommendations.validation_method",
+              "nativeQueryRef": "Validation method",
+              "displayName": "Validation method"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_recommendations"
+                    }
+                  },
+                  "Property": "rollback_guidance"
+                }
+              },
+              "queryRef": "semantic_model_optimization_recommendations.rollback_guidance",
+              "nativeQueryRef": "Rollback guidance",
+              "displayName": "Rollback guidance"
             }
           ]
         }
@@ -78,7 +168,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Related recommendations'"
+                  "Value": "'Recommendation = user work item with implementation controls'"
                 }
               }
             },
@@ -222,19 +312,19 @@
                                       "Entity": "semantic_model_optimization_recommendations"
                                     }
                                   },
-                                  "Property": "change_risk"
+                                  "Property": "actionability_status"
                                 }
                               },
                               "Right": {
                                 "Literal": {
-                                  "Value": "'HIGH'"
+                                  "Value": "'ACTIONABLE'"
                                 }
                               }
                             }
                           },
                           "Value": {
                             "Literal": {
-                              "Value": "'#F4CCCC'"
+                              "Value": "'#D9EAD3'"
                             }
                           }
                         },
@@ -249,12 +339,12 @@
                                       "Entity": "semantic_model_optimization_recommendations"
                                     }
                                   },
-                                  "Property": "change_risk"
+                                  "Property": "actionability_status"
                                 }
                               },
                               "Right": {
                                 "Literal": {
-                                  "Value": "'MEDIUM'"
+                                  "Value": "'REVIEW_REQUIRED'"
                                 }
                               }
                             }
@@ -276,19 +366,46 @@
                                       "Entity": "semantic_model_optimization_recommendations"
                                     }
                                   },
-                                  "Property": "change_risk"
+                                  "Property": "actionability_status"
                                 }
                               },
                               "Right": {
                                 "Literal": {
-                                  "Value": "'LOW'"
+                                  "Value": "'INFORMATIONAL'"
                                 }
                               }
                             }
                           },
                           "Value": {
                             "Literal": {
-                              "Value": "'#D9EAD3'"
+                              "Value": "'#D9EAF7'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_recommendations"
+                                    }
+                                  },
+                                  "Property": "actionability_status"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'SUPPRESSED'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#E5E7EB'"
                             }
                           }
                         }
@@ -312,7 +429,7 @@
                 }
               }
             ],
-            "metadata": "semantic_model_optimization_recommendations.change_risk"
+            "metadata": "semantic_model_optimization_recommendations.actionability_status"
           }
         }
       ]
