@@ -7,6 +7,7 @@ credentials in the repository or the deployed workspace.
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
@@ -91,6 +92,46 @@ def _replace_ids(root: Path, mappings: list[dict[str, str]]) -> None:
             for mapping in mappings:
                 content = content.replace(mapping["source_id"], mapping["target_id"])
             path.write_text(content, encoding="utf-8")
+
+
+def _public_definition(root: Path, item_type: str) -> dict:
+    """Build a complete Fabric public definition without Git-only metadata."""
+    formats = {"SemanticModel": "TMDL", "Report": "PBIR"}
+    if item_type not in formats:
+        raise ValueError(f"Public-definition update is unsupported for {item_type}.")
+
+    parts = []
+    for path in sorted(root.rglob("*")):
+        if not path.is_file() or path.name == ".platform":
+            continue
+        parts.append(
+            {
+                "path": path.relative_to(root).as_posix(),
+                "payload": base64.b64encode(path.read_bytes()).decode("ascii"),
+                "payloadType": "InlineBase64",
+            }
+        )
+    if not parts:
+        raise ValueError(f"No public definition parts found under {root}.")
+    return {"format": formats[item_type], "parts": parts}
+
+
+def _update_public_definition(
+    workspace_id: str,
+    item_id: str,
+    item_type: str,
+    root: Path,
+) -> None:
+    """Update an existing Power BI item through its definition REST API."""
+    collections = {"SemanticModel": "semanticModels", "Report": "reports"}
+    collection = collections[item_type]
+    _fabric_request_json(
+        "POST",
+        f"workspaces/{workspace_id}/{collection}/{item_id}/updateDefinition",
+        body={"definition": _public_definition(root, item_type)},
+        timeout_seconds=1200,
+    )
+    print(f"Updated {item_type} definition through Fabric REST API.")
 
 
 def _make_initialization_notebook(root: Path, output_schema: str) -> None:
@@ -772,6 +813,7 @@ def deploy_solution(repo_root: str | Path) -> dict:
     for item in order:
         qualified_name = item["name"]
         item_type = _item_type(qualified_name)
+        item_key = (_item_display_name(qualified_name), item_type)
         print(f"Deploying {qualified_name} ...")
 
         if item_type == "Lakehouse":
@@ -816,15 +858,25 @@ def deploy_solution(repo_root: str | Path) -> dict:
             destination_parent = f"/{workspace_name}.Workspace"
             if folder_name:
                 destination_parent += f"/{folder_name}.Folder"
-            run_fab(
-                f"import {destination_parent}/{qualified_name} "
-                f"-i '{target_path}' -f{format_argument}",
-                timeout=1200,
-            )
+            if item_key in existing and item_type in {"SemanticModel", "Report"}:
+                target_id = existing[item_key]
+                _update_public_definition(
+                    workspace_id,
+                    target_id,
+                    item_type,
+                    target_path,
+                )
+            else:
+                run_fab(
+                    f"import {destination_parent}/{qualified_name} "
+                    f"-i '{target_path}' -f{format_argument}",
+                    timeout=1200,
+                )
 
-        target_id = _resolve_item_id(
-            workspace_name, qualified_name, folder_by_item.get(qualified_name)
-        )
+        if item_key not in existing or item_type not in {"SemanticModel", "Report"}:
+            target_id = _resolve_item_id(
+                workspace_name, qualified_name, folder_by_item.get(qualified_name)
+            )
         if not any(m["source_id"] == item["source_id"] for m in mappings):
             mappings.append({"source_id": item["source_id"], "target_id": target_id})
         deployed.append({"name": qualified_name, "id": target_id})
