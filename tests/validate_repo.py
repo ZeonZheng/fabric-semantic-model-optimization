@@ -425,8 +425,10 @@ def validate_report() -> None:
     if visual_count != 70:
         fail(f"The M6.6.2 report contract requires 70 visuals, found {visual_count}.")
     model_text = (model_tables.parent / "model.tmdl").read_text(encoding="utf-8")
-    if "relationship opportunity_findings" not in model_text or "crossFilteringBehavior: bothDirections" not in model_text:
-        fail("Object-level evidence filters must propagate to grouped issues and actions.")
+    for relation_name in ("opportunity_findings", "opportunity_recommendations"):
+        relation_block = model_text.split(f"relationship {relation_name}", 1)[-1].split("\n\n", 1)[0]
+        if "crossFilteringBehavior: bothDirections" not in relation_block:
+            fail(f"{relation_name} must bidirectionally filter the grouped root-cause bridge.")
     metrics_text = (model_tables / "Metrics.tmdl").read_text(encoding="utf-8")
     for context_field in (
         "measure 'Selected analysis context'", "latest_analysis_id", "latest_analysis_status",

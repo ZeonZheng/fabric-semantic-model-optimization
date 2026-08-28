@@ -52,6 +52,7 @@ relationship models_table_storage
 relationship opportunity_recommendations
 	fromColumn: semantic_model_optimization_recommendations.opportunity_id
 	toColumn: semantic_model_optimization_opportunities.opportunity_id
+	crossFilteringBehavior: bothDirections
 
 relationship opportunity_findings
 	fromColumn: semantic_model_optimization_findings.opportunity_id

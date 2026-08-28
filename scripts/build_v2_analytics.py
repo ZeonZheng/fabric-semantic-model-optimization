@@ -436,9 +436,10 @@ def write_model() -> None:
             f"\tfromColumn: {from_table}.{from_column}",
             f"\ttoColumn: {to_table}.{to_column}",
         ]
-        if name == "opportunity_findings":
-            # Object-level slicers live on Findings. Bidirectional filtering lets
-            # those selections locate their grouped root causes and action items.
+        if name in {"opportunity_recommendations", "opportunity_findings"}:
+            # Opportunities are the report's root-cause bridge. Bidirectional
+            # filtering lets evidence locate its actions and lets each action row
+            # resolve the correct root cause for display and drillthrough.
             relation_definition.append("\tcrossFilteringBehavior: bothDirections")
         relation_text.extend([*relation_definition, ""])
     model = "\n".join([
