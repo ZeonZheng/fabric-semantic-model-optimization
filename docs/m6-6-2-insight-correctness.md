@@ -122,9 +122,11 @@ if it answers a distinct aggregation question.
 
 - Repository validation: passed, 88 JSON/notebook/platform files.
 - Python compile and `git diff --check`: passed.
-- Microsoft `powerbi-report-author` `0.1.4`: 0 errors. The only warnings were
-  schema-fetch warnings caused by the execution network; no PBIR diagnostic
-  remained.
+- Microsoft `powerbi-report-author` `0.1.4`: the earlier full PBIR pass reported
+  0 errors; its only warnings were schema-fetch warnings caused by the execution
+  network. The final unique-key delta passed repository validation and was accepted
+  by Fabric `updateDefinition`; the temporary authoring CLI was no longer available
+  for a second local pass.
 - Report inventory: five visible pages, one hidden drillthrough page, 70 visuals,
   no overlap or out-of-canvas bounds.
 - TEST deployment: solution `0.6.15` succeeded in workspace
