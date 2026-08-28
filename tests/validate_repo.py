@@ -145,6 +145,11 @@ def validate_scanner() -> None:
         '"component_errors": row["error_json"]',
         "Model analysis failures:",
         "def ensure_curated_tables()",
+        "def finding_locator_fields(finding)",
+        '"object_scope": object_scope',
+        '"display_table_name": display_table',
+        "UPDATE {findings_name}",
+        "WHERE object_scope IS NULL",
         "def curate_latest_model_analysis(result)",
         "auto_date_present = any(is_auto_date_root_cause_finding(row) for row in findings)",
         "consolidation = root_cause_grouping(finding, auto_date_present)",
@@ -430,8 +435,13 @@ def validate_report() -> None:
             fail(f"The current analysis context is missing {context_field}.")
     findings_tmdl = (model_tables / "semantic_model_optimization_findings.tmdl").read_text(encoding="utf-8")
     for display_field in ("object_scope", "display_table_name", "display_object_name"):
-        if f"column {display_field} =" not in findings_tmdl:
-            fail(f"The evidence locator is missing calculated display field {display_field}.")
+        if (
+            f"column {display_field}\n" not in findings_tmdl
+            or f"sourceColumn: {display_field}" not in findings_tmdl
+        ):
+            fail(f"The evidence locator is missing curated source field {display_field}.")
+    if "column object_scope =" in findings_tmdl:
+        fail("Direct Lake on SQL locator fields must not use calculated columns.")
     overview_queue = report_root / "definition/pages/overview/visuals/priority_summary/visual.json"
     overview_queue_text = overview_queue.read_text(encoding="utf-8")
     for field in ("priority_band", "actionability_status", "Total opportunities", "Visible evidence", "Visible actions"):

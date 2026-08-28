@@ -100,6 +100,8 @@ TABLE_DEFINITIONS = {
             ("optimization_domain", "string"), ("rule_name", "string"), ("severity", "string"),
             ("confidence", "string"), ("impact_area", "string"), ("affected_object_type", "string"),
             ("affected_table_name", "string"), ("affected_object_name", "string"),
+            ("object_scope", "string"), ("display_table_name", "string"),
+            ("display_object_name", "string"),
             ("finding_description", "string"), ("recommended_action", "string"),
             ("technical_evidence", "string"), ("estimated_saving_bytes_low", "int64"),
             ("estimated_saving_bytes_high", "int64"), ("change_risk", "string"),
@@ -197,6 +199,10 @@ RETURN IF(_rawObject = \"\", \"Not applicable\", _rawObject)""",
         ),
     ],
 }
+
+# Direct Lake on SQL tables reject standard-expression calculated columns.
+# These locator fields are physical curated columns populated by the scanner.
+CALCULATED_COLUMNS = {}
 
 
 def lineage(*parts: str) -> str:

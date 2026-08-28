@@ -93,6 +93,24 @@ table semantic_model_optimization_findings
 		sourceLineageTag: affected_object_name
 		summarizeBy: none
 
+	column object_scope
+		dataType: string
+		sourceColumn: object_scope
+		sourceLineageTag: object_scope
+		summarizeBy: none
+
+	column display_table_name
+		dataType: string
+		sourceColumn: display_table_name
+		sourceLineageTag: display_table_name
+		summarizeBy: none
+
+	column display_object_name
+		dataType: string
+		sourceColumn: display_object_name
+		sourceLineageTag: display_object_name
+		summarizeBy: none
+
 	column finding_description
 		dataType: string
 		sourceColumn: finding_description
@@ -173,55 +191,6 @@ table semantic_model_optimization_findings
 		formatString: General Date
 		sourceColumn: detected_at
 		sourceLineageTag: detected_at
-		summarizeBy: none
-
-	column object_scope = ```
-			VAR _rawTable = LOWER(COALESCE(semantic_model_optimization_findings[affected_table_name], ""))
-			VAR _rawObject = LOWER(COALESCE(semantic_model_optimization_findings[affected_object_name], ""))
-			VAR _objectType = UPPER(COALESCE(semantic_model_optimization_findings[affected_object_type], ""))
-			VAR _isAutoDate =
-			    CONTAINSSTRING(_rawTable, "datetabletemplate_") ||
-			    CONTAINSSTRING(_rawTable, "localdatetable_") ||
-			    CONTAINSSTRING(_rawObject, "datetabletemplate_") ||
-			    CONTAINSSTRING(_rawObject, "localdatetable_")
-			RETURN
-			    SWITCH(
-			        TRUE(),
-			        _isAutoDate, "Auto Date/Time (system)",
-			        _objectType IN { "", "MODEL", "SEMANTIC MODEL" }, "Model-level",
-			        "Authored / imported object"
-			    )
-			```
-		dataType: string
-		lineageTag: be44660c-cff9-5a80-b4cf-fe4ddb63c894
-		summarizeBy: none
-
-	column display_table_name = ```
-			VAR _rawTable = TRIM(COALESCE(semantic_model_optimization_findings[affected_table_name], ""))
-			VAR _rawObject = TRIM(COALESCE(semantic_model_optimization_findings[affected_object_name], ""))
-			VAR _objectType = UPPER(TRIM(COALESCE(semantic_model_optimization_findings[affected_object_type], "")))
-			VAR _objectLooksLikeAutoDate =
-			    CONTAINSSTRING(LOWER(_rawObject), "datetabletemplate_") ||
-			    CONTAINSSTRING(LOWER(_rawObject), "localdatetable_")
-			RETURN
-			    SWITCH(
-			        TRUE(),
-			        _rawTable <> "", _rawTable,
-			        _objectLooksLikeAutoDate, _rawObject,
-			        _objectType IN { "TABLE", "CALCULATED TABLE" } && _rawObject <> "", _rawObject,
-			        "Not applicable"
-			    )
-			```
-		dataType: string
-		lineageTag: 5247364a-dccd-5eca-88fa-39ad6f06f811
-		summarizeBy: none
-
-	column display_object_name = ```
-			VAR _rawObject = TRIM(COALESCE(semantic_model_optimization_findings[affected_object_name], ""))
-			RETURN IF(_rawObject = "", "Not applicable", _rawObject)
-			```
-		dataType: string
-		lineageTag: 3e1596b4-38ca-5abd-96b5-984195bddc31
 		summarizeBy: none
 
 	partition 'semantic_model_optimization_findings' = entity

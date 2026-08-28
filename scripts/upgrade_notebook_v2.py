@@ -156,6 +156,9 @@ OPTIMIZATION_FINDING_SCHEMA = T.StructType([
     T.StructField("affected_object_type", T.StringType()),
     T.StructField("affected_table_name", T.StringType()),
     T.StructField("affected_object_name", T.StringType()),
+    T.StructField("object_scope", T.StringType()),
+    T.StructField("display_table_name", T.StringType()),
+    T.StructField("display_object_name", T.StringType()),
     T.StructField("finding_description", T.StringType()),
     T.StructField("recommended_action", T.StringType()),
     T.StructField("technical_evidence", T.StringType()),
@@ -311,6 +314,39 @@ def ensure_curated_tables():
                 for field in missing_fields
             )
             spark.sql(f"ALTER TABLE {name} ADD COLUMNS ({additions})")
+
+    findings_name = curated_table_name("findings")
+    spark.sql(f"""
+        UPDATE {findings_name}
+        SET
+            object_scope = CASE
+                WHEN instr(lower(coalesce(affected_table_name, '')), 'datetabletemplate_') > 0
+                  OR instr(lower(coalesce(affected_table_name, '')), 'localdatetable_') > 0
+                  OR instr(lower(coalesce(affected_object_name, '')), 'datetabletemplate_') > 0
+                  OR instr(lower(coalesce(affected_object_name, '')), 'localdatetable_') > 0
+                    THEN 'Auto Date/Time (system)'
+                WHEN upper(trim(coalesce(affected_object_type, ''))) IN ('', 'MODEL', 'SEMANTIC MODEL')
+                    THEN 'Model-level'
+                ELSE 'Authored / imported object'
+            END,
+            display_table_name = CASE
+                WHEN trim(coalesce(affected_table_name, '')) <> '' THEN trim(affected_table_name)
+                WHEN instr(lower(coalesce(affected_object_name, '')), 'datetabletemplate_') > 0
+                  OR instr(lower(coalesce(affected_object_name, '')), 'localdatetable_') > 0
+                    THEN trim(affected_object_name)
+                WHEN upper(trim(coalesce(affected_object_type, ''))) IN ('TABLE', 'CALCULATED TABLE')
+                  AND trim(coalesce(affected_object_name, '')) <> ''
+                    THEN trim(affected_object_name)
+                ELSE 'Not applicable'
+            END,
+            display_object_name = CASE
+                WHEN trim(coalesce(affected_object_name, '')) = '' THEN 'Not applicable'
+                ELSE trim(affected_object_name)
+            END
+        WHERE object_scope IS NULL
+           OR display_table_name IS NULL
+           OR display_object_name IS NULL
+    """)
 
 
 def replace_semantic_model_current_state(logical_name, semantic_model_id, rows):
@@ -658,6 +694,32 @@ def severity_value(value):
     }.get((value or "").upper(), 0)
 
 
+def finding_locator_fields(finding):
+    raw_table = (finding.get("table_name") or "").strip()
+    raw_object = (finding.get("object_name") or "").strip()
+    object_type = (finding.get("object_type") or "").strip().upper()
+    auto_date = any(
+        marker in value.lower()
+        for marker in ("datetabletemplate_", "localdatetable_")
+        for value in (raw_table, raw_object)
+    )
+    object_scope = (
+        "Auto Date/Time (system)" if auto_date
+        else "Model-level" if object_type in {"", "MODEL", "SEMANTIC MODEL"}
+        else "Authored / imported object"
+    )
+    display_table = (
+        raw_table
+        or (raw_object if auto_date or object_type in {"TABLE", "CALCULATED TABLE"} else "")
+        or "Not applicable"
+    )
+    return {
+        "object_scope": object_scope,
+        "display_table_name": display_table,
+        "display_object_name": raw_object or "Not applicable",
+    }
+
+
 def risk_value(value):
     return {"HIGH": 3, "MEDIUM": 2, "LOW": 1}.get((value or "").upper(), 0)
 
@@ -814,6 +876,7 @@ def curate_latest_model_analysis(result):
             "affected_object_type": finding.get("object_type"),
             "affected_table_name": finding.get("table_name"),
             "affected_object_name": finding.get("object_name"),
+            **finding_locator_fields(finding),
             "finding_description": finding.get("finding_text"),
             "recommended_action": finding.get("recommended_action"),
             "technical_evidence": finding.get("technical_evidence"),

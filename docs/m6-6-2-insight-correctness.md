@@ -20,7 +20,7 @@ M6.6.2 corrects these consumption semantics without rescanning either TEST model
 or changing any accepted finding description, technical evidence, source, rule,
 opportunity, or recommendation row.
 
-The TEST deployment candidate is solution `0.6.9`. Existing semantic models and
+The TEST deployment candidate is solution `0.6.10`. Existing semantic models and
 reports are updated through the Fabric public-definition REST APIs so the complete
 TMDL/PBIR contract is validated directly; the CLI import path remains available
 for first creation only.
@@ -69,8 +69,9 @@ contained only a subset of those records.
 
 ### Object and table taxonomy
 
-Three semantic display columns are added to the Findings table. They are derived
-at query time and do not replace or mutate raw evidence columns:
+Three semantic display columns are added to the curated Findings table. They are
+derived during curated projection and deterministically backfilled for accepted
+rows; they do not replace or mutate raw evidence columns:
 
 - `object_scope`: `Auto Date/Time (system)`, `Authored / imported object`, or
   `Model-level`.
