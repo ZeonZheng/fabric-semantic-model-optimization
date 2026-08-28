@@ -114,9 +114,11 @@ The M6.6.2 insight-correctness remediation is documented in
 
 ## Current stage
 
-Version `0.6.15` is the M6.6.2 TEST candidate for insight correctness and report
-information hierarchy on the
-validated TEST-tenant baseline. Scanner `2.6.1` is unchanged and retains the M6.4 production-stabilization
+Version `0.6.15` is deployed to TEST for the M6.6.2 insight-correctness and report
+information-hierarchy gate on the validated TEST-tenant baseline. Functional Viewer
+acceptance has passed; only the final post-deployment click-through of the new unique
+`opportunity_id` drillthrough key remains to be repeated after the authenticated
+Viewer session reconnects. Scanner `2.6.1` is unchanged and retains the M6.4 production-stabilization
 contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
 current identity and workspace-scoped APIs only. It does not enumerate tenant
@@ -209,3 +211,6 @@ raw evidence, and adds object category, area/domain, and root-cause navigation.
 Evidence remains a raw-detail table rather than collapsing records into a matrix,
 while shared columns use a canonical order and drillthrough highlights rationale,
 validation, rollback, and technical evidence that are not present in the queues.
+The Action queue now resolves each work item to its actual root cause through the
+bidirectional opportunity bridge, and detail navigation uses a hidden unique
+`opportunity_id` context instead of a non-unique title.
