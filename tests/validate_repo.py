@@ -94,6 +94,7 @@ def validate_manifest() -> None:
         'path.name == ".platform"',
         'item_type in {"SemanticModel", "Report"}',
         "updateDefinition",
+        'result_error.get("errorCode") == "OperationHasNoResult"',
         "Scanner environment libraries are not published",
         "will determine compatibility",
         "SQL endpoint metadata validated:",

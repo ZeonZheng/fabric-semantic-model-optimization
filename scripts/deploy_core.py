@@ -340,6 +340,10 @@ def _fabric_request_json(
             )
             if result_status == 200:
                 return _response_json(result_status, result_content)
+            if result_status == 400:
+                result_error = _response_json(result_status, result_content)
+                if result_error.get("errorCode") == "OperationHasNoResult":
+                    return operation
             if result_status not in {204, 404}:
                 raise RuntimeError(
                     "Fabric LRO result retrieval failed "
