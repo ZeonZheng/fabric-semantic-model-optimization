@@ -331,9 +331,12 @@ def ensure_curated_tables():
             END,
             display_table_name = CASE
                 WHEN trim(coalesce(affected_table_name, '')) <> '' THEN trim(affected_table_name)
-                WHEN instr(lower(coalesce(affected_object_name, '')), 'datetabletemplate_') > 0
-                  OR instr(lower(coalesce(affected_object_name, '')), 'localdatetable_') > 0
-                    THEN trim(affected_object_name)
+                WHEN instr(coalesce(affected_object_name, ''), '[') > 0
+                    THEN regexp_replace(
+                        trim(substring_index(affected_object_name, '[', 1)),
+                        '^\\x27|\\x27$',
+                        ''
+                    )
                 WHEN upper(trim(coalesce(affected_object_type, ''))) IN ('TABLE', 'CALCULATED TABLE')
                   AND trim(coalesce(affected_object_name, '')) <> ''
                     THEN trim(affected_object_name)
@@ -343,9 +346,6 @@ def ensure_curated_tables():
                 WHEN trim(coalesce(affected_object_name, '')) = '' THEN 'Not applicable'
                 ELSE trim(affected_object_name)
             END
-        WHERE object_scope IS NULL
-           OR display_table_name IS NULL
-           OR display_object_name IS NULL
     """)
 
 
@@ -708,11 +708,13 @@ def finding_locator_fields(finding):
         else "Model-level" if object_type in {"", "MODEL", "SEMANTIC MODEL"}
         else "Authored / imported object"
     )
-    display_table = (
-        raw_table
-        or (raw_object if auto_date or object_type in {"TABLE", "CALCULATED TABLE"} else "")
-        or "Not applicable"
-    )
+    object_table = ""
+    if "[" in raw_object:
+        object_table = raw_object.split("[", 1)[0].strip().strip("'")
+    display_table = raw_table or object_table
+    if not display_table and object_type in {"TABLE", "CALCULATED TABLE"}:
+        display_table = raw_object
+    display_table = display_table or "Not applicable"
     return {
         "object_scope": object_scope,
         "display_table_name": display_table,

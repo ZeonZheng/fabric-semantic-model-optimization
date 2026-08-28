@@ -20,7 +20,7 @@ M6.6.2 corrects these consumption semantics without rescanning either TEST model
 or changing any accepted finding description, technical evidence, source, rule,
 opportunity, or recommendation row.
 
-The TEST deployment candidate is solution `0.6.12`. Existing semantic models and
+The TEST deployment candidate is solution `0.6.13`. Existing semantic models and
 reports are updated through the Fabric public-definition REST APIs so the complete
 TMDL/PBIR contract is validated directly; the CLI import path remains available
 for first creation only.
