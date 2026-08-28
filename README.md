@@ -109,10 +109,13 @@ The M6.6 report-consumption contract is documented in
 [`docs/m6-6-report-consumption-review.md`](docs/m6-6-report-consumption-review.md).
 The M6.6.1 Viewer UX redesign is documented in
 [`docs/m6-6-1-viewer-ux-redesign.md`](docs/m6-6-1-viewer-ux-redesign.md).
+The M6.6.2 insight-correctness remediation is documented in
+[`docs/m6-6-2-insight-correctness.md`](docs/m6-6-2-insight-correctness.md).
 
 ## Current stage
 
-Version `0.6.7` deploys the accepted M6.6.1 Viewer UX redesign to TEST on the
+Version `0.6.8` is the M6.6.2 TEST candidate for insight correctness and report
+information hierarchy on the
 validated TEST-tenant baseline. Scanner `2.6.1` is unchanged and retains the M6.4 production-stabilization
 contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
@@ -195,3 +198,14 @@ retains the existing TEST analyses without rescanning. Live Viewer acceptance
 confirmed the unclipped four-card landing page, the Table object filter across
 Issues/Actions/Evidence, the saved P2 action queue, and Issue detail drillthrough
 with a working Back action.
+
+M6.6.2 addresses the second Viewer review without changing accepted scan rows.
+Start here now summarizes priority and decision bands instead of repeating the
+full Issues inventory. Issues uses filter-aware evidence and action measures;
+Actions shows the evidence currently supporting each work item. The shared
+locator distinguishes system Auto Date/Time objects from authored/imported
+objects and model-level findings, normalizes table display names without changing
+raw evidence, and adds object category, area/domain, and root-cause navigation.
+Evidence remains a raw-detail table rather than collapsing records into a matrix,
+while shared columns use a canonical order and drillthrough highlights rationale,
+validation, rollback, and technical evidence that are not present in the queues.

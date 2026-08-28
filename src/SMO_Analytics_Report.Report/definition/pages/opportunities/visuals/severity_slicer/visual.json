@@ -2,12 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "severity_slicer",
   "position": {
-    "x": 24,
-    "y": 480,
-    "z": 2003,
-    "height": 80,
-    "width": 232,
-    "tabOrder": 2003
+    "x": 280,
+    "y": 216,
+    "z": 2006,
+    "height": 76,
+    "width": 472,
+    "tabOrder": 2006
   },
   "visual": {
     "visualType": "slicer",
@@ -41,7 +41,7 @@
             "show": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "false"
                 }
               }
             },

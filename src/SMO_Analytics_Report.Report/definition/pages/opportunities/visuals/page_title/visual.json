@@ -32,7 +32,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "Filter by object type, table, or object. Each row is one grouped root cause, not a duplicate action.",
+                    "value": "One row is one root cause. Evidence and Actions recalculate for the current affected-object scope.",
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "11px",

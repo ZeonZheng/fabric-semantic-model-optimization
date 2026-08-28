@@ -3,11 +3,11 @@
   "name": "table_slicer",
   "position": {
     "x": 24,
-    "y": 304,
-    "z": 2001,
-    "height": 80,
+    "y": 376,
+    "z": 2002,
+    "height": 76,
     "width": 232,
-    "tabOrder": 2001
+    "tabOrder": 2002
   },
   "visual": {
     "visualType": "slicer",
@@ -23,12 +23,12 @@
                       "Entity": "semantic_model_optimization_findings"
                     }
                   },
-                  "Property": "affected_table_name"
+                  "Property": "display_table_name"
                 }
               },
-              "queryRef": "semantic_model_optimization_findings.affected_table_name",
-              "nativeQueryRef": "Table",
-              "displayName": "Table"
+              "queryRef": "semantic_model_optimization_findings.display_table_name",
+              "nativeQueryRef": "Affected table",
+              "displayName": "Affected table"
             }
           ]
         }
@@ -41,14 +41,14 @@
             "show": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "false"
                 }
               }
             },
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Table'"
+                  "Value": "'Affected table'"
                 }
               }
             },
@@ -79,7 +79,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Table'"
+                  "Value": "'Affected table'"
                 }
               }
             }

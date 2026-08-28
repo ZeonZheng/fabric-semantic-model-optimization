@@ -32,7 +32,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "This page contains work items only. It defaults to P2 actionable/review work; detail holds why, validation, and rollback.",
+                    "value": "Work items only. Visible evidence shows whether each action applies to the current object filters.",
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "11px",

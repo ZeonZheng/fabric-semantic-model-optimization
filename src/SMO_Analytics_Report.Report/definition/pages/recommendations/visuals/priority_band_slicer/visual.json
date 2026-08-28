@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "priority_band_slicer",
   "position": {
-    "x": 24,
-    "y": 568,
+    "x": 768,
+    "y": 216,
     "z": 2101,
-    "height": 80,
-    "width": 232,
+    "height": 76,
+    "width": 488,
     "tabOrder": 2101
   },
   "visual": {
@@ -41,7 +41,7 @@
             "show": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "false"
                 }
               }
             },

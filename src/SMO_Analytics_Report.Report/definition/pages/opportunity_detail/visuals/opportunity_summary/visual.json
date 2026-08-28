@@ -68,6 +68,21 @@
                       "Entity": "semantic_model_optimization_opportunities"
                     }
                   },
+                  "Property": "optimization_domain"
+                }
+              },
+              "queryRef": "semantic_model_optimization_opportunities.optimization_domain",
+              "nativeQueryRef": "Area / domain",
+              "displayName": "Area / domain"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_opportunities"
+                    }
+                  },
                   "Property": "highest_severity"
                 }
               },
@@ -89,6 +104,36 @@
               "queryRef": "semantic_model_optimization_opportunities.change_risk",
               "nativeQueryRef": "Risk",
               "displayName": "Risk"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Metrics"
+                    }
+                  },
+                  "Property": "Visible evidence"
+                }
+              },
+              "queryRef": "Metrics.Visible evidence",
+              "nativeQueryRef": "Visible evidence",
+              "displayName": "Visible evidence"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Metrics"
+                    }
+                  },
+                  "Property": "Visible actions"
+                }
+              },
+              "queryRef": "Metrics.Visible actions",
+              "nativeQueryRef": "Visible actions",
+              "displayName": "Visible actions"
             },
             {
               "field": {
@@ -123,7 +168,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Issue summary'"
+                  "Value": "'Issue summary \u2014 visible counts retain the source-page object filters'"
                 }
               }
             },
@@ -154,7 +199,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Issue summary'"
+                  "Value": "'Issue summary \u2014 visible counts retain the source-page object filters'"
                 }
               }
             }

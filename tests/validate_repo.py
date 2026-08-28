@@ -298,13 +298,19 @@ def validate_report() -> None:
     model_sync_count = 0
     analysis_sync_count = 0
     object_type_sync_count = 0
+    object_scope_sync_count = 0
     affected_table_sync_count = 0
     affected_object_sync_count = 0
+    domain_sync_count = 0
+    root_cause_sync_count = 0
     model_tables = ROOT / "src/SMO_Analytics_SM.SemanticModel/definition/tables"
     semantic_fields = {}
     for table_path in model_tables.glob("*.tmdl"):
         text = table_path.read_text(encoding="utf-8")
-        columns = set(re.findall(r"^\tcolumn ([^\n]+)$", text, re.MULTILINE))
+        columns = {
+            value.strip()
+            for value in re.findall(r"^\tcolumn ([^\n=]+)(?: =.*)?$", text, re.MULTILINE)
+        }
         measures = set(re.findall(r"^\tmeasure '([^']+)'", text, re.MULTILINE))
         semantic_fields[table_path.stem] = columns | measures
 
@@ -341,6 +347,11 @@ def validate_report() -> None:
                 or position.get("y", 0) + position.get("height", 0) > page_definition.get("height", 720)
             ):
                 fail(f"Visual {visual_path.relative_to(ROOT)} extends outside the report canvas.")
+            if (
+                visual_definition.get("visual", {}).get("visualType") == "slicer"
+                and position.get("height", 0) < 76
+            ):
+                fail(f"Dropdown slicer {visual_path.relative_to(ROOT)} is below the 76 px clipping-safe floor.")
             for entity, prop in referenced_fields(visual_definition):
                 if entity not in semantic_fields or prop not in semantic_fields[entity]:
                     fail(f"Report field {entity}.{prop} in {visual_path.relative_to(ROOT)} is not present in TMDL.")
@@ -349,8 +360,11 @@ def validate_report() -> None:
             model_sync_count += sync_group == "SMO_SemanticModel"
             analysis_sync_count += sync_group == "SMO_Analysis"
             object_type_sync_count += sync_group == "SMO_ObjectType"
+            object_scope_sync_count += sync_group == "SMO_ObjectScope"
             affected_table_sync_count += sync_group == "SMO_AffectedTable"
             affected_object_sync_count += sync_group == "SMO_AffectedObject"
+            domain_sync_count += sync_group == "SMO_Domain"
+            root_cause_sync_count += sync_group == "SMO_RootCause"
         visual_definitions = [json.loads(path.read_text()) for path in visuals]
         for index, left in enumerate(visual_definitions):
             lp = left["position"]
@@ -389,32 +403,96 @@ def validate_report() -> None:
         fail("Opportunity drillthrough must use the visible opportunity title from the source table.")
     if workspace_sync_count != 5 or model_sync_count != 6 or analysis_sync_count != 5:
         fail("Global scope slicers must stay synchronized across visible pages, with model context retained on detail.")
-    if object_type_sync_count != 3 or affected_table_sync_count != 3 or affected_object_sync_count != 3:
-        fail("Object type, table, and object locators must stay synchronized across Issues, Actions, and Evidence.")
-    if visual_count != 61:
-        fail(f"The M6.6.1 report contract requires 61 visuals, found {visual_count}.")
+    if (
+        object_scope_sync_count != 3 or object_type_sync_count != 3
+        or affected_table_sync_count != 3 or affected_object_sync_count != 3
+        or domain_sync_count != 3 or root_cause_sync_count != 3
+    ):
+        fail("Object category, type, table, object, domain, and root-cause locators must stay synchronized.")
+    if visual_count != 70:
+        fail(f"The M6.6.2 report contract requires 70 visuals, found {visual_count}.")
     model_text = (model_tables.parent / "model.tmdl").read_text(encoding="utf-8")
     if "relationship opportunity_findings" not in model_text or "crossFilteringBehavior: bothDirections" not in model_text:
         fail("Object-level evidence filters must propagate to grouped issues and actions.")
     metrics_text = (model_tables / "Metrics.tmdl").read_text(encoding="utf-8")
     for context_field in (
         "measure 'Selected analysis context'", "latest_analysis_id", "latest_analysis_status",
-        "latest_analysis_at", "scanner_version",
+        "latest_analysis_at", "scanner_version", "measure 'Visible evidence'",
+        "measure 'Visible action evidence'", "measure 'Visible actions'",
     ):
         if context_field not in metrics_text:
             fail(f"The current analysis context is missing {context_field}.")
-    overview_queue = report_root / "definition/pages/overview/visuals/findings_by_severity/visual.json"
+    findings_tmdl = (model_tables / "semantic_model_optimization_findings.tmdl").read_text(encoding="utf-8")
+    for display_field in ("object_scope", "display_table_name", "display_object_name"):
+        if f"column {display_field} =" not in findings_tmdl:
+            fail(f"The evidence locator is missing calculated display field {display_field}.")
+    overview_queue = report_root / "definition/pages/overview/visuals/priority_summary/visual.json"
     overview_queue_text = overview_queue.read_text(encoding="utf-8")
-    for field in ("opportunity_title", "priority_score", "actionability_status", "recommendation_count"):
+    for field in ("priority_band", "actionability_status", "Total opportunities", "Visible evidence", "Visible actions"):
         if field not in overview_queue_text:
-            fail(f"The overview decision queue is missing {field}.")
+            fail(f"The overview priority summary is missing {field}.")
+    if "opportunity_title" in overview_queue_text:
+        fail("Start here must summarize the queue instead of repeating the full Issues root-cause inventory.")
+    issues_text = (
+        report_root / "definition/pages/opportunities/visuals/opportunities_table/visual.json"
+    ).read_text(encoding="utf-8")
+    for dynamic_measure in ("Visible evidence", "Visible actions"):
+        if dynamic_measure not in issues_text:
+            fail(f"Issues must expose filter-aware {dynamic_measure}.")
+    if "finding_count" in issues_text or "recommendation_count" in issues_text:
+        fail("Issues must not present stored opportunity totals as filter-aware counts.")
+
+    def projection_order(page, visual_name):
+        definition = json.loads((
+            report_root / "definition/pages" / page / "visuals" / visual_name / "visual.json"
+        ).read_text(encoding="utf-8"))
+        return [
+            projection["queryRef"]
+            for projection in definition["visual"]["query"]["queryState"]["Values"]["projections"]
+        ]
+
+    canonical_orders = {
+        ("opportunities", "opportunities_table"): [
+            f"semantic_model_optimization_opportunities.{field}"
+            for field in (
+                "priority_band", "actionability_status", "opportunity_title", "optimization_domain",
+                "highest_severity", "change_risk",
+            )
+        ] + ["Metrics.Visible evidence", "Metrics.Visible actions"],
+        ("recommendations", "top_actionable_recommendations"): [
+            "semantic_model_optimization_recommendations.recommendation_priority_band",
+            "semantic_model_optimization_recommendations.actionability_status",
+            "semantic_model_optimization_opportunities.opportunity_title",
+            "semantic_model_optimization_recommendations.recommendation_title",
+            "semantic_model_optimization_recommendations.change_risk",
+            "semantic_model_optimization_recommendations.automation_eligibility",
+            "Metrics.Visible action evidence",
+        ],
+        ("findings", "findings_table"): [
+            "semantic_model_optimization_findings.finding_priority_band",
+            "semantic_model_optimization_findings.actionability_status",
+            "semantic_model_optimization_opportunities.opportunity_title",
+            "semantic_model_optimization_findings.optimization_domain",
+            "semantic_model_optimization_findings.severity",
+            "semantic_model_optimization_findings.object_scope",
+            "semantic_model_optimization_findings.affected_object_type",
+            "semantic_model_optimization_findings.display_table_name",
+            "semantic_model_optimization_findings.display_object_name",
+            "semantic_model_optimization_findings.finding_source",
+            "semantic_model_optimization_findings.rule_name",
+        ],
+    }
+    for target, expected_order in canonical_orders.items():
+        actual_order = projection_order(*target)
+        if actual_order != expected_order:
+            fail(f"Canonical field order mismatch for {target}: {actual_order}.")
     top_queue = report_root / "definition/pages/recommendations/visuals/top_actionable_recommendations/visual.json"
     if not top_queue.exists():
         fail("Recommendations must expose the Top actionable recommendations queue.")
     top_queue_text = top_queue.read_text(encoding="utf-8")
     for field in (
         "recommendation_priority_band", "actionability_status", "opportunity_title",
-        "automation_eligibility", "affected_finding_count",
+        "automation_eligibility", "Visible action evidence",
     ):
         if field not in top_queue_text:
             fail(f"Top actionable recommendations is missing {field}.")
@@ -422,6 +500,9 @@ def validate_report() -> None:
     top_sort = top_queue_definition["visual"]["query"].get("sortDefinition", {}).get("sort", [])
     if not top_sort or top_sort[0].get("direction") != "Descending":
         fail("Top actionable recommendations must be sorted by priority descending.")
+    action_filters = top_queue_definition.get("filterConfig", {}).get("filters", [])
+    if not action_filters or "Visible action evidence" not in json.dumps(action_filters):
+        fail("Actions must hide work items with no evidence in the current object scope.")
     actionability_slicer = json.loads((
         report_root / "definition/pages/recommendations/visuals/actionability_slicer/visual.json"
     ).read_text(encoding="utf-8"))
@@ -466,7 +547,10 @@ def validate_report() -> None:
         path.read_text(encoding="utf-8")
         for path in (report_root / "definition/pages/opportunity_detail/visuals").glob("*/visual.json")
     )
-    for field in ("technical_evidence", "finding_source", "validation_method", "rollback_guidance"):
+    for field in (
+        "technical_evidence", "finding_source", "validation_method", "rollback_guidance",
+        "object_scope", "display_table_name", "Visible evidence", "Visible actions",
+    ):
         if field not in detail_text:
             fail(f"The recommendation-to-evidence drillthrough is missing {field}.")
 

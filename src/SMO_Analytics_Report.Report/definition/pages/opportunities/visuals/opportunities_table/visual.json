@@ -3,9 +3,9 @@
   "name": "opportunities_table",
   "position": {
     "x": 280,
-    "y": 216,
+    "y": 308,
     "z": 3000,
-    "height": 480,
+    "height": 388,
     "width": 976,
     "tabOrder": 3000
   },
@@ -72,8 +72,8 @@
                 }
               },
               "queryRef": "semantic_model_optimization_opportunities.optimization_domain",
-              "nativeQueryRef": "Area",
-              "displayName": "Area"
+              "nativeQueryRef": "Area / domain",
+              "displayName": "Area / domain"
             },
             {
               "field": {
@@ -98,42 +98,42 @@
                       "Entity": "semantic_model_optimization_opportunities"
                     }
                   },
-                  "Property": "finding_count"
-                }
-              },
-              "queryRef": "semantic_model_optimization_opportunities.finding_count",
-              "nativeQueryRef": "Evidence",
-              "displayName": "Evidence"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_opportunities"
-                    }
-                  },
-                  "Property": "recommendation_count"
-                }
-              },
-              "queryRef": "semantic_model_optimization_opportunities.recommendation_count",
-              "nativeQueryRef": "Actions",
-              "displayName": "Actions"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_opportunities"
-                    }
-                  },
                   "Property": "change_risk"
                 }
               },
               "queryRef": "semantic_model_optimization_opportunities.change_risk",
               "nativeQueryRef": "Risk",
               "displayName": "Risk"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Metrics"
+                    }
+                  },
+                  "Property": "Visible evidence"
+                }
+              },
+              "queryRef": "Metrics.Visible evidence",
+              "nativeQueryRef": "Visible evidence",
+              "displayName": "Visible evidence"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Metrics"
+                    }
+                  },
+                  "Property": "Visible actions"
+                }
+              },
+              "queryRef": "Metrics.Visible actions",
+              "nativeQueryRef": "Visible actions",
+              "displayName": "Visible actions"
             }
           ]
         }
@@ -171,7 +171,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Issues = grouped root causes \u2014 right-click Root cause for actions and evidence'"
+                  "Value": "'Issues \u2014 counts reflect the current object filters; right-click Root cause for detail'"
                 }
               }
             },
@@ -202,7 +202,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Issues = grouped root causes \u2014 right-click Root cause for actions and evidence'"
+                  "Value": "'Issues \u2014 counts reflect the current object filters; right-click Root cause for detail'"
                 }
               }
             }

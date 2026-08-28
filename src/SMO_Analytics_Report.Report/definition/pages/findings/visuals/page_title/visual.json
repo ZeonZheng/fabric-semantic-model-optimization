@@ -32,7 +32,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "Use this as the evidence locator. Filter to an object, then right-click Root cause for full descriptions and technical evidence.",
+                    "value": "Raw evidence stays tabular for exact inspection; use category and normalized table fields to locate it.",
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "11px",

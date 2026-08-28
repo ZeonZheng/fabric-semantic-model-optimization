@@ -61,6 +61,41 @@ table Metrics
 		formatString: #,0
 		displayFolder: Findings
 
+	measure 'Visible evidence' = COALESCE(COUNTROWS(semantic_model_optimization_findings), 0)
+		formatString: #,0
+		displayFolder: Report experience
+
+	measure 'Visible action evidence' =
+			VAR ActionTitle = SELECTEDVALUE(semantic_model_optimization_recommendations[recommendation_title])
+			VAR ActionOpportunity = SELECTEDVALUE(semantic_model_optimization_recommendations[opportunity_id])
+			VAR RootCause =
+				LOOKUPVALUE(
+					semantic_model_optimization_opportunities[opportunity_title],
+					semantic_model_optimization_opportunities[opportunity_id], ActionOpportunity
+				)
+			RETURN
+				IF(
+					ISBLANK(ActionTitle) || ActionTitle = RootCause,
+					[Visible evidence],
+					CALCULATE(
+						[Visible evidence],
+						TREATAS({ ActionTitle }, semantic_model_optimization_findings[rule_name])
+					)
+				)
+		formatString: #,0
+		displayFolder: Report experience
+
+	measure 'Visible actions' =
+			COALESCE(
+				SUMX(
+					VALUES(semantic_model_optimization_recommendations[recommendation_id]),
+					IF(CALCULATE([Visible action evidence]) > 0, 1, 0)
+				),
+				0
+			)
+		formatString: #,0
+		displayFolder: Report experience
+
 	measure 'Columns analyzed' = COALESCE(COUNTROWS(semantic_model_column_storage), 0)
 		formatString: #,0
 		displayFolder: Storage

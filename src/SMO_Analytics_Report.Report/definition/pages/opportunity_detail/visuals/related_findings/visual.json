@@ -68,6 +68,21 @@
                       "Entity": "semantic_model_optimization_findings"
                     }
                   },
+                  "Property": "object_scope"
+                }
+              },
+              "queryRef": "semantic_model_optimization_findings.object_scope",
+              "nativeQueryRef": "Object category",
+              "displayName": "Object category"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_findings"
+                    }
+                  },
                   "Property": "affected_object_type"
                 }
               },
@@ -83,12 +98,12 @@
                       "Entity": "semantic_model_optimization_findings"
                     }
                   },
-                  "Property": "affected_table_name"
+                  "Property": "display_table_name"
                 }
               },
-              "queryRef": "semantic_model_optimization_findings.affected_table_name",
-              "nativeQueryRef": "Table",
-              "displayName": "Table"
+              "queryRef": "semantic_model_optimization_findings.display_table_name",
+              "nativeQueryRef": "Affected table",
+              "displayName": "Affected table"
             },
             {
               "field": {
@@ -98,12 +113,12 @@
                       "Entity": "semantic_model_optimization_findings"
                     }
                   },
-                  "Property": "affected_object_name"
+                  "Property": "display_object_name"
                 }
               },
-              "queryRef": "semantic_model_optimization_findings.affected_object_name",
-              "nativeQueryRef": "Object",
-              "displayName": "Object"
+              "queryRef": "semantic_model_optimization_findings.display_object_name",
+              "nativeQueryRef": "Affected object",
+              "displayName": "Affected object"
             },
             {
               "field": {
@@ -153,7 +168,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Preserved raw evidence'"
+                  "Value": "'Preserved raw evidence \u2014 technical names and descriptions remain unchanged'"
                 }
               }
             },
@@ -184,7 +199,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Preserved raw evidence'"
+                  "Value": "'Preserved raw evidence \u2014 technical names and descriptions remain unchanged'"
                 }
               }
             }

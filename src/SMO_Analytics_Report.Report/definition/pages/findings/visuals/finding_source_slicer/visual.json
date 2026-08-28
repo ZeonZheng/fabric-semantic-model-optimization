@@ -2,12 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "finding_source_slicer",
   "position": {
-    "x": 24,
-    "y": 568,
-    "z": 2004,
-    "height": 80,
-    "width": 232,
-    "tabOrder": 2004
+    "x": 768,
+    "y": 216,
+    "z": 2007,
+    "height": 76,
+    "width": 488,
+    "tabOrder": 2007
   },
   "visual": {
     "visualType": "slicer",
@@ -41,7 +41,7 @@
             "show": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "false"
                 }
               }
             },

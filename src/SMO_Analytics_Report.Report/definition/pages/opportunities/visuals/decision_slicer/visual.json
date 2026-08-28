@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
-  "name": "table_slicer",
+  "name": "decision_slicer",
   "position": {
-    "x": 24,
-    "y": 376,
-    "z": 2002,
+    "x": 768,
+    "y": 216,
+    "z": 2007,
     "height": 76,
-    "width": 232,
-    "tabOrder": 2002
+    "width": 488,
+    "tabOrder": 2007
   },
   "visual": {
     "visualType": "slicer",
@@ -20,15 +20,15 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_model_optimization_findings"
+                      "Entity": "semantic_model_optimization_opportunities"
                     }
                   },
-                  "Property": "display_table_name"
+                  "Property": "actionability_status"
                 }
               },
-              "queryRef": "semantic_model_optimization_findings.display_table_name",
-              "nativeQueryRef": "Affected table",
-              "displayName": "Affected table"
+              "queryRef": "semantic_model_optimization_opportunities.actionability_status",
+              "nativeQueryRef": "Decision",
+              "displayName": "Decision"
             }
           ]
         }
@@ -48,7 +48,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Affected table'"
+                  "Value": "'Decision'"
                 }
               }
             },
@@ -79,7 +79,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Affected table'"
+                  "Value": "'Decision'"
                 }
               }
             }
@@ -136,11 +136,6 @@
           }
         }
       ]
-    },
-    "syncGroup": {
-      "groupName": "SMO_AffectedTable",
-      "fieldChanges": true,
-      "filterChanges": true
     }
   }
 }

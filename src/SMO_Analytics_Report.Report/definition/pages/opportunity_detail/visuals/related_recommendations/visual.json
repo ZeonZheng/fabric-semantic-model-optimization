@@ -23,21 +23,6 @@
                       "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
-                  "Property": "actionability_status"
-                }
-              },
-              "queryRef": "semantic_model_optimization_recommendations.actionability_status",
-              "nativeQueryRef": "Decision",
-              "displayName": "Decision"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_recommendations"
-                    }
-                  },
                   "Property": "recommendation_title"
                 }
               },
@@ -83,6 +68,36 @@
                       "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
+                  "Property": "validation_method"
+                }
+              },
+              "queryRef": "semantic_model_optimization_recommendations.validation_method",
+              "nativeQueryRef": "Validation method",
+              "displayName": "Validation method"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_recommendations"
+                    }
+                  },
+                  "Property": "rollback_guidance"
+                }
+              },
+              "queryRef": "semantic_model_optimization_recommendations.rollback_guidance",
+              "nativeQueryRef": "Rollback guidance",
+              "displayName": "Rollback guidance"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_recommendations"
+                    }
+                  },
                   "Property": "change_risk"
                 }
               },
@@ -107,33 +122,18 @@
             },
             {
               "field": {
-                "Column": {
+                "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_model_optimization_recommendations"
+                      "Entity": "Metrics"
                     }
                   },
-                  "Property": "validation_method"
+                  "Property": "Visible action evidence"
                 }
               },
-              "queryRef": "semantic_model_optimization_recommendations.validation_method",
-              "nativeQueryRef": "Validation method",
-              "displayName": "Validation method"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_recommendations"
-                    }
-                  },
-                  "Property": "rollback_guidance"
-                }
-              },
-              "queryRef": "semantic_model_optimization_recommendations.rollback_guidance",
-              "nativeQueryRef": "Rollback guidance",
-              "displayName": "Rollback guidance"
+              "queryRef": "Metrics.Visible action evidence",
+              "nativeQueryRef": "Visible evidence",
+              "displayName": "Visible evidence"
             }
           ]
         }
@@ -153,7 +153,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Action controls'"
+                  "Value": "'Implementation controls \u2014 rationale, validation, and rollback not shown in the action queue'"
                 }
               }
             },
@@ -184,7 +184,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Action controls'"
+                  "Value": "'Implementation controls \u2014 rationale, validation, and rollback not shown in the action queue'"
                 }
               }
             }
@@ -325,147 +325,61 @@
               }
             }
           }
+        }
+      ]
+    }
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "Filter7ce0faed258e5279bacf5d9e",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Metrics"
+              }
+            },
+            "Property": "Visible action evidence"
+          }
         },
-        {
-          "properties": {
-            "backColor": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Conditional": {
-                      "Cases": [
-                        {
-                          "Condition": {
-                            "Comparison": {
-                              "ComparisonKind": 0,
-                              "Left": {
-                                "Column": {
-                                  "Expression": {
-                                    "SourceRef": {
-                                      "Entity": "semantic_model_optimization_recommendations"
-                                    }
-                                  },
-                                  "Property": "actionability_status"
-                                }
-                              },
-                              "Right": {
-                                "Literal": {
-                                  "Value": "'ACTIONABLE'"
-                                }
-                              }
-                            }
-                          },
-                          "Value": {
-                            "Literal": {
-                              "Value": "'#D9EAD3'"
-                            }
-                          }
-                        },
-                        {
-                          "Condition": {
-                            "Comparison": {
-                              "ComparisonKind": 0,
-                              "Left": {
-                                "Column": {
-                                  "Expression": {
-                                    "SourceRef": {
-                                      "Entity": "semantic_model_optimization_recommendations"
-                                    }
-                                  },
-                                  "Property": "actionability_status"
-                                }
-                              },
-                              "Right": {
-                                "Literal": {
-                                  "Value": "'REVIEW_REQUIRED'"
-                                }
-                              }
-                            }
-                          },
-                          "Value": {
-                            "Literal": {
-                              "Value": "'#FCE8B2'"
-                            }
-                          }
-                        },
-                        {
-                          "Condition": {
-                            "Comparison": {
-                              "ComparisonKind": 0,
-                              "Left": {
-                                "Column": {
-                                  "Expression": {
-                                    "SourceRef": {
-                                      "Entity": "semantic_model_optimization_recommendations"
-                                    }
-                                  },
-                                  "Property": "actionability_status"
-                                }
-                              },
-                              "Right": {
-                                "Literal": {
-                                  "Value": "'INFORMATIONAL'"
-                                }
-                              }
-                            }
-                          },
-                          "Value": {
-                            "Literal": {
-                              "Value": "'#D9EAF7'"
-                            }
-                          }
-                        },
-                        {
-                          "Condition": {
-                            "Comparison": {
-                              "ComparisonKind": 0,
-                              "Left": {
-                                "Column": {
-                                  "Expression": {
-                                    "SourceRef": {
-                                      "Entity": "semantic_model_optimization_recommendations"
-                                    }
-                                  },
-                                  "Property": "actionability_status"
-                                }
-                              },
-                              "Right": {
-                                "Literal": {
-                                  "Value": "'SUPPRESSED'"
-                                }
-                              }
-                            }
-                          },
-                          "Value": {
-                            "Literal": {
-                              "Value": "'#E5E7EB'"
-                            }
-                          }
+        "type": "Advanced",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "m",
+              "Entity": "Metrics",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Comparison": {
+                  "ComparisonKind": 1,
+                  "Left": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Source": "m"
                         }
-                      ],
-                      "DefaultValue": {
-                        "Literal": {
-                          "Value": "'#FFFFFF'"
-                        }
-                      }
+                      },
+                      "Property": "Visible action evidence"
+                    }
+                  },
+                  "Right": {
+                    "Literal": {
+                      "Value": "0L"
                     }
                   }
                 }
               }
             }
-          },
-          "selector": {
-            "data": [
-              {
-                "dataViewWildcard": {
-                  "matchingOption": 1
-                }
-              }
-            ],
-            "metadata": "semantic_model_optimization_recommendations.actionability_status"
-          }
-        }
-      ]
-    }
+          ]
+        },
+        "howCreated": "User"
+      }
+    ]
   }
 }

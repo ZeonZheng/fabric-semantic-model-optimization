@@ -3,11 +3,11 @@
   "name": "object_type_slicer",
   "position": {
     "x": 24,
-    "y": 216,
-    "z": 2000,
-    "height": 80,
+    "y": 296,
+    "z": 2001,
+    "height": 76,
     "width": 232,
-    "tabOrder": 2000
+    "tabOrder": 2001
   },
   "visual": {
     "visualType": "slicer",
@@ -41,7 +41,7 @@
             "show": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "false"
                 }
               }
             },

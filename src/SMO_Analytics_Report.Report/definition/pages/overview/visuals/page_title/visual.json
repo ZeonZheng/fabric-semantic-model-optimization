@@ -32,7 +32,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "Default validation preset: SMO_Optimization1 (intentionally degraded). Follow Issues \u2192 Actions \u2192 Evidence.",
+                    "value": "Read the four KPIs, then use the priority summary to choose the queue to open in Issues.",
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "11px",

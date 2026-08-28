@@ -1,6 +1,6 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
-  "name": "findings_by_severity",
+  "name": "priority_summary",
   "position": {
     "x": 24,
     "y": 344,
@@ -47,99 +47,51 @@
             },
             {
               "field": {
-                "Column": {
+                "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_model_optimization_opportunities"
+                      "Entity": "Metrics"
                     }
                   },
-                  "Property": "opportunity_title"
+                  "Property": "Total opportunities"
                 }
               },
-              "queryRef": "semantic_model_optimization_opportunities.opportunity_title",
-              "nativeQueryRef": "Root cause",
-              "displayName": "Root cause"
+              "queryRef": "Metrics.Total opportunities",
+              "nativeQueryRef": "Root causes",
+              "displayName": "Root causes"
             },
             {
               "field": {
-                "Column": {
+                "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_model_optimization_opportunities"
+                      "Entity": "Metrics"
                     }
                   },
-                  "Property": "optimization_domain"
+                  "Property": "Visible evidence"
                 }
               },
-              "queryRef": "semantic_model_optimization_opportunities.optimization_domain",
-              "nativeQueryRef": "Area",
-              "displayName": "Area"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_opportunities"
-                    }
-                  },
-                  "Property": "highest_severity"
-                }
-              },
-              "queryRef": "semantic_model_optimization_opportunities.highest_severity",
-              "nativeQueryRef": "Severity",
-              "displayName": "Severity"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_opportunities"
-                    }
-                  },
-                  "Property": "finding_count"
-                }
-              },
-              "queryRef": "semantic_model_optimization_opportunities.finding_count",
+              "queryRef": "Metrics.Visible evidence",
               "nativeQueryRef": "Evidence",
               "displayName": "Evidence"
             },
             {
               "field": {
-                "Column": {
+                "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_model_optimization_opportunities"
+                      "Entity": "Metrics"
                     }
                   },
-                  "Property": "recommendation_count"
+                  "Property": "Visible actions"
                 }
               },
-              "queryRef": "semantic_model_optimization_opportunities.recommendation_count",
+              "queryRef": "Metrics.Visible actions",
               "nativeQueryRef": "Actions",
               "displayName": "Actions"
             }
           ]
         }
-      },
-      "sortDefinition": {
-        "sort": [
-          {
-            "field": {
-              "Column": {
-                "Expression": {
-                  "SourceRef": {
-                    "Entity": "semantic_model_optimization_opportunities"
-                  }
-                },
-                "Property": "priority_score"
-              }
-            },
-            "direction": "Descending"
-          }
-        ],
-        "isDefaultSort": false
       }
     },
     "visualContainerObjects": {
@@ -156,7 +108,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Start with the highest-priority root causes \u2014 right-click one for full detail'"
+                  "Value": "'Priority summary \u2014 open Issues for the full root-cause locator'"
                 }
               }
             },
@@ -187,7 +139,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Start with the highest-priority root causes \u2014 right-click one for full detail'"
+                  "Value": "'Priority summary \u2014 open Issues for the full root-cause locator'"
                 }
               }
             }

@@ -3,11 +3,11 @@
   "name": "object_slicer",
   "position": {
     "x": 24,
-    "y": 392,
-    "z": 2002,
-    "height": 80,
+    "y": 456,
+    "z": 2003,
+    "height": 76,
     "width": 232,
-    "tabOrder": 2002
+    "tabOrder": 2003
   },
   "visual": {
     "visualType": "slicer",
@@ -23,12 +23,12 @@
                       "Entity": "semantic_model_optimization_findings"
                     }
                   },
-                  "Property": "affected_object_name"
+                  "Property": "display_object_name"
                 }
               },
-              "queryRef": "semantic_model_optimization_findings.affected_object_name",
-              "nativeQueryRef": "Object",
-              "displayName": "Object"
+              "queryRef": "semantic_model_optimization_findings.display_object_name",
+              "nativeQueryRef": "Affected object",
+              "displayName": "Affected object"
             }
           ]
         }
@@ -41,14 +41,14 @@
             "show": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "false"
                 }
               }
             },
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Object'"
+                  "Value": "'Affected object'"
                 }
               }
             },
@@ -79,7 +79,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Object'"
+                  "Value": "'Affected object'"
                 }
               }
             }
