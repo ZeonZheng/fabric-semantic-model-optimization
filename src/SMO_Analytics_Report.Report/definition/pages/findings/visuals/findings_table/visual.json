@@ -179,11 +179,7 @@
               "queryRef": "semantic_model_optimization_findings.rule_name",
               "nativeQueryRef": "Rule",
               "displayName": "Rule"
-            }
-          ]
-        },
-        "Tooltips": {
-          "projections": [
+            },
             {
               "field": {
                 "Column": {
