@@ -477,9 +477,9 @@ def validate_report() -> None:
         source_visual = json.loads((
             report_root / f"definition/pages/{page_name}/visuals/{visual_name}/visual.json"
         ).read_text(encoding="utf-8"))
-        tooltips = source_visual["visual"]["query"]["queryState"].get("Tooltips", {}).get("projections", [])
-        if "opportunity_id" not in json.dumps(tooltips):
-            fail(f"{page_name} must carry the unique opportunity drillthrough key in Tooltips.")
+        values = source_visual["visual"]["query"]["queryState"]["Values"]["projections"]
+        if "opportunity_id" not in json.dumps(values):
+            fail(f"{page_name} must carry the unique opportunity drillthrough key in the row grain.")
 
     def projection_order(page, visual_name):
         definition = json.loads((
@@ -497,7 +497,11 @@ def validate_report() -> None:
                 "priority_band", "actionability_status", "opportunity_title", "optimization_domain",
                 "highest_severity", "change_risk",
             )
-        ] + ["Metrics.Visible evidence", "Metrics.Visible actions"],
+        ] + [
+            "Metrics.Visible evidence",
+            "Metrics.Visible actions",
+            "semantic_model_optimization_opportunities.opportunity_id",
+        ],
         ("recommendations", "top_actionable_recommendations"): [
             "semantic_model_optimization_recommendations.recommendation_priority_band",
             "semantic_model_optimization_recommendations.actionability_status",
@@ -506,6 +510,7 @@ def validate_report() -> None:
             "semantic_model_optimization_recommendations.change_risk",
             "semantic_model_optimization_recommendations.automation_eligibility",
             "Metrics.Visible action evidence",
+            "semantic_model_optimization_opportunities.opportunity_id",
         ],
         ("findings", "findings_table"): [
             "semantic_model_optimization_findings.finding_priority_band",
@@ -519,6 +524,7 @@ def validate_report() -> None:
             "semantic_model_optimization_findings.display_object_name",
             "semantic_model_optimization_findings.finding_source",
             "semantic_model_optimization_findings.rule_name",
+            "semantic_model_optimization_opportunities.opportunity_id",
         ],
     }
     for target, expected_order in canonical_orders.items():
