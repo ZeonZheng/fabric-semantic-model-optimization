@@ -20,7 +20,7 @@ M6.6.2 corrects these consumption semantics without rescanning either TEST model
 or changing any accepted finding description, technical evidence, source, rule,
 opportunity, or recommendation row.
 
-The TEST deployment candidate is solution `0.6.15`. Existing semantic models and
+The accepted TEST release is solution `0.6.16`. Existing semantic models and
 reports are updated through the Fabric public-definition REST APIs so the complete
 TMDL/PBIR contract is validated directly; the CLI import path remains available
 for first creation only.
@@ -87,9 +87,9 @@ in Evidence and drillthrough for traceability.
 
 | Surface | Order |
 | --- | --- |
-| Issues | Priority → Decision → Root cause → Area/domain → Severity → Risk → Visible evidence → Visible actions |
-| Actions | Priority → Decision → Root cause → Action → Risk → Automation → Visible evidence |
-| Evidence | Priority → Decision → Root cause → Area/domain → Severity → Object category → Object type → Affected table → Affected object → Source → Rule |
+| Issues | Priority → Decision → Root cause → Area/domain → Severity → Risk → Visible evidence → Visible actions → Issue key |
+| Actions | Priority → Decision → Root cause → Action → Risk → Automation → Visible evidence → Issue key |
+| Evidence | Priority → Decision → Root cause → Area/domain → Severity → Object category → Object type → Affected table → Affected object → Source → Rule → Issue key |
 | Detail actions | Action → Why it matters → Recommended action → Validation → Rollback → Risk → Automation → Visible evidence |
 | Detail evidence | Severity → Source → Rule → Object category → Object type → Affected table → Affected object → Finding → Technical evidence |
 
@@ -122,14 +122,12 @@ if it answers a distinct aggregation question.
 
 - Repository validation: passed, 88 JSON/notebook/platform files.
 - Python compile and `git diff --check`: passed.
-- Microsoft `powerbi-report-author` `0.1.4`: the earlier full PBIR pass reported
-  0 errors; its only warnings were schema-fetch warnings caused by the execution
-  network. The final unique-key delta passed repository validation and was accepted
-  by Fabric `updateDefinition`; the temporary authoring CLI was no longer available
-  for a second local pass.
+- Microsoft `powerbi-report-author` `0.1.4`: final `0.6.16` PBIR validation passed
+  with 0 errors. Its only warning was an unreachable public JSON schema caused by
+  the execution network; repository validation still parsed all 88 definition files.
 - Report inventory: five visible pages, one hidden drillthrough page, 70 visuals,
   no overlap or out-of-canvas bounds.
-- TEST deployment: solution `0.6.15` succeeded in workspace
+- TEST deployment: solution `0.6.16` succeeded in workspace
   `cc9ce2d3-5e27-47e3-9e69-06cf7324dbb4`; Semantic Model and Report
   definitions updated through REST and the Direct Lake refresh completed.
 - No `Load_SMO_Data` run occurred. The accepted adverse analysis remains
@@ -142,7 +140,11 @@ if it answers a distinct aggregation question.
   actions), hiding zero-evidence groups, positive-evidence-only Actions rows,
   correct Action-to-root-cause mapping, Auto Date/Time isolation, table-grain
   locator values, explicit detail controls, raw evidence, and Back navigation.
-- The final `0.6.15` unique-`opportunity_id` drillthrough contract is
-  deployed and repository-validated. A final post-deployment Viewer click-through
-  remains pending because the authenticated cloud Viewer session went offline
-  immediately after deployment; no product or deployment failure was observed.
+- Final Viewer acceptance passed on `0.6.16`. Right-clicking
+  `Model structure optimization` in Actions exposed `Issue detail`; the target
+  received the unique issue key `5a5d4ec8…be0b`, rendered exactly one issue-summary
+  row at P2_HIGH / ACTIONABLE with 13 visible evidence and 1 visible action in the
+  selected source-row context, exposed only the selected MQ006 implementation row,
+  and returned to Actions through Back.
+
+M6.6.2 is complete.
