@@ -127,4 +127,20 @@ if it answers a distinct aggregation question.
   remained.
 - Report inventory: five visible pages, one hidden drillthrough page, 70 visuals,
   no overlap or out-of-canvas bounds.
-- TEST deployment and Viewer acceptance: pending.
+- TEST deployment: solution `0.6.15` succeeded in workspace
+  `cc9ce2d3-5e27-47e3-9e69-06cf7324dbb4`; Semantic Model and Report
+  definitions updated through REST and the Direct Lake refresh completed.
+- No `Load_SMO_Data` run occurred. The accepted adverse analysis remains
+  `ce4c1f2e-fe41-4ca2-9cff-5ab740ef8eea` at 1,021 findings, 19
+  opportunities, 54 recommendations, and 30/30 MQ coverage; the control
+  analysis remains `bff4e3d3-a64e-49ca-abb2-c24e7d172030` at 138 findings,
+  13 opportunities, 25 recommendations, and 9 MQ rules.
+- Viewer acceptance passed for the non-duplicated Start here summary (19 /
+  1,021 / 54), the Table-scoped Issues totals (98 visible evidence / 10 visible
+  actions), hiding zero-evidence groups, positive-evidence-only Actions rows,
+  correct Action-to-root-cause mapping, Auto Date/Time isolation, table-grain
+  locator values, explicit detail controls, raw evidence, and Back navigation.
+- The final `0.6.15` unique-`opportunity_id` drillthrough contract is
+  deployed and repository-validated. A final post-deployment Viewer click-through
+  remains pending because the authenticated cloud Viewer session went offline
+  immediately after deployment; no product or deployment failure was observed.
