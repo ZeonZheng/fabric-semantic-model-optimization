@@ -450,6 +450,10 @@ def validate_report() -> None:
             fail(f"The overview priority summary is missing {field}.")
     if "opportunity_title" in overview_queue_text:
         fail("Start here must summarize the queue instead of repeating the full Issues root-cause inventory.")
+    if "Visible evidence" not in json.dumps(
+        json.loads(overview_queue_text).get("filterConfig", {}).get("filters", [])
+    ):
+        fail("Start here must hide priority/decision groups with no visible evidence.")
     issues_text = (
         report_root / "definition/pages/opportunities/visuals/opportunities_table/visual.json"
     ).read_text(encoding="utf-8")
@@ -458,6 +462,10 @@ def validate_report() -> None:
             fail(f"Issues must expose filter-aware {dynamic_measure}.")
     if "finding_count" in issues_text or "recommendation_count" in issues_text:
         fail("Issues must not present stored opportunity totals as filter-aware counts.")
+    if "Visible evidence" not in json.dumps(
+        json.loads(issues_text).get("filterConfig", {}).get("filters", [])
+    ):
+        fail("Issues must hide root causes with no evidence in the current object scope.")
 
     def projection_order(page, visual_name):
         definition = json.loads((

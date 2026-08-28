@@ -942,7 +942,8 @@ def write_report() -> None:
             field_measure("Visible evidence", "Evidence"),
             field_measure("Visible actions", "Actions"),
         ]}, "Priority summary — open Issues for the full root-cause locator", 3000,
-               conditional_color=(f"{opportunities}.actionability_status", "actionability")),
+               conditional_color=(f"{opportunities}.actionability_status", "actionability"),
+               measure_filter_gt_zero=("Metrics", "Visible evidence")),
     ])
 
     write_page("opportunities", "1 · Issues", report_header(
@@ -976,7 +977,8 @@ def write_report() -> None:
             field_measure("Visible actions", "Visible actions"),
         ]}, "Issues — counts reflect the current object filters; right-click Root cause for detail", 3000,
                conditional_color=(f"{opportunities}.actionability_status", "actionability"),
-               sort_by=(opportunities, "priority_score")),
+               sort_by=(opportunities, "priority_score"),
+               measure_filter_gt_zero=("Metrics", "Visible evidence")),
     ])
 
     write_page("recommendations", "2 · Actions", report_header(
