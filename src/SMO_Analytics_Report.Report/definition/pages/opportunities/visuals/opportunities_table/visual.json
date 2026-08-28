@@ -134,11 +134,7 @@
               "queryRef": "Metrics.Visible actions",
               "nativeQueryRef": "Visible actions",
               "displayName": "Visible actions"
-            }
-          ]
-        },
-        "Tooltips": {
-          "projections": [
+            },
             {
               "field": {
                 "Column": {
