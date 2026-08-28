@@ -114,7 +114,7 @@ The M6.6.2 insight-correctness remediation is documented in
 
 ## Current stage
 
-Version `0.6.14` is the M6.6.2 TEST candidate for insight correctness and report
+Version `0.6.15` is the M6.6.2 TEST candidate for insight correctness and report
 information hierarchy on the
 validated TEST-tenant baseline. Scanner `2.6.1` is unchanged and retains the M6.4 production-stabilization
 contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,

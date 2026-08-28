@@ -412,8 +412,8 @@ def validate_report() -> None:
         if drill_parameters
         else None
     )
-    if drill_property != "opportunity_title":
-        fail("Opportunity drillthrough must use the visible opportunity title from the source table.")
+    if drill_property != "opportunity_id":
+        fail("Opportunity drillthrough must use the unique opportunity key from the source context.")
     if workspace_sync_count != 5 or model_sync_count != 6 or analysis_sync_count != 5:
         fail("Global scope slicers must stay synchronized across visible pages, with model context retained on detail.")
     if (
@@ -469,6 +469,17 @@ def validate_report() -> None:
         json.loads(issues_text).get("filterConfig", {}).get("filters", [])
     ):
         fail("Issues must hide root causes with no evidence in the current object scope.")
+    for page_name, visual_name in (
+        ("opportunities", "opportunities_table"),
+        ("recommendations", "top_actionable_recommendations"),
+        ("findings", "findings_table"),
+    ):
+        source_visual = json.loads((
+            report_root / f"definition/pages/{page_name}/visuals/{visual_name}/visual.json"
+        ).read_text(encoding="utf-8"))
+        tooltips = source_visual["visual"]["query"]["queryState"].get("Tooltips", {}).get("projections", [])
+        if "opportunity_id" not in json.dumps(tooltips):
+            fail(f"{page_name} must carry the unique opportunity drillthrough key in Tooltips.")
 
     def projection_order(page, visual_name):
         definition = json.loads((

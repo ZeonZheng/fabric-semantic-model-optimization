@@ -136,6 +136,25 @@
               "displayName": "Visible actions"
             }
           ]
+        },
+        "Tooltips": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_opportunities"
+                    }
+                  },
+                  "Property": "opportunity_id"
+                }
+              },
+              "queryRef": "semantic_model_optimization_opportunities.opportunity_id",
+              "nativeQueryRef": "Issue key",
+              "displayName": "Issue key"
+            }
+          ]
         }
       },
       "sortDefinition": {

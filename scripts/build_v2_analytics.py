@@ -976,7 +976,8 @@ def write_report() -> None:
             field_column(opportunities, "change_risk", "Risk"),
             field_measure("Visible evidence", "Visible evidence"),
             field_measure("Visible actions", "Visible actions"),
-        ]}, "Issues — counts reflect the current object filters; right-click Root cause for detail", 3000,
+        ], "Tooltips": [field_column(opportunities, "opportunity_id", "Issue key")]},
+               "Issues — counts reflect the current object filters; right-click Root cause for detail", 3000,
                conditional_color=(f"{opportunities}.actionability_status", "actionability"),
                sort_by=(opportunities, "priority_score"),
                measure_filter_gt_zero=("Metrics", "Visible evidence")),
@@ -1012,7 +1013,8 @@ def write_report() -> None:
             field_column(recommendations, "change_risk", "Risk"),
             field_column(recommendations, "automation_eligibility", "Automation"),
             field_measure("Visible action evidence", "Visible evidence"),
-        ]}, "Actions = user work items — right-click Root cause for why, validation, rollback, and evidence", 3000,
+        ], "Tooltips": [field_column(opportunities, "opportunity_id", "Issue key")]},
+               "Actions = user work items — right-click Root cause for why, validation, rollback, and evidence", 3000,
                conditional_color=(f"{recommendations}.actionability_status", "actionability"),
                sort_by=(recommendations, "recommendation_priority_score"),
                measure_filter_gt_zero=("Metrics", "Visible action evidence")),
@@ -1050,7 +1052,8 @@ def write_report() -> None:
             field_column(findings, "display_object_name", "Affected object"),
             field_column(findings, "finding_source", "Source"),
             field_column(findings, "rule_name", "Rule"),
-        ]}, "Evidence locator — raw descriptions and technical evidence are one drillthrough away", 3000,
+        ], "Tooltips": [field_column(opportunities, "opportunity_id", "Issue key")]},
+               "Evidence locator — raw descriptions and technical evidence are one drillthrough away", 3000,
                conditional_color=(f"{findings}.severity", "severity"),
                sort_by=(findings, "finding_priority_score")),
     ])
@@ -1103,7 +1106,8 @@ def write_report() -> None:
             field_measure("Visible actions", "Visible actions"),
             field_column(opportunities, "opportunity_summary", "Summary"),
         ]}, "Issue summary — visible counts retain the source-page object filters", 2000,
-               conditional_color=(f"{opportunities}.actionability_status", "actionability")),
+               conditional_color=(f"{opportunities}.actionability_status", "actionability"),
+               measure_filter_gt_zero=("Metrics", "Visible evidence")),
         visual("related_recommendations", "tableEx", 24, 280, 1232, 192, {"Values": [
             field_column(recommendations, "recommendation_title", "Action"),
             field_column(recommendations, "why_it_matters", "Why it matters"),
@@ -1127,10 +1131,9 @@ def write_report() -> None:
             field_column(findings, "technical_evidence", "Technical evidence"),
         ]}, "Preserved raw evidence — technical names and descriptions remain unchanged", 4000,
                conditional_color=(f"{findings}.severity", "severity")),
-    # Drillthrough must bind to a field that is present in the source table visual.
-    # The synchronized semantic-model slicer preserves model scope, so the visible
-    # opportunity title is both user-friendly and unambiguous in the drill context.
-    ], **drillthrough_config(opportunities, "opportunity_title"))
+    # The unique opportunity key is carried in each source table's Tooltips role,
+    # so same-title root causes remain user-friendly without widening drill scope.
+    ], **drillthrough_config(opportunities, "opportunity_id"))
 
     (PAGES / "pages.json").write_text(json.dumps({
         "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.0.0/schema.json",
