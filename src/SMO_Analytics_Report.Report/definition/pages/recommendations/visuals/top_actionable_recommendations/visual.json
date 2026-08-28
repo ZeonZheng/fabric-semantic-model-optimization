@@ -119,11 +119,7 @@
               "queryRef": "Metrics.Visible action evidence",
               "nativeQueryRef": "Visible evidence",
               "displayName": "Visible evidence"
-            }
-          ]
-        },
-        "Tooltips": {
-          "projections": [
+            },
             {
               "field": {
                 "Column": {
