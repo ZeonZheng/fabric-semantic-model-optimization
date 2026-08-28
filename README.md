@@ -114,12 +114,12 @@ The M6.6.2 insight-correctness remediation is documented in
 
 ## Current stage
 
-Version `0.6.15` is deployed to TEST for the M6.6.2 insight-correctness and report
-information-hierarchy gate on the validated TEST-tenant baseline. Functional Viewer
-acceptance has passed; only the final post-deployment click-through of the new unique
-`opportunity_id` drillthrough key remains to be repeated after the authenticated
-Viewer session reconnects. Scanner `2.6.1` is unchanged and retains the M6.4 production-stabilization
-contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
+Version `0.6.16` is deployed and accepted in TEST for the M6.6.2 insight-correctness
+and report information-hierarchy gate on the validated TEST-tenant baseline. Viewer
+acceptance passed through the complete Issues/Actions/Evidence → Issue detail → Back
+path, including unique `opportunity_id` drillthrough that returns exactly one root
+cause. M6.6.2 is complete. Scanner `2.6.1` is unchanged and retains the M6.4
+production-stabilization contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
 current identity and workspace-scoped APIs only. It does not enumerate tenant
 workspaces, workspace members, or items through Fabric Admin APIs. SPN validation
