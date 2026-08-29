@@ -235,6 +235,12 @@ def validate_scanner() -> None:
     normalized = [normalize_identifier(value) for value in variants]
     if normalized[:5] != ["DimDate"] * 5 or normalized[5] != "Dim Date":
         fail(f"Display-only table-name normalization is not canonical: {normalized}.")
+    ensure_curated_source = ast.get_source_segment(code_source, next(
+        node for node in scanner_tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "ensure_curated_tables"
+    )) or ""
+    if 'spark.sql(fr"""' not in ensure_curated_source:
+        fail("Curated display-name normalization must use a raw f-string so Spark receives regex escapes unchanged.")
     classify = status_namespace["classify_model_status"]
     base = {
         "bpa": "SUCCEEDED",

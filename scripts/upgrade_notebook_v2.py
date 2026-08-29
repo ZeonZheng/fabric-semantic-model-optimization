@@ -316,7 +316,11 @@ def ensure_curated_tables():
             spark.sql(f"ALTER TABLE {name} ADD COLUMNS ({additions})")
 
     findings_name = curated_table_name("findings")
-    spark.sql(f"""
+    # Keep the regex backslashes intact through Python and Spark SQL parsing.
+    # A normal f-string turns ``\\s`` into ``\s`` before Spark sees it; Spark's
+    # SQL string parser then drops that remaining slash and the regex becomes
+    # ``s+``, which corrupts identifiers such as ``FactInternetSales``.
+    spark.sql(fr"""
         UPDATE {findings_name}
         SET
             object_scope = CASE
