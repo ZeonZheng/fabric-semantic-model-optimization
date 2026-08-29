@@ -116,13 +116,15 @@ The M6.6.3 consolidated review workbench is documented in
 
 ## Current stage
 
-Version `0.6.17` is the locally validated TEST candidate for the reopened M6.6.3
+Version `0.6.17` is deployed to TEST and accepted for the reopened M6.6.3
 report-review gate. It consolidates Issues, Actions, Evidence, and Issue detail into
 one Review issues workbench, restores a Start here drillthrough path, canonicalizes
 display-only affected-table names, removes the mixed-grain stored summary, and makes
-semantic conditional formatting consistent. TEST deployment and Viewer acceptance
-remain pending; the last accepted TEST baseline is M6.6.2 on `0.6.16`. Scanner
-`2.6.1` is unchanged and retains the M6.4
+semantic conditional formatting consistent. Fabric Viewer acceptance confirmed the
+three-page navigation, filtered drillthrough, issue-to-action/evidence interactions,
+canonical affected-table slicer values, and the 6/13 action/evidence example that
+previously exposed the mixed-grain summary defect. Scanner `2.6.1` is unchanged and
+retains the M6.4
 production-stabilization contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
 current identity and workspace-scoped APIs only. It does not enumerate tenant
@@ -230,5 +232,15 @@ The unique issue key remains only as a final control column in Issues. Start her
 drills by Priority and Decision, and no visual uses the stored `opportunity_summary`.
 Display-only table-name normalization removes wrapping quotes, zero-width marks,
 non-breaking spaces, and repeated whitespace while preserving all raw evidence.
-Local PBIR/repository acceptance is complete for solution `0.6.17`; TEST deployment
-and Viewer acceptance are the remaining M6.6.3 gates.
+Solution `0.6.17` passed local PBIR/repository validation, TEST deployment, semantic
+model refresh, and live Fabric Viewer acceptance. The accepted adverse-model baseline
+remains 1,021 findings, 19 root causes, and 54 actions; no data-collection pipeline or
+new model scan was run for this report-only milestone.
+
+```mermaid
+flowchart LR
+    A["M6.5.6 Scan quality ✓"] --> B["M6.6.1 Viewer UX ✓"]
+    B --> C["M6.6.2 Insight correctness ✓"]
+    C --> D["M6.6.3 Review workbench ✓"]
+    D --> E["Next: M6.7 remediation workflow"]
+```

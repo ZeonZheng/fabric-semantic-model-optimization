@@ -70,3 +70,30 @@ Design Brief:
 - Affected-table display values are canonical while raw evidence fields remain unchanged.
 - Priority, Decision, Severity, Risk, and Automation conditional formatting is consistent wherever each field is shown.
 - PBIR schema validation, repository validation, TEST deployment, and Fabric Viewer acceptance all pass.
+
+## TEST acceptance result
+
+Accepted on 2026-08-29 in `SMO Analytics - Dev` with solution `0.6.17` and scanner `2.6.1`.
+
+| Check | Result |
+| --- | --- |
+| Deployment | `SUCCEEDED`; scanner initialization job `57ac749a-9154-409e-a4ee-a7d5c547fc02` completed |
+| Semantic model / report | Definitions updated through Fabric REST; semantic model refresh completed |
+| Visible pages | Exactly Start here, Review issues, and Storage |
+| Start here | Four unclipped KPIs; Priority/Decision rows expose `Drillthrough → Review issues` |
+| Object navigation | Authored/imported, Auto Date/Time system, and model-level categories are available |
+| Affected-table normalization | Quoted/unquoted duplicates removed; identifiers such as `DimCustomer` and `FactInternetSales` remain intact |
+| Three-table interaction | Issues filters Actions and Evidence; lower tables do not cross-filter each other |
+| Count correctness | Date handling shows 2 actions / 6 evidence; Model structure shows 6 actions / 13 evidence |
+| Inline detail | Action rationale, implementation, validation, rollback, finding, and technical evidence are visible without detail-page drillthrough |
+| Conditional formatting | Priority, Decision, Severity, Risk, and Automation render consistently; count measures retain data bars |
+| Data baseline | 1,021 findings, 19 root causes, 54 actions; no `Load_SMO_Data` run and no rescan |
+
+During live acceptance, the first display-name migration exposed a Spark SQL escaping defect: `\\s+` was parsed as `s+`, which preserved quote variants and removed the letter `s` from some display identifiers. The migration now uses a raw f-string so Spark receives the intended regex escapes. The fix was redeployed and the slicer was rechecked in Viewer. Raw affected names and preserved evidence were never rewritten.
+
+```mermaid
+flowchart LR
+    A["Local schema and repo checks ✓"] --> B["TEST deployment ✓"]
+    B --> C["Viewer interaction checks ✓"]
+    C --> D["M6.6.3 accepted"]
+```
