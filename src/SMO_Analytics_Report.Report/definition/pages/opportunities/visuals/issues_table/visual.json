@@ -1,11 +1,11 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
-  "name": "priority_summary",
+  "name": "issues_table",
   "position": {
     "x": 24,
-    "y": 344,
+    "y": 308,
     "z": 3000,
-    "height": 352,
+    "height": 216,
     "width": 1232,
     "tabOrder": 3000
   },
@@ -47,18 +47,63 @@
             },
             {
               "field": {
-                "Measure": {
+                "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Metrics"
+                      "Entity": "semantic_model_optimization_opportunities"
                     }
                   },
-                  "Property": "Total opportunities"
+                  "Property": "opportunity_title"
                 }
               },
-              "queryRef": "Metrics.Total opportunities",
-              "nativeQueryRef": "Root causes",
-              "displayName": "Root causes"
+              "queryRef": "semantic_model_optimization_opportunities.opportunity_title",
+              "nativeQueryRef": "Root cause",
+              "displayName": "Root cause"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_opportunities"
+                    }
+                  },
+                  "Property": "optimization_domain"
+                }
+              },
+              "queryRef": "semantic_model_optimization_opportunities.optimization_domain",
+              "nativeQueryRef": "Area / domain",
+              "displayName": "Area / domain"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_opportunities"
+                    }
+                  },
+                  "Property": "highest_severity"
+                }
+              },
+              "queryRef": "semantic_model_optimization_opportunities.highest_severity",
+              "nativeQueryRef": "Severity",
+              "displayName": "Severity"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_opportunities"
+                    }
+                  },
+                  "Property": "change_risk"
+                }
+              },
+              "queryRef": "semantic_model_optimization_opportunities.change_risk",
+              "nativeQueryRef": "Risk",
+              "displayName": "Risk"
             },
             {
               "field": {
@@ -72,8 +117,8 @@
                 }
               },
               "queryRef": "Metrics.Visible evidence",
-              "nativeQueryRef": "Evidence",
-              "displayName": "Evidence"
+              "nativeQueryRef": "Visible evidence",
+              "displayName": "Visible evidence"
             },
             {
               "field": {
@@ -87,11 +132,44 @@
                 }
               },
               "queryRef": "Metrics.Visible actions",
-              "nativeQueryRef": "Actions",
-              "displayName": "Actions"
+              "nativeQueryRef": "Visible actions",
+              "displayName": "Visible actions"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_opportunities"
+                    }
+                  },
+                  "Property": "opportunity_id"
+                }
+              },
+              "queryRef": "semantic_model_optimization_opportunities.opportunity_id",
+              "nativeQueryRef": "Key \u00b7 control",
+              "displayName": "Key \u00b7 control"
             }
           ]
         }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "semantic_model_optimization_opportunities"
+                  }
+                },
+                "Property": "priority_score"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": false
       }
     },
     "visualContainerObjects": {
@@ -108,7 +186,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Priority summary \u2014 right-click a row for the filtered review workbench'"
+                  "Value": "'1 \u00b7 Issues \u2014 select one root cause; counts reflect the current object filters'"
                 }
               }
             },
@@ -139,7 +217,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Priority summary \u2014 right-click a row for the filtered review workbench'"
+                  "Value": "'1 \u00b7 Issues \u2014 select one root cause; counts reflect the current object filters'"
                 }
               }
             }
@@ -558,6 +636,338 @@
             ],
             "metadata": "semantic_model_optimization_opportunities.actionability_status"
           }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "highest_severity"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'CRITICAL'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#F4CCCC'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "highest_severity"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'ERROR'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#F4CCCC'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "highest_severity"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'HIGH'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#F4CCCC'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "highest_severity"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'WARNING'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#FCE8B2'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "highest_severity"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'MEDIUM'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#FCE8B2'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "highest_severity"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'INFO'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#D9EAF7'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "highest_severity"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'LOW'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#D9EAD3'"
+                            }
+                          }
+                        }
+                      ],
+                      "DefaultValue": {
+                        "Literal": {
+                          "Value": "'#FFFFFF'"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "semantic_model_optimization_opportunities.highest_severity"
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "change_risk"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'HIGH'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#F4CCCC'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "change_risk"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'MEDIUM'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#FCE8B2'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_opportunities"
+                                    }
+                                  },
+                                  "Property": "change_risk"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'LOW'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#D9EAD3'"
+                            }
+                          }
+                        }
+                      ],
+                      "DefaultValue": {
+                        "Literal": {
+                          "Value": "'#FFFFFF'"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "semantic_model_optimization_opportunities.change_risk"
+          }
         }
       ],
       "columnFormatting": [
@@ -693,7 +1103,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter14f131cbd3fd564f8630d92b",
+        "name": "Filterfb0dfa6b65685a44a3176b96",
         "field": {
           "Measure": {
             "Expression": {

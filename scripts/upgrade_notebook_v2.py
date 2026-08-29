@@ -330,16 +330,49 @@ def ensure_curated_tables():
                 ELSE 'Authored / imported object'
             END,
             display_table_name = CASE
-                WHEN trim(coalesce(affected_table_name, '')) <> '' THEN trim(affected_table_name)
+                WHEN trim(coalesce(affected_table_name, '')) <> '' THEN
+                    regexp_replace(
+                        regexp_replace(
+                            regexp_replace(
+                                trim(regexp_replace(
+                                    replace(replace(replace(affected_table_name, chr(8203), ''), chr(65279), ''), chr(160), ' '),
+                                    '\\s+', ' '
+                                )),
+                                '^\\x27+|\\x27+$', ''
+                            ),
+                            '^"+|"+$', ''
+                        ),
+                        '^`+|`+$', ''
+                    )
                 WHEN instr(coalesce(affected_object_name, ''), '[') > 0
                     THEN regexp_replace(
-                        trim(substring_index(affected_object_name, '[', 1)),
-                        '^\\x27|\\x27$',
-                        ''
+                        regexp_replace(
+                            regexp_replace(
+                                trim(regexp_replace(
+                                    replace(replace(replace(substring_index(affected_object_name, '[', 1), chr(8203), ''), chr(65279), ''), chr(160), ' '),
+                                    '\\s+', ' '
+                                )),
+                                '^\\x27+|\\x27+$', ''
+                            ),
+                            '^"+|"+$', ''
+                        ),
+                        '^`+|`+$', ''
                     )
                 WHEN upper(trim(coalesce(affected_object_type, ''))) IN ('TABLE', 'CALCULATED TABLE')
                   AND trim(coalesce(affected_object_name, '')) <> ''
-                    THEN trim(affected_object_name)
+                    THEN regexp_replace(
+                        regexp_replace(
+                            regexp_replace(
+                                trim(regexp_replace(
+                                    replace(replace(replace(affected_object_name, chr(8203), ''), chr(65279), ''), chr(160), ' '),
+                                    '\\s+', ' '
+                                )),
+                                '^\\x27+|\\x27+$', ''
+                            ),
+                            '^"+|"+$', ''
+                        ),
+                        '^`+|`+$', ''
+                    )
                 ELSE 'Not applicable'
             END,
             display_object_name = CASE
@@ -694,6 +727,14 @@ def severity_value(value):
     }.get((value or "").upper(), 0)
 
 
+def normalize_display_identifier(value):
+    normalized = str(value or "").replace("\u200b", "").replace("\ufeff", "").replace("\u00a0", " ")
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    while len(normalized) >= 2 and normalized[0] == normalized[-1] and normalized[0] in "'\"`":
+        normalized = normalized[1:-1].strip()
+    return normalized
+
+
 def finding_locator_fields(finding):
     raw_table = (finding.get("table_name") or "").strip()
     raw_object = (finding.get("object_name") or "").strip()
@@ -710,10 +751,10 @@ def finding_locator_fields(finding):
     )
     object_table = ""
     if "[" in raw_object:
-        object_table = raw_object.split("[", 1)[0].strip().strip("'")
-    display_table = raw_table or object_table
+        object_table = normalize_display_identifier(raw_object.split("[", 1)[0])
+    display_table = normalize_display_identifier(raw_table) or object_table
     if not display_table and object_type in {"TABLE", "CALCULATED TABLE"}:
-        display_table = raw_object
+        display_table = normalize_display_identifier(raw_object)
     display_table = display_table or "Not applicable"
     return {
         "object_scope": object_scope,

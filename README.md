@@ -111,14 +111,18 @@ The M6.6.1 Viewer UX redesign is documented in
 [`docs/m6-6-1-viewer-ux-redesign.md`](docs/m6-6-1-viewer-ux-redesign.md).
 The M6.6.2 insight-correctness remediation is documented in
 [`docs/m6-6-2-insight-correctness.md`](docs/m6-6-2-insight-correctness.md).
+The M6.6.3 consolidated review workbench is documented in
+[`docs/m6-6-3-report-review-workbench.md`](docs/m6-6-3-report-review-workbench.md).
 
 ## Current stage
 
-Version `0.6.16` is deployed and accepted in TEST for the M6.6.2 insight-correctness
-and report information-hierarchy gate on the validated TEST-tenant baseline. Viewer
-acceptance passed through the complete Issues/Actions/Evidence → Issue detail → Back
-path, including unique `opportunity_id` drillthrough that returns exactly one root
-cause. M6.6.2 is complete. Scanner `2.6.1` is unchanged and retains the M6.4
+Version `0.6.17` is the locally validated TEST candidate for the reopened M6.6.3
+report-review gate. It consolidates Issues, Actions, Evidence, and Issue detail into
+one Review issues workbench, restores a Start here drillthrough path, canonicalizes
+display-only affected-table names, removes the mixed-grain stored summary, and makes
+semantic conditional formatting consistent. TEST deployment and Viewer acceptance
+remain pending; the last accepted TEST baseline is M6.6.2 on `0.6.16`. Scanner
+`2.6.1` is unchanged and retains the M6.4
 production-stabilization contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
 current identity and workspace-scoped APIs only. It does not enumerate tenant
@@ -214,3 +218,17 @@ validation, rollback, and technical evidence that are not present in the queues.
 The Action queue now resolves each work item to its actual root cause through the
 bidirectional opportunity bridge, and detail navigation uses a hidden unique
 `opportunity_id` context instead of a non-unique title.
+
+M6.6.3 reopens the report gate after Viewer feedback showed that the five-page path
+still repeated control fields and hid the most useful action/evidence columns behind
+drillthrough. The new three-page path is Start here → Review issues → Storage.
+Review issues uses one shared locator row and three distinct tables: Issues selects
+the root cause, Actions exposes why/implementation/validation/rollback inline, and
+Evidence exposes the original finding and technical evidence inline. Issues filters
+both lower tables; Actions and Evidence cannot misleadingly cross-filter each other.
+The unique issue key remains only as a final control column in Issues. Start here
+drills by Priority and Decision, and no visual uses the stored `opportunity_summary`.
+Display-only table-name normalization removes wrapping quotes, zero-width marks,
+non-breaking spaces, and repeated whitespace while preserving all raw evidence.
+Local PBIR/repository acceptance is complete for solution `0.6.17`; TEST deployment
+and Viewer acceptance are the remaining M6.6.3 gates.

@@ -32,7 +32,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "Read the four KPIs, then use the priority summary to choose the queue to open in Issues.",
+                    "value": "Read the four KPIs, then right-click a Priority or Decision row to drill into Review issues.",
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "11px",

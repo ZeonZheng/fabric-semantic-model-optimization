@@ -585,6 +585,8 @@ def visual(
     name: str, visual_type: str, x: int, y: int, width: int, height: int,
     roles: dict, title: str, z: int, *, sync_group: str | None = None,
     conditional_color: tuple[str, str] | None = None,
+    conditional_colors: list[tuple[str, str]] | None = None,
+    data_bars: list[tuple[str, str]] | None = None,
     sort_by: tuple[str, str] | None = None,
     selected_values: tuple[str, str, list[str]] | None = None,
     measure_filter_gt_zero: tuple[str, str] | None = None,
@@ -645,8 +647,10 @@ def visual(
         objects, vcos = table_formatting()
         result["visual"]["objects"] = objects
         result["visual"]["visualContainerObjects"].update(vcos)
+        color_specs = list(conditional_colors or [])
         if conditional_color:
-            query_ref, color_kind = conditional_color
+            color_specs.append(conditional_color)
+        for query_ref, color_kind in color_specs:
             entity, prop = query_ref.split(".", 1)
             color_rules = {
                 "severity": [
@@ -658,6 +662,14 @@ def visual(
                 "actionability": [
                     ("ACTIONABLE", "#D9EAD3"), ("REVIEW_REQUIRED", "#FCE8B2"),
                     ("INFORMATIONAL", "#D9EAF7"), ("SUPPRESSED", "#E5E7EB"),
+                ],
+                "priority": [
+                    ("P1_CRITICAL", "#F4CCCC"), ("P2_HIGH", "#F9CB9C"),
+                    ("P3_MEDIUM", "#FCE8B2"), ("P4_LOW", "#D9EAF7"),
+                ],
+                "automation": [
+                    ("SCRIPT_CANDIDATE", "#D9EAD3"), ("MANUAL_REVIEW", "#FCE8B2"),
+                    ("NOT_ELIGIBLE", "#E5E7EB"), ("NO_AUTOMATION", "#E5E7EB"),
                 ],
             }[color_kind]
             left = {"Column": {"Expression": {"SourceRef": {"Entity": entity}}, "Property": prop}}
@@ -679,6 +691,20 @@ def visual(
                     "data": [{"dataViewWildcard": {"matchingOption": 1}}],
                     "metadata": query_ref,
                 },
+            })
+        for query_ref, color in data_bars or []:
+            result["visual"]["objects"].setdefault("columnFormatting", []).append({
+                "properties": {
+                    "dataBars": {
+                        "positiveColor": {"solid": {"color": literal(color)}},
+                        "negativeColor": {"solid": {"color": literal("#F4CCCC")}},
+                        "axisColor": {"solid": {"color": literal("#9FB3C8")}},
+                        "reverseDirection": {"expr": {"Literal": {"Value": "false"}}},
+                        "hideText": {"expr": {"Literal": {"Value": "false"}}},
+                        "totalMatchingOption": {"expr": {"Literal": {"Value": "1L"}}},
+                    }
+                },
+                "selector": {"metadata": query_ref},
             })
     elif visual_type == "cardVisual":
         result["visual"]["objects"] = {
@@ -887,26 +913,40 @@ def compact_slicer(
                   sync_group=sync_group, selected_values=selected_values, show_title=False)
 
 
-def drillthrough_config(entity: str, prop: str) -> dict:
-    filter_name = "Filter9f9d2c44a76c4b589ea25720"
-    field = {"Column": {"Expression": {"SourceRef": {"Entity": entity}}, "Property": prop}}
-    return {
-        "visibility": "HiddenInViewMode",
-        "filterConfig": {"filters": [{
+def drillthrough_config(fields: list[tuple[str, str]], *, hidden: bool = False) -> dict:
+    filters = []
+    parameters = []
+    for index, (entity, prop) in enumerate(fields):
+        filter_name = "Filter" + uuid.uuid5(
+            uuid.NAMESPACE_URL, f"smo-drillthrough/{index}/{entity}/{prop}"
+        ).hex[:24]
+        field = {"Column": {"Expression": {"SourceRef": {"Entity": entity}}, "Property": prop}}
+        filters.append({
             "name": filter_name, "field": field, "type": "Categorical", "howCreated": "Drillthrough",
-        }]},
-        "pageBinding": {"name": "Pod", "type": "Drillthrough", "parameters": [{
+        })
+        parameters.append({
             "name": f"Param_{filter_name}", "boundFilter": filter_name, "fieldExpr": field,
-        }]},
+        })
+    return {
+        **({"visibility": "HiddenInViewMode"} if hidden else {}),
+        "filterConfig": {"filters": filters},
+        "pageBinding": {
+            "name": "Pod", "type": "Drillthrough", "parameters": parameters,
+            "acceptsFilterContext": "Default",
+        },
     }
 
 
-def write_page(page_name: str, display_name: str, visuals: list[dict], **page_properties: object) -> None:
+def write_page(
+    page_name: str, display_name: str, visuals: list[dict], *, height: int = 720,
+    visual_interactions: list[dict] | None = None, **page_properties: object,
+) -> None:
     page = PAGES / page_name
     (page / "visuals").mkdir(parents=True)
     page_json = {
         "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.3.0/schema.json",
-        "name": page_name, "displayName": display_name, "displayOption": "FitToPage", "height": 720, "width": 1280,
+        "name": page_name, "displayName": display_name, "displayOption": "FitToPage", "height": height, "width": 1280,
+        **({"visualInteractions": visual_interactions} if visual_interactions else {}),
         **page_properties,
     }
     (page / "page.json").write_text(json.dumps(page_json, indent=2) + "\n", encoding="utf-8")
@@ -928,7 +968,7 @@ def write_report() -> None:
 
     write_page("overview", "Start here", report_header(
         "What should I fix first?",
-        "Read the four KPIs, then use the priority summary to choose the queue to open in Issues.",
+        "Read the four KPIs, then right-click a Priority or Decision row to drill into Review issues.",
     ) + [
         visual("optimization_kpis", "cardVisual", 24, 216, 1232, 112, {"Data": [
             field_measure("Total opportunities", "Root causes"),
@@ -942,32 +982,35 @@ def write_report() -> None:
             field_measure("Total opportunities", "Root causes"),
             field_measure("Visible evidence", "Evidence"),
             field_measure("Visible actions", "Actions"),
-        ]}, "Priority summary — open Issues for the full root-cause locator", 3000,
-               conditional_color=(f"{opportunities}.actionability_status", "actionability"),
+        ]}, "Priority summary — right-click a row for the filtered review workbench", 3000,
+               conditional_colors=[
+                   (f"{opportunities}.priority_band", "priority"),
+                   (f"{opportunities}.actionability_status", "actionability"),
+               ],
+               data_bars=[
+                   ("Metrics.Visible evidence", "#6C8EBF"),
+                   ("Metrics.Visible actions", "#76A5AF"),
+               ],
                measure_filter_gt_zero=("Metrics", "Visible evidence")),
     ])
 
-    write_page("opportunities", "1 · Issues", report_header(
-        "Where are the model problems?",
-        "One row is one root cause. Evidence and Actions recalculate for the current affected-object scope.",
+    review_visuals = report_header(
+        "Which issue should I fix, and what proves it?",
+        "Select one root-cause row. Actions and Evidence update together; object locators apply to all three sections.",
     ) + [
-        object_slicer("object_scope_slicer", "object_scope", "Object category", 216, 2000,
-                      sync_group="SMO_ObjectScope"),
-        object_slicer("object_type_slicer", "affected_object_type", "Object type", 296, 2001,
-                      sync_group="SMO_ObjectType"),
-        object_slicer("table_slicer", "display_table_name", "Affected table", 376, 2002,
-                      sync_group="SMO_AffectedTable"),
-        object_slicer("object_slicer", "display_object_name", "Affected object", 456, 2003,
-                      sync_group="SMO_AffectedObject"),
-        object_slicer("domain_slicer", "optimization_domain", "Area / domain", 536, 2004,
-                      sync_group="SMO_Domain"),
-        compact_slicer("root_cause_slicer", opportunities, "opportunity_title", "Root cause", 616, 2005,
-                       sync_group="SMO_RootCause"),
-        compact_slicer("severity_slicer", findings, "severity", "Severity", 216, 2006,
-                       x=280, width=472),
-        compact_slicer("decision_slicer", opportunities, "actionability_status", "Decision", 216, 2007,
-                       x=768, width=488),
-        visual("opportunities_table", "tableEx", 280, 308, 976, 388, {"Values": [
+        compact_slicer("object_scope_slicer", findings, "object_scope", "Object category", 216, 2000,
+                       x=24, width=192),
+        compact_slicer("object_type_slicer", findings, "affected_object_type", "Object type", 216, 2001,
+                       x=232, width=192),
+        compact_slicer("table_slicer", findings, "display_table_name", "Affected table", 216, 2002,
+                       x=440, width=192),
+        compact_slicer("object_slicer", findings, "display_object_name", "Affected object", 216, 2003,
+                       x=648, width=192),
+        compact_slicer("domain_slicer", findings, "optimization_domain", "Area / domain", 216, 2004,
+                       x=856, width=192),
+        compact_slicer("severity_slicer", findings, "severity", "Severity", 216, 2005,
+                       x=1064, width=192),
+        visual("issues_table", "tableEx", 24, 308, 1232, 216, {"Values": [
             field_column(opportunities, "priority_band", "Priority"),
             field_column(opportunities, "actionability_status", "Decision"),
             field_column(opportunities, "opportunity_title", "Root cause"),
@@ -976,75 +1019,40 @@ def write_report() -> None:
             field_column(opportunities, "change_risk", "Risk"),
             field_measure("Visible evidence", "Visible evidence"),
             field_measure("Visible actions", "Visible actions"),
-        ], "Tooltips": [field_column(opportunities, "opportunity_id", "Issue key")]},
-               "Issues — counts reflect the current object filters; right-click Root cause for detail", 3000,
-               conditional_color=(f"{opportunities}.actionability_status", "actionability"),
+            field_column(opportunities, "opportunity_id", "Key · control"),
+        ]},
+               "1 · Issues — select one root cause; counts reflect the current object filters", 3000,
+               conditional_colors=[
+                   (f"{opportunities}.priority_band", "priority"),
+                   (f"{opportunities}.actionability_status", "actionability"),
+                   (f"{opportunities}.highest_severity", "severity"),
+                   (f"{opportunities}.change_risk", "risk"),
+               ],
+               data_bars=[
+                   ("Metrics.Visible evidence", "#6C8EBF"),
+                   ("Metrics.Visible actions", "#76A5AF"),
+               ],
                sort_by=(opportunities, "priority_score"),
                measure_filter_gt_zero=("Metrics", "Visible evidence")),
-    ])
-
-    write_page("recommendations", "2 · Actions", report_header(
-        "What should I do next?",
-        "Work items only. Visible evidence shows whether each action applies to the current object filters.",
-    ) + [
-        object_slicer("object_scope_slicer", "object_scope", "Object category", 216, 2000,
-                      sync_group="SMO_ObjectScope"),
-        object_slicer("object_type_slicer", "affected_object_type", "Object type", 296, 2001,
-                      sync_group="SMO_ObjectType"),
-        object_slicer("table_slicer", "display_table_name", "Affected table", 376, 2002,
-                      sync_group="SMO_AffectedTable"),
-        object_slicer("object_slicer", "display_object_name", "Affected object", 456, 2003,
-                      sync_group="SMO_AffectedObject"),
-        object_slicer("domain_slicer", "optimization_domain", "Area / domain", 536, 2004,
-                      sync_group="SMO_Domain"),
-        compact_slicer("root_cause_slicer", opportunities, "opportunity_title", "Root cause", 616, 2005,
-                       sync_group="SMO_RootCause"),
-        compact_slicer("actionability_slicer", recommendations, "actionability_status", "Decision", 216, 2100,
-                       selected_values=(recommendations, "actionability_status", ["ACTIONABLE", "REVIEW_REQUIRED"]),
-                       x=280, width=472),
-        compact_slicer("priority_band_slicer", recommendations, "recommendation_priority_band", "Priority", 216, 2101,
-                       selected_values=(recommendations, "recommendation_priority_band", ["P2_HIGH"]),
-                       x=768, width=488),
-        visual("top_actionable_recommendations", "tableEx", 280, 308, 976, 388, {"Values": [
-            field_column(recommendations, "recommendation_priority_band", "Priority"),
-            field_column(recommendations, "actionability_status", "Decision"),
-            field_column(opportunities, "opportunity_title", "Root cause"),
+        visual("actions_table", "tableEx", 24, 540, 1232, 248, {"Values": [
             field_column(recommendations, "recommendation_title", "Action"),
+            field_column(recommendations, "why_it_matters", "Why it matters"),
+            field_column(recommendations, "recommended_action", "Recommended action"),
+            field_column(recommendations, "validation_method", "Validation method"),
+            field_column(recommendations, "rollback_guidance", "Rollback guidance"),
             field_column(recommendations, "change_risk", "Risk"),
             field_column(recommendations, "automation_eligibility", "Automation"),
             field_measure("Visible action evidence", "Visible evidence"),
-        ], "Tooltips": [field_column(opportunities, "opportunity_id", "Issue key")]},
-               "Actions = user work items — right-click Root cause for why, validation, rollback, and evidence", 3000,
-               conditional_color=(f"{recommendations}.actionability_status", "actionability"),
+        ]},
+               "2 · Actions — rationale, implementation, validation, and rollback are inline", 4000,
+               conditional_colors=[
+                   (f"{recommendations}.change_risk", "risk"),
+                   (f"{recommendations}.automation_eligibility", "automation"),
+               ],
+               data_bars=[("Metrics.Visible action evidence", "#6C8EBF")],
                sort_by=(recommendations, "recommendation_priority_score"),
                measure_filter_gt_zero=("Metrics", "Visible action evidence")),
-    ])
-
-    write_page("findings", "3 · Evidence", report_header(
-        "Which object proves the problem?",
-        "Raw evidence stays tabular for exact inspection; use category and normalized table fields to locate it.",
-    ) + [
-        object_slicer("object_scope_slicer", "object_scope", "Object category", 216, 2000,
-                      sync_group="SMO_ObjectScope"),
-        object_slicer("object_type_slicer", "affected_object_type", "Object type", 296, 2001,
-                      sync_group="SMO_ObjectType"),
-        object_slicer("table_slicer", "display_table_name", "Affected table", 376, 2002,
-                      sync_group="SMO_AffectedTable"),
-        object_slicer("object_slicer", "display_object_name", "Affected object", 456, 2003,
-                      sync_group="SMO_AffectedObject"),
-        object_slicer("domain_slicer", "optimization_domain", "Area / domain", 536, 2004,
-                      sync_group="SMO_Domain"),
-        compact_slicer("root_cause_slicer", opportunities, "opportunity_title", "Root cause", 616, 2005,
-                       sync_group="SMO_RootCause"),
-        compact_slicer("finding_severity_slicer", findings, "severity", "Severity", 216, 2006,
-                       x=280, width=472),
-        compact_slicer("finding_source_slicer", findings, "finding_source", "Source", 216, 2007,
-                       x=768, width=488),
-        visual("findings_table", "tableEx", 280, 308, 976, 388, {"Values": [
-            field_column(findings, "finding_priority_band", "Priority"),
-            field_column(findings, "actionability_status", "Decision"),
-            field_column(opportunities, "opportunity_title", "Root cause"),
-            field_column(findings, "optimization_domain", "Area / domain"),
+        visual("evidence_table", "tableEx", 24, 804, 1232, 252, {"Values": [
             field_column(findings, "severity", "Severity"),
             field_column(findings, "object_scope", "Object category"),
             field_column(findings, "affected_object_type", "Object type"),
@@ -1052,11 +1060,28 @@ def write_report() -> None:
             field_column(findings, "display_object_name", "Affected object"),
             field_column(findings, "finding_source", "Source"),
             field_column(findings, "rule_name", "Rule"),
-        ], "Tooltips": [field_column(opportunities, "opportunity_id", "Issue key")]},
-               "Evidence locator — raw descriptions and technical evidence are one drillthrough away", 3000,
-               conditional_color=(f"{findings}.severity", "severity"),
+            field_column(findings, "finding_description", "Finding"),
+            field_column(findings, "technical_evidence", "Technical evidence"),
+        ]},
+               "3 · Evidence — preserved raw descriptions and technical evidence", 5000,
+               conditional_colors=[(f"{findings}.severity", "severity")],
                sort_by=(findings, "finding_priority_score")),
-    ])
+    ]
+
+    review_interactions = [
+        {"source": "issues_table", "target": "actions_table", "type": "DataFilter"},
+        {"source": "issues_table", "target": "evidence_table", "type": "DataFilter"},
+        {"source": "actions_table", "target": "evidence_table", "type": "NoFilter"},
+        {"source": "evidence_table", "target": "actions_table", "type": "NoFilter"},
+    ]
+    write_page(
+        "opportunities", "Review issues", review_visuals, height=1080,
+        visual_interactions=review_interactions,
+        **drillthrough_config([
+            (opportunities, "priority_band"),
+            (opportunities, "actionability_status"),
+        ]),
+    )
 
     write_page("storage", "Storage", report_header(
         "Which tables and columns consume model storage?",
@@ -1078,66 +1103,9 @@ def write_report() -> None:
         ]}, "Column storage evidence", 3000),
     ])
 
-    write_page("opportunity_detail", "Issue detail", [
-        action_button("back_button", "Back", "Back", 24, 16, 112, 40, 500),
-        textbox("page_title", 152, 16, 728, 48, [
-            ("Issue detail — action and evidence", "20px", "#102A43"),
-        ], 600),
-        visual("semantic_model_filter", "slicer", 896, 8, 360, 80,
-               {"Values": [field_column("semantic_models", "semantic_model_name", "Semantic model")]},
-               "Model", 1000, sync_group="SMO_SemanticModel",
-               selected_values=("semantic_models", "semantic_model_name", ["SMO_Optimization1"])),
-        visual("selected_scope", "tableEx", 24, 88, 1232, 56, {"Values": [
-            field_column("semantic_models", "workspace_name", "Workspace"),
-            field_column("semantic_models", "semantic_model_name", "Model"),
-            field_column("semantic_models", "latest_analysis_status", "Status"),
-            field_column("semantic_models", "latest_analysis_at", "Completed"),
-            field_column("semantic_models", "scanner_version", "Scanner"),
-            field_column("semantic_models", "latest_analysis_id", "Analysis ID"),
-        ]}, "Current analysis scope", 1100, show_title=False),
-        visual("opportunity_summary", "tableEx", 24, 160, 1232, 104, {"Values": [
-            field_column(opportunities, "priority_band", "Priority"),
-            field_column(opportunities, "actionability_status", "Decision"),
-            field_column(opportunities, "opportunity_title", "Root cause"),
-            field_column(opportunities, "optimization_domain", "Area / domain"),
-            field_column(opportunities, "highest_severity", "Severity"),
-            field_column(opportunities, "change_risk", "Risk"),
-            field_measure("Visible evidence", "Visible evidence"),
-            field_measure("Visible actions", "Visible actions"),
-            field_column(opportunities, "opportunity_summary", "Summary"),
-        ]}, "Issue summary — visible counts retain the source-page object filters", 2000,
-               conditional_color=(f"{opportunities}.actionability_status", "actionability"),
-               measure_filter_gt_zero=("Metrics", "Visible evidence")),
-        visual("related_recommendations", "tableEx", 24, 280, 1232, 192, {"Values": [
-            field_column(recommendations, "recommendation_title", "Action"),
-            field_column(recommendations, "why_it_matters", "Why it matters"),
-            field_column(recommendations, "recommended_action", "Recommended action"),
-            field_column(recommendations, "validation_method", "Validation method"),
-            field_column(recommendations, "rollback_guidance", "Rollback guidance"),
-            field_column(recommendations, "change_risk", "Risk"),
-            field_column(recommendations, "automation_eligibility", "Automation"),
-            field_measure("Visible action evidence", "Visible evidence"),
-        ]}, "Implementation controls — rationale, validation, and rollback not shown in the action queue", 3000,
-               measure_filter_gt_zero=("Metrics", "Visible action evidence")),
-        visual("related_findings", "tableEx", 24, 488, 1232, 208, {"Values": [
-            field_column(findings, "severity", "Severity"),
-            field_column(findings, "finding_source", "Source"),
-            field_column(findings, "rule_name", "Rule"),
-            field_column(findings, "object_scope", "Object category"),
-            field_column(findings, "affected_object_type", "Object type"),
-            field_column(findings, "display_table_name", "Affected table"),
-            field_column(findings, "display_object_name", "Affected object"),
-            field_column(findings, "finding_description", "Finding"),
-            field_column(findings, "technical_evidence", "Technical evidence"),
-        ]}, "Preserved raw evidence — technical names and descriptions remain unchanged", 4000,
-               conditional_color=(f"{findings}.severity", "severity")),
-    # The unique opportunity key is carried in each source table's Tooltips role,
-    # so same-title root causes remain user-friendly without widening drill scope.
-    ], **drillthrough_config(opportunities, "opportunity_id"))
-
     (PAGES / "pages.json").write_text(json.dumps({
         "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.0.0/schema.json",
-        "pageOrder": ["overview", "opportunities", "recommendations", "findings", "storage", "opportunity_detail"],
+        "pageOrder": ["overview", "opportunities", "storage"],
         "activePageName": "overview",
     }, indent=2) + "\n", encoding="utf-8")
 

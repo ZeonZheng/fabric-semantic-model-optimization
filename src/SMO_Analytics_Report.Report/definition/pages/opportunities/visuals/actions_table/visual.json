@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
-  "name": "opportunities_table",
+  "name": "actions_table",
   "position": {
-    "x": 280,
-    "y": 308,
-    "z": 3000,
-    "height": 388,
-    "width": 976,
-    "tabOrder": 3000
+    "x": 24,
+    "y": 540,
+    "z": 4000,
+    "height": 248,
+    "width": 1232,
+    "tabOrder": 4000
   },
   "visual": {
     "visualType": "tableEx",
@@ -20,135 +20,120 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_model_optimization_opportunities"
+                      "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
-                  "Property": "priority_band"
+                  "Property": "recommendation_title"
                 }
               },
-              "queryRef": "semantic_model_optimization_opportunities.priority_band",
-              "nativeQueryRef": "Priority",
-              "displayName": "Priority"
+              "queryRef": "semantic_model_optimization_recommendations.recommendation_title",
+              "nativeQueryRef": "Action",
+              "displayName": "Action"
             },
             {
               "field": {
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_model_optimization_opportunities"
+                      "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
-                  "Property": "actionability_status"
+                  "Property": "why_it_matters"
                 }
               },
-              "queryRef": "semantic_model_optimization_opportunities.actionability_status",
-              "nativeQueryRef": "Decision",
-              "displayName": "Decision"
+              "queryRef": "semantic_model_optimization_recommendations.why_it_matters",
+              "nativeQueryRef": "Why it matters",
+              "displayName": "Why it matters"
             },
             {
               "field": {
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_model_optimization_opportunities"
+                      "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
-                  "Property": "opportunity_title"
+                  "Property": "recommended_action"
                 }
               },
-              "queryRef": "semantic_model_optimization_opportunities.opportunity_title",
-              "nativeQueryRef": "Root cause",
-              "displayName": "Root cause"
+              "queryRef": "semantic_model_optimization_recommendations.recommended_action",
+              "nativeQueryRef": "Recommended action",
+              "displayName": "Recommended action"
             },
             {
               "field": {
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_model_optimization_opportunities"
+                      "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
-                  "Property": "optimization_domain"
+                  "Property": "validation_method"
                 }
               },
-              "queryRef": "semantic_model_optimization_opportunities.optimization_domain",
-              "nativeQueryRef": "Area / domain",
-              "displayName": "Area / domain"
+              "queryRef": "semantic_model_optimization_recommendations.validation_method",
+              "nativeQueryRef": "Validation method",
+              "displayName": "Validation method"
             },
             {
               "field": {
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_model_optimization_opportunities"
+                      "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
-                  "Property": "highest_severity"
+                  "Property": "rollback_guidance"
                 }
               },
-              "queryRef": "semantic_model_optimization_opportunities.highest_severity",
-              "nativeQueryRef": "Severity",
-              "displayName": "Severity"
+              "queryRef": "semantic_model_optimization_recommendations.rollback_guidance",
+              "nativeQueryRef": "Rollback guidance",
+              "displayName": "Rollback guidance"
             },
             {
               "field": {
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_model_optimization_opportunities"
+                      "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
                   "Property": "change_risk"
                 }
               },
-              "queryRef": "semantic_model_optimization_opportunities.change_risk",
+              "queryRef": "semantic_model_optimization_recommendations.change_risk",
               "nativeQueryRef": "Risk",
               "displayName": "Risk"
-            },
-            {
-              "field": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "Metrics"
-                    }
-                  },
-                  "Property": "Visible evidence"
-                }
-              },
-              "queryRef": "Metrics.Visible evidence",
-              "nativeQueryRef": "Visible evidence",
-              "displayName": "Visible evidence"
-            },
-            {
-              "field": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "Metrics"
-                    }
-                  },
-                  "Property": "Visible actions"
-                }
-              },
-              "queryRef": "Metrics.Visible actions",
-              "nativeQueryRef": "Visible actions",
-              "displayName": "Visible actions"
             },
             {
               "field": {
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "semantic_model_optimization_opportunities"
+                      "Entity": "semantic_model_optimization_recommendations"
                     }
                   },
-                  "Property": "opportunity_id"
+                  "Property": "automation_eligibility"
                 }
               },
-              "queryRef": "semantic_model_optimization_opportunities.opportunity_id",
-              "nativeQueryRef": "Issue key",
-              "displayName": "Issue key"
+              "queryRef": "semantic_model_optimization_recommendations.automation_eligibility",
+              "nativeQueryRef": "Automation",
+              "displayName": "Automation"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Metrics"
+                    }
+                  },
+                  "Property": "Visible action evidence"
+                }
+              },
+              "queryRef": "Metrics.Visible action evidence",
+              "nativeQueryRef": "Visible evidence",
+              "displayName": "Visible evidence"
             }
           ]
         }
@@ -160,10 +145,10 @@
               "Column": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "semantic_model_optimization_opportunities"
+                    "Entity": "semantic_model_optimization_recommendations"
                   }
                 },
-                "Property": "priority_score"
+                "Property": "recommendation_priority_score"
               }
             },
             "direction": "Descending"
@@ -186,7 +171,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Issues \u2014 counts reflect the current object filters; right-click Root cause for detail'"
+                  "Value": "'2 \u00b7 Actions \u2014 rationale, implementation, validation, and rollback are inline'"
                 }
               }
             },
@@ -217,7 +202,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Issues \u2014 counts reflect the current object filters; right-click Root cause for detail'"
+                  "Value": "'2 \u00b7 Actions \u2014 rationale, implementation, validation, and rollback are inline'"
                 }
               }
             }
@@ -375,22 +360,22 @@
                                 "Column": {
                                   "Expression": {
                                     "SourceRef": {
-                                      "Entity": "semantic_model_optimization_opportunities"
+                                      "Entity": "semantic_model_optimization_recommendations"
                                     }
                                   },
-                                  "Property": "actionability_status"
+                                  "Property": "change_risk"
                                 }
                               },
                               "Right": {
                                 "Literal": {
-                                  "Value": "'ACTIONABLE'"
+                                  "Value": "'HIGH'"
                                 }
                               }
                             }
                           },
                           "Value": {
                             "Literal": {
-                              "Value": "'#D9EAD3'"
+                              "Value": "'#F4CCCC'"
                             }
                           }
                         },
@@ -402,15 +387,15 @@
                                 "Column": {
                                   "Expression": {
                                     "SourceRef": {
-                                      "Entity": "semantic_model_optimization_opportunities"
+                                      "Entity": "semantic_model_optimization_recommendations"
                                     }
                                   },
-                                  "Property": "actionability_status"
+                                  "Property": "change_risk"
                                 }
                               },
                               "Right": {
                                 "Literal": {
-                                  "Value": "'REVIEW_REQUIRED'"
+                                  "Value": "'MEDIUM'"
                                 }
                               }
                             }
@@ -429,22 +414,80 @@
                                 "Column": {
                                   "Expression": {
                                     "SourceRef": {
-                                      "Entity": "semantic_model_optimization_opportunities"
+                                      "Entity": "semantic_model_optimization_recommendations"
                                     }
                                   },
-                                  "Property": "actionability_status"
+                                  "Property": "change_risk"
                                 }
                               },
                               "Right": {
                                 "Literal": {
-                                  "Value": "'INFORMATIONAL'"
+                                  "Value": "'LOW'"
                                 }
                               }
                             }
                           },
                           "Value": {
                             "Literal": {
-                              "Value": "'#D9EAF7'"
+                              "Value": "'#D9EAD3'"
+                            }
+                          }
+                        }
+                      ],
+                      "DefaultValue": {
+                        "Literal": {
+                          "Value": "'#FFFFFF'"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "semantic_model_optimization_recommendations.change_risk"
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_recommendations"
+                                    }
+                                  },
+                                  "Property": "automation_eligibility"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'SCRIPT_CANDIDATE'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#D9EAD3'"
                             }
                           }
                         },
@@ -456,15 +499,69 @@
                                 "Column": {
                                   "Expression": {
                                     "SourceRef": {
-                                      "Entity": "semantic_model_optimization_opportunities"
+                                      "Entity": "semantic_model_optimization_recommendations"
                                     }
                                   },
-                                  "Property": "actionability_status"
+                                  "Property": "automation_eligibility"
                                 }
                               },
                               "Right": {
                                 "Literal": {
-                                  "Value": "'SUPPRESSED'"
+                                  "Value": "'MANUAL_REVIEW'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#FCE8B2'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_recommendations"
+                                    }
+                                  },
+                                  "Property": "automation_eligibility"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'NOT_ELIGIBLE'"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#E5E7EB'"
+                            }
+                          }
+                        },
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "semantic_model_optimization_recommendations"
+                                    }
+                                  },
+                                  "Property": "automation_eligibility"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "'NO_AUTOMATION'"
                                 }
                               }
                             }
@@ -495,7 +592,72 @@
                 }
               }
             ],
-            "metadata": "semantic_model_optimization_opportunities.actionability_status"
+            "metadata": "semantic_model_optimization_recommendations.automation_eligibility"
+          }
+        }
+      ],
+      "columnFormatting": [
+        {
+          "properties": {
+            "dataBars": {
+              "positiveColor": {
+                "solid": {
+                  "color": {
+                    "expr": {
+                      "Literal": {
+                        "Value": "'#6C8EBF'"
+                      }
+                    }
+                  }
+                }
+              },
+              "negativeColor": {
+                "solid": {
+                  "color": {
+                    "expr": {
+                      "Literal": {
+                        "Value": "'#F4CCCC'"
+                      }
+                    }
+                  }
+                }
+              },
+              "axisColor": {
+                "solid": {
+                  "color": {
+                    "expr": {
+                      "Literal": {
+                        "Value": "'#9FB3C8'"
+                      }
+                    }
+                  }
+                }
+              },
+              "reverseDirection": {
+                "expr": {
+                  "Literal": {
+                    "Value": "false"
+                  }
+                }
+              },
+              "hideText": {
+                "expr": {
+                  "Literal": {
+                    "Value": "false"
+                  }
+                }
+              },
+              "totalMatchingOption": {
+                "expr": {
+                  "Literal": {
+                    "Value": "1L"
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Metrics.Visible action evidence"
           }
         }
       ]
@@ -504,7 +666,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter76074afb80da516eabfb2d30",
+        "name": "Filterdcac46cf729559d4be956f3c",
         "field": {
           "Measure": {
             "Expression": {
@@ -512,7 +674,7 @@
                 "Entity": "Metrics"
               }
             },
-            "Property": "Visible evidence"
+            "Property": "Visible action evidence"
           }
         },
         "type": "Advanced",
@@ -537,7 +699,7 @@
                           "Source": "m"
                         }
                       },
-                      "Property": "Visible evidence"
+                      "Property": "Visible action evidence"
                     }
                   },
                   "Right": {

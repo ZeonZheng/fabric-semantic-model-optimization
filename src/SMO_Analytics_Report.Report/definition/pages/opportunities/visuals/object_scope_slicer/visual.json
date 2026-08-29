@@ -6,7 +6,7 @@
     "y": 216,
     "z": 2000,
     "height": 76,
-    "width": 232,
+    "width": 192,
     "tabOrder": 2000
   },
   "visual": {
@@ -136,11 +136,6 @@
           }
         }
       ]
-    },
-    "syncGroup": {
-      "groupName": "SMO_ObjectScope",
-      "fieldChanges": true,
-      "filterChanges": true
     }
   }
 }

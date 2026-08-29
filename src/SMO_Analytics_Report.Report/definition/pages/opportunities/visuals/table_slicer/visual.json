@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "table_slicer",
   "position": {
-    "x": 24,
-    "y": 376,
+    "x": 440,
+    "y": 216,
     "z": 2002,
     "height": 76,
-    "width": 232,
+    "width": 192,
     "tabOrder": 2002
   },
   "visual": {
@@ -136,11 +136,6 @@
           }
         }
       ]
-    },
-    "syncGroup": {
-      "groupName": "SMO_AffectedTable",
-      "fieldChanges": true,
-      "filterChanges": true
     }
   }
 }

@@ -148,3 +148,8 @@ if it answers a distinct aggregation question.
   and returned to Actions through Back.
 
 M6.6.2 is complete.
+
+> Follow-up: Viewer review reopened the report gate as M6.6.3. The accepted M6.6.2
+> data baseline remains valid, but its separate Issues/Actions/Evidence/detail page
+> experience is superseded by the consolidated workbench contract in
+> [m6-6-3-report-review-workbench.md](m6-6-3-report-review-workbench.md).

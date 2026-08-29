@@ -3,10 +3,7 @@
   "pageOrder": [
     "overview",
     "opportunities",
-    "recommendations",
-    "findings",
-    "storage",
-    "opportunity_detail"
+    "storage"
   ],
   "activePageName": "overview"
 }

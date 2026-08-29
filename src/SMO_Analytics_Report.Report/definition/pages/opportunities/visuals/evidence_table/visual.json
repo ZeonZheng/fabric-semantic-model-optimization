@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
-  "name": "related_findings",
+  "name": "evidence_table",
   "position": {
     "x": 24,
-    "y": 488,
-    "z": 4000,
-    "height": 208,
+    "y": 804,
+    "z": 5000,
+    "height": 252,
     "width": 1232,
-    "tabOrder": 4000
+    "tabOrder": 5000
   },
   "visual": {
     "visualType": "tableEx",
@@ -29,36 +29,6 @@
               "queryRef": "semantic_model_optimization_findings.severity",
               "nativeQueryRef": "Severity",
               "displayName": "Severity"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_findings"
-                    }
-                  },
-                  "Property": "finding_source"
-                }
-              },
-              "queryRef": "semantic_model_optimization_findings.finding_source",
-              "nativeQueryRef": "Source",
-              "displayName": "Source"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "semantic_model_optimization_findings"
-                    }
-                  },
-                  "Property": "rule_name"
-                }
-              },
-              "queryRef": "semantic_model_optimization_findings.rule_name",
-              "nativeQueryRef": "Rule",
-              "displayName": "Rule"
             },
             {
               "field": {
@@ -128,6 +98,36 @@
                       "Entity": "semantic_model_optimization_findings"
                     }
                   },
+                  "Property": "finding_source"
+                }
+              },
+              "queryRef": "semantic_model_optimization_findings.finding_source",
+              "nativeQueryRef": "Source",
+              "displayName": "Source"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_findings"
+                    }
+                  },
+                  "Property": "rule_name"
+                }
+              },
+              "queryRef": "semantic_model_optimization_findings.rule_name",
+              "nativeQueryRef": "Rule",
+              "displayName": "Rule"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "semantic_model_optimization_findings"
+                    }
+                  },
                   "Property": "finding_description"
                 }
               },
@@ -152,6 +152,24 @@
             }
           ]
         }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "semantic_model_optimization_findings"
+                  }
+                },
+                "Property": "finding_priority_score"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": false
       }
     },
     "visualContainerObjects": {
@@ -168,7 +186,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Preserved raw evidence \u2014 technical names and descriptions remain unchanged'"
+                  "Value": "'3 \u00b7 Evidence \u2014 preserved raw descriptions and technical evidence'"
                 }
               }
             },
@@ -199,7 +217,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Preserved raw evidence \u2014 technical names and descriptions remain unchanged'"
+                  "Value": "'3 \u00b7 Evidence \u2014 preserved raw descriptions and technical evidence'"
                 }
               }
             }

@@ -19,7 +19,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "Where are the model problems?",
+                    "value": "Which issue should I fix, and what proves it?",
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "20px",
@@ -32,7 +32,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "One row is one root cause. Evidence and Actions recalculate for the current affected-object scope.",
+                    "value": "Select one root-cause row. Actions and Evidence update together; object locators apply to all three sections.",
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "11px",
@@ -54,7 +54,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Page title: Where are the model problems?'"
+                  "Value": "'Page title: Which issue should I fix, and what proves it?'"
                 }
               }
             }

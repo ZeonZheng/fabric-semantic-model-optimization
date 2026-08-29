@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "domain_slicer",
   "position": {
-    "x": 24,
-    "y": 536,
+    "x": 856,
+    "y": 216,
     "z": 2004,
     "height": 76,
-    "width": 232,
+    "width": 192,
     "tabOrder": 2004
   },
   "visual": {
@@ -136,11 +136,6 @@
           }
         }
       ]
-    },
-    "syncGroup": {
-      "groupName": "SMO_Domain",
-      "fieldChanges": true,
-      "filterChanges": true
     }
   }
 }

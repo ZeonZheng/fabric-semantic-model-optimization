@@ -1,8 +1,99 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.3.0/schema.json",
   "name": "opportunities",
-  "displayName": "1 \u00b7 Issues",
+  "displayName": "Review issues",
   "displayOption": "FitToPage",
-  "height": 720,
-  "width": 1280
+  "height": 1080,
+  "width": 1280,
+  "visualInteractions": [
+    {
+      "source": "issues_table",
+      "target": "actions_table",
+      "type": "DataFilter"
+    },
+    {
+      "source": "issues_table",
+      "target": "evidence_table",
+      "type": "DataFilter"
+    },
+    {
+      "source": "actions_table",
+      "target": "evidence_table",
+      "type": "NoFilter"
+    },
+    {
+      "source": "evidence_table",
+      "target": "actions_table",
+      "type": "NoFilter"
+    }
+  ],
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "Filter47e1eea5ee0a53c29317db40",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "semantic_model_optimization_opportunities"
+              }
+            },
+            "Property": "priority_band"
+          }
+        },
+        "type": "Categorical",
+        "howCreated": "Drillthrough"
+      },
+      {
+        "name": "Filter40d413eb23fe500e83655fd5",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "semantic_model_optimization_opportunities"
+              }
+            },
+            "Property": "actionability_status"
+          }
+        },
+        "type": "Categorical",
+        "howCreated": "Drillthrough"
+      }
+    ]
+  },
+  "pageBinding": {
+    "name": "Pod",
+    "type": "Drillthrough",
+    "parameters": [
+      {
+        "name": "Param_Filter47e1eea5ee0a53c29317db40",
+        "boundFilter": "Filter47e1eea5ee0a53c29317db40",
+        "fieldExpr": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "semantic_model_optimization_opportunities"
+              }
+            },
+            "Property": "priority_band"
+          }
+        }
+      },
+      {
+        "name": "Param_Filter40d413eb23fe500e83655fd5",
+        "boundFilter": "Filter40d413eb23fe500e83655fd5",
+        "fieldExpr": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "semantic_model_optimization_opportunities"
+              }
+            },
+            "Property": "actionability_status"
+          }
+        }
+      }
+    ],
+    "acceptsFilterContext": "Default"
+  }
 }
