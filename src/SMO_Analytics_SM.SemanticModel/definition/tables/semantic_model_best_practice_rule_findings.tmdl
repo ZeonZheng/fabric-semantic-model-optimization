@@ -15,6 +15,12 @@ table semantic_model_best_practice_rule_findings
 		sourceLineageTag: analysis_id
 		summarizeBy: none
 
+	column analysis_scope_key
+		dataType: string
+		sourceColumn: analysis_scope_key
+		sourceLineageTag: analysis_scope_key
+		summarizeBy: none
+
 	column workspace_name
 		dataType: string
 		sourceColumn: workspace_name

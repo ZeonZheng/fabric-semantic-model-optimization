@@ -58,6 +58,12 @@ table semantic_models
 		sourceLineageTag: latest_analysis_id
 		summarizeBy: none
 
+	column analysis_scope_key
+		dataType: string
+		sourceColumn: analysis_scope_key
+		sourceLineageTag: analysis_scope_key
+		summarizeBy: none
+
 	column latest_analysis_status
 		dataType: string
 		sourceColumn: latest_analysis_status

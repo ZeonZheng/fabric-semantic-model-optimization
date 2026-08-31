@@ -4,7 +4,6 @@ table semantic_model_optimization_opportunities
 
 	column opportunity_id
 		dataType: string
-		isKey
 		sourceColumn: opportunity_id
 		sourceLineageTag: opportunity_id
 		summarizeBy: none
@@ -13,6 +12,19 @@ table semantic_model_optimization_opportunities
 		dataType: string
 		sourceColumn: analysis_id
 		sourceLineageTag: analysis_id
+		summarizeBy: none
+
+	column analysis_scope_key
+		dataType: string
+		sourceColumn: analysis_scope_key
+		sourceLineageTag: analysis_scope_key
+		summarizeBy: none
+
+	column issue_scope_key
+		dataType: string
+		isKey
+		sourceColumn: issue_scope_key
+		sourceLineageTag: issue_scope_key
 		summarizeBy: none
 
 	column workspace_name

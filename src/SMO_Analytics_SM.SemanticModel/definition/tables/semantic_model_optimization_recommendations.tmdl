@@ -21,6 +21,18 @@ table semantic_model_optimization_recommendations
 		sourceLineageTag: analysis_id
 		summarizeBy: none
 
+	column analysis_scope_key
+		dataType: string
+		sourceColumn: analysis_scope_key
+		sourceLineageTag: analysis_scope_key
+		summarizeBy: none
+
+	column issue_scope_key
+		dataType: string
+		sourceColumn: issue_scope_key
+		sourceLineageTag: issue_scope_key
+		summarizeBy: none
+
 	column workspace_name
 		dataType: string
 		sourceColumn: workspace_name

@@ -23,7 +23,8 @@ TABLE_DEFINITIONS = {
             ("semantic_model_id", "string"), ("workspace_id", "string"), ("workspace_name", "string"),
             ("semantic_model_name", "string"), ("capacity_id", "string"), ("capacity_name", "string"),
             ("storage_mode", "string"), ("semantic_model_size_bytes", "int64"),
-            ("latest_analysis_id", "string"), ("latest_analysis_status", "string"),
+            ("latest_analysis_id", "string"), ("analysis_scope_key", "string"),
+            ("latest_analysis_status", "string"),
             ("latest_analysis_at", "dateTime"), ("scanner_version", "string"),
         ],
     },
@@ -46,7 +47,8 @@ TABLE_DEFINITIONS = {
         "entity": "semantic_model_optimization_overview",
         "key": "semantic_model_id",
         "columns": [
-            ("analysis_id", "string"), ("workspace_id", "string"), ("workspace_name", "string"),
+            ("analysis_id", "string"), ("analysis_scope_key", "string"),
+            ("workspace_id", "string"), ("workspace_name", "string"),
             ("semantic_model_id", "string"), ("semantic_model_name", "string"), ("storage_mode", "string"),
             ("analysis_status", "string"), ("analysis_completed_at", "dateTime"), ("scanner_version", "string"),
             ("semantic_model_size_bytes", "int64"), ("optimization_opportunity_count", "int64"),
@@ -62,9 +64,10 @@ TABLE_DEFINITIONS = {
         ],
     },
     "semantic_model_optimization_opportunities": {
-        "schema": "semantic_model_optimization", "entity": "semantic_model_optimization_opportunities", "key": "opportunity_id",
+        "schema": "semantic_model_optimization", "entity": "semantic_model_optimization_opportunities", "key": "issue_scope_key",
         "columns": [
-            ("opportunity_id", "string"), ("analysis_id", "string"), ("workspace_name", "string"),
+            ("opportunity_id", "string"), ("analysis_id", "string"),
+            ("analysis_scope_key", "string"), ("issue_scope_key", "string"), ("workspace_name", "string"),
             ("semantic_model_id", "string"), ("semantic_model_name", "string"), ("opportunity_title", "string"),
             ("optimization_domain", "string"), ("finding_source", "string"), ("highest_severity", "string"),
             ("finding_count", "int64"), ("recommendation_count", "int64"),
@@ -79,7 +82,8 @@ TABLE_DEFINITIONS = {
     "semantic_model_optimization_recommendations": {
         "schema": "semantic_model_optimization", "entity": "semantic_model_optimization_recommendations", "key": "recommendation_id",
         "columns": [
-            ("recommendation_id", "string"), ("opportunity_id", "string"), ("analysis_id", "string"), ("workspace_name", "string"),
+            ("recommendation_id", "string"), ("opportunity_id", "string"), ("analysis_id", "string"),
+            ("analysis_scope_key", "string"), ("issue_scope_key", "string"), ("workspace_name", "string"),
             ("semantic_model_id", "string"), ("semantic_model_name", "string"), ("recommendation_title", "string"),
             ("optimization_domain", "string"), ("recommended_action", "string"), ("change_risk", "string"),
             ("validation_required", "boolean"), ("estimated_saving_bytes_low", "int64"),
@@ -95,7 +99,8 @@ TABLE_DEFINITIONS = {
     "semantic_model_optimization_findings": {
         "schema": "semantic_model_optimization", "entity": "semantic_model_optimization_findings", "key": "finding_id",
         "columns": [
-            ("finding_id", "string"), ("opportunity_id", "string"), ("analysis_id", "string"), ("workspace_name", "string"),
+            ("finding_id", "string"), ("opportunity_id", "string"), ("analysis_id", "string"),
+            ("analysis_scope_key", "string"), ("issue_scope_key", "string"), ("workspace_name", "string"),
             ("semantic_model_id", "string"), ("semantic_model_name", "string"), ("finding_source", "string"),
             ("optimization_domain", "string"), ("rule_name", "string"), ("severity", "string"),
             ("confidence", "string"), ("impact_area", "string"), ("affected_object_type", "string"),
@@ -114,7 +119,8 @@ TABLE_DEFINITIONS = {
     "semantic_model_column_storage": {
         "schema": "semantic_model_vertipaq", "entity": "semantic_model_column_storage", "key": "column_storage_record_id",
         "columns": [
-            ("column_storage_record_id", "string"), ("analysis_id", "string"), ("workspace_name", "string"),
+            ("column_storage_record_id", "string"), ("analysis_id", "string"),
+            ("analysis_scope_key", "string"), ("workspace_name", "string"),
             ("semantic_model_id", "string"), ("semantic_model_name", "string"), ("table_name", "string"),
             ("column_name", "string"), ("data_type", "string"), ("encoding", "string"),
             ("cardinality", "int64"), ("data_size_bytes", "int64"), ("dictionary_size_bytes", "int64"),
@@ -125,7 +131,8 @@ TABLE_DEFINITIONS = {
     "semantic_model_table_storage": {
         "schema": "semantic_model_vertipaq", "entity": "semantic_model_table_storage", "key": "table_storage_record_id",
         "columns": [
-            ("table_storage_record_id", "string"), ("analysis_id", "string"), ("workspace_name", "string"),
+            ("table_storage_record_id", "string"), ("analysis_id", "string"),
+            ("analysis_scope_key", "string"), ("workspace_name", "string"),
             ("semantic_model_id", "string"), ("semantic_model_name", "string"), ("table_name", "string"),
             ("row_count", "int64"), ("data_size_bytes", "int64"), ("dictionary_size_bytes", "int64"),
             ("hierarchy_size_bytes", "int64"), ("total_size_bytes", "int64"),
@@ -135,7 +142,8 @@ TABLE_DEFINITIONS = {
     "semantic_model_best_practice_rule_findings": {
         "schema": "semantic_model_best_practice", "entity": "semantic_model_best_practice_rule_findings", "key": "best_practice_finding_id",
         "columns": [
-            ("best_practice_finding_id", "string"), ("analysis_id", "string"), ("workspace_name", "string"),
+            ("best_practice_finding_id", "string"), ("analysis_id", "string"),
+            ("analysis_scope_key", "string"), ("workspace_name", "string"),
             ("semantic_model_id", "string"), ("semantic_model_name", "string"), ("rule_id", "string"),
             ("rule_name", "string"), ("category", "string"), ("severity", "string"),
             ("affected_object_type", "string"), ("affected_table_name", "string"),
@@ -420,14 +428,14 @@ def write_model() -> None:
 
     refs = [f"ref table {name}" for name in TABLE_DEFINITIONS] + ["ref table Metrics"]
     relationships = [
-        ("models_overview", "semantic_model_optimization_overview", "analysis_id", "semantic_models", "latest_analysis_id"),
+        ("models_overview", "semantic_model_optimization_overview", "analysis_scope_key", "semantic_models", "analysis_scope_key"),
         ("models_analysis_runs", "semantic_model_analysis_runs", "semantic_model_id", "semantic_models", "semantic_model_id"),
-        ("models_opportunities", "semantic_model_optimization_opportunities", "analysis_id", "semantic_models", "latest_analysis_id"),
-        ("models_bpa_findings", "semantic_model_best_practice_rule_findings", "analysis_id", "semantic_models", "latest_analysis_id"),
-        ("models_column_storage", "semantic_model_column_storage", "analysis_id", "semantic_models", "latest_analysis_id"),
-        ("models_table_storage", "semantic_model_table_storage", "analysis_id", "semantic_models", "latest_analysis_id"),
-        ("opportunity_recommendations", "semantic_model_optimization_recommendations", "opportunity_id", "semantic_model_optimization_opportunities", "opportunity_id"),
-        ("opportunity_findings", "semantic_model_optimization_findings", "opportunity_id", "semantic_model_optimization_opportunities", "opportunity_id"),
+        ("models_opportunities", "semantic_model_optimization_opportunities", "analysis_scope_key", "semantic_models", "analysis_scope_key"),
+        ("models_bpa_findings", "semantic_model_best_practice_rule_findings", "analysis_scope_key", "semantic_models", "analysis_scope_key"),
+        ("models_column_storage", "semantic_model_column_storage", "analysis_scope_key", "semantic_models", "analysis_scope_key"),
+        ("models_table_storage", "semantic_model_table_storage", "analysis_scope_key", "semantic_models", "analysis_scope_key"),
+        ("opportunity_recommendations", "semantic_model_optimization_recommendations", "issue_scope_key", "semantic_model_optimization_opportunities", "issue_scope_key"),
+        ("opportunity_findings", "semantic_model_optimization_findings", "issue_scope_key", "semantic_model_optimization_opportunities", "issue_scope_key"),
     ]
     relation_text = []
     for name, from_table, from_column, to_table, to_column in relationships:

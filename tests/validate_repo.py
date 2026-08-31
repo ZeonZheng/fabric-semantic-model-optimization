@@ -127,7 +127,7 @@ def validate_scanner() -> None:
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
-        'SCANNER_VERSION = "2.6.2"',
+        'SCANNER_VERSION = "2.6.3"',
         "run_model_metadata_checks = True",
         "semantic-model metadata inspection",
         "def analyze_model_bim(",
@@ -152,6 +152,10 @@ def validate_scanner() -> None:
         'replace("\\u200b", "").replace("\\ufeff", "").replace("\\u00a0", " ")',
         '"object_scope": object_scope',
         '"display_table_name": display_table',
+        'row["analysis_scope_key"] = f"{semantic_model_id}|{analysis_id}"',
+        'row["issue_scope_key"] = f"{semantic_model_id}|{analysis_id}|{row[\'opportunity_id\']}"',
+        "SET analysis_scope_key = concat(semantic_model_id, '|', analysis_id)",
+        "SET issue_scope_key = concat(semantic_model_id, '|', analysis_id, '|', opportunity_id)",
         "UPDATE {findings_name}",
         "substring_index(affected_object_name, '[', 1)",
         "object_table, object_leaf = split_display_object(raw_object)",
@@ -193,7 +197,7 @@ def validate_scanner() -> None:
         "workspaceId": "00000000-0000-0000-0000-000000000000",
     }:
         fail("Scanner Environment dependency does not match the deployment manifest.")
-    if notebook["metadata"].get("scanner_version") != "2.6.2":
+    if notebook["metadata"].get("scanner_version") != "2.6.3":
         fail("Scanner metadata version must match the executable scanner version.")
     if "%pip" in source or "_inlineInstallationEnabled" in source:
         fail("Pipeline scanner must not use session-scoped package installation.")
@@ -454,8 +458,16 @@ def validate_report() -> None:
         "models_column_storage", "models_table_storage",
     ):
         relation_block = model_text.split(f"relationship {relation_name}", 1)[-1].split("\n\n", 1)[0]
-        if "toColumn: semantic_models.latest_analysis_id" not in relation_block:
-            fail(f"{relation_name} must filter facts to the selected model's latest analysis.")
+        if (
+            "fromColumn:" not in relation_block
+            or ".analysis_scope_key" not in relation_block
+            or "toColumn: semantic_models.analysis_scope_key" not in relation_block
+        ):
+            fail(f"{relation_name} must use the unique model-analysis scope key.")
+    for relation_name in ("opportunity_findings", "opportunity_recommendations"):
+        relation_block = model_text.split(f"relationship {relation_name}", 1)[-1].split("\n\n", 1)[0]
+        if relation_block.count(".issue_scope_key") != 2:
+            fail(f"{relation_name} must use the analysis-scoped issue key.")
     metrics_text = (model_tables / "Metrics.tmdl").read_text(encoding="utf-8")
     for context_field in (
         "measure 'Selected analysis context'", "latest_analysis_id", "latest_analysis_status",
@@ -465,7 +477,10 @@ def validate_report() -> None:
         if context_field not in metrics_text:
             fail(f"The current analysis context is missing {context_field}.")
     findings_tmdl = (model_tables / "semantic_model_optimization_findings.tmdl").read_text(encoding="utf-8")
-    for display_field in ("object_scope", "display_table_name", "display_object_name"):
+    for display_field in (
+        "analysis_scope_key", "issue_scope_key", "object_scope",
+        "display_table_name", "display_object_name",
+    ):
         if (
             f"column {display_field}\n" not in findings_tmdl
             or f"sourceColumn: {display_field}" not in findings_tmdl

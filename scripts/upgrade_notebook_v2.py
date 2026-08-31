@@ -57,6 +57,7 @@ BUSINESS_SCHEMAS = (
 
 OPTIMIZATION_OVERVIEW_SCHEMA = T.StructType([
     T.StructField("analysis_id", T.StringType(), False),
+    T.StructField("analysis_scope_key", T.StringType(), False),
     T.StructField("workspace_id", T.StringType()),
     T.StructField("workspace_name", T.StringType()),
     T.StructField("semantic_model_id", T.StringType(), False),
@@ -89,6 +90,8 @@ OPTIMIZATION_OVERVIEW_SCHEMA = T.StructType([
 OPTIMIZATION_OPPORTUNITY_SCHEMA = T.StructType([
     T.StructField("opportunity_id", T.StringType(), False),
     T.StructField("analysis_id", T.StringType(), False),
+    T.StructField("analysis_scope_key", T.StringType(), False),
+    T.StructField("issue_scope_key", T.StringType(), False),
     T.StructField("workspace_name", T.StringType()),
     T.StructField("semantic_model_id", T.StringType(), False),
     T.StructField("semantic_model_name", T.StringType()),
@@ -115,6 +118,8 @@ OPTIMIZATION_RECOMMENDATION_SCHEMA = T.StructType([
     T.StructField("recommendation_id", T.StringType(), False),
     T.StructField("opportunity_id", T.StringType(), False),
     T.StructField("analysis_id", T.StringType(), False),
+    T.StructField("analysis_scope_key", T.StringType(), False),
+    T.StructField("issue_scope_key", T.StringType(), False),
     T.StructField("workspace_name", T.StringType()),
     T.StructField("semantic_model_id", T.StringType(), False),
     T.StructField("semantic_model_name", T.StringType()),
@@ -144,6 +149,8 @@ OPTIMIZATION_FINDING_SCHEMA = T.StructType([
     T.StructField("finding_id", T.StringType(), False),
     T.StructField("opportunity_id", T.StringType(), False),
     T.StructField("analysis_id", T.StringType(), False),
+    T.StructField("analysis_scope_key", T.StringType(), False),
+    T.StructField("issue_scope_key", T.StringType(), False),
     T.StructField("workspace_name", T.StringType()),
     T.StructField("semantic_model_id", T.StringType(), False),
     T.StructField("semantic_model_name", T.StringType()),
@@ -184,6 +191,7 @@ OPTIMIZATION_LINK_SCHEMA = T.StructType([
 COLUMN_STORAGE_SCHEMA = T.StructType([
     T.StructField("column_storage_record_id", T.StringType(), False),
     T.StructField("analysis_id", T.StringType(), False),
+    T.StructField("analysis_scope_key", T.StringType(), False),
     T.StructField("workspace_name", T.StringType()),
     T.StructField("semantic_model_id", T.StringType(), False),
     T.StructField("semantic_model_name", T.StringType()),
@@ -233,6 +241,7 @@ SEMANTIC_MODEL_SCHEMA = T.StructType([
     T.StructField("storage_mode", T.StringType()),
     T.StructField("semantic_model_size_bytes", T.LongType()),
     T.StructField("latest_analysis_id", T.StringType()),
+    T.StructField("analysis_scope_key", T.StringType(), False),
     T.StructField("latest_analysis_status", T.StringType()),
     T.StructField("latest_analysis_at", T.TimestampType()),
     T.StructField("scanner_version", T.StringType()),
@@ -241,6 +250,7 @@ SEMANTIC_MODEL_SCHEMA = T.StructType([
 BEST_PRACTICE_FINDING_SCHEMA = T.StructType([
     T.StructField("best_practice_finding_id", T.StringType(), False),
     T.StructField("analysis_id", T.StringType(), False),
+    T.StructField("analysis_scope_key", T.StringType(), False),
     T.StructField("workspace_name", T.StringType()),
     T.StructField("semantic_model_id", T.StringType(), False),
     T.StructField("semantic_model_name", T.StringType()),
@@ -261,6 +271,7 @@ BEST_PRACTICE_FINDING_SCHEMA = T.StructType([
 TABLE_STORAGE_SCHEMA = T.StructType([
     T.StructField("table_storage_record_id", T.StringType(), False),
     T.StructField("analysis_id", T.StringType(), False),
+    T.StructField("analysis_scope_key", T.StringType(), False),
     T.StructField("workspace_name", T.StringType()),
     T.StructField("semantic_model_id", T.StringType(), False),
     T.StructField("semantic_model_name", T.StringType()),
@@ -385,6 +396,28 @@ def ensure_curated_tables():
             END
     """)
 
+    semantic_models_name = curated_table_name("semantic_models")
+    spark.sql(f"""
+        UPDATE {semantic_models_name}
+        SET analysis_scope_key = concat(semantic_model_id, '|', latest_analysis_id)
+        WHERE latest_analysis_id IS NOT NULL
+    """)
+    for logical_name in (
+        "overview", "opportunities", "recommendations", "findings",
+        "best_practice_findings", "column_storage", "table_storage",
+    ):
+        spark.sql(f"""
+            UPDATE {curated_table_name(logical_name)}
+            SET analysis_scope_key = concat(semantic_model_id, '|', analysis_id)
+            WHERE analysis_id IS NOT NULL
+        """)
+    for logical_name in ("opportunities", "recommendations", "findings"):
+        spark.sql(f"""
+            UPDATE {curated_table_name(logical_name)}
+            SET issue_scope_key = concat(semantic_model_id, '|', analysis_id, '|', opportunity_id)
+            WHERE analysis_id IS NOT NULL AND opportunity_id IS NOT NULL
+        """)
+
 
 def replace_semantic_model_current_state(logical_name, semantic_model_id, rows):
     _, _, schema = CURATED_TABLES[logical_name]
@@ -392,7 +425,16 @@ def replace_semantic_model_current_state(logical_name, semantic_model_id, rows):
     escaped_model_id = semantic_model_id.replace("'", "''")
     DeltaTable.forName(spark, name).delete(f"semantic_model_id = '{escaped_model_id}'")
     if rows:
-        spark.createDataFrame(rows, schema=schema).write.format("delta").mode("append").saveAsTable(name)
+        keyed_rows = []
+        for source_row in rows:
+            row = dict(source_row)
+            analysis_id = row.get("latest_analysis_id") if logical_name == "semantic_models" else row.get("analysis_id")
+            if "analysis_scope_key" in schema.fieldNames() and analysis_id:
+                row["analysis_scope_key"] = f"{semantic_model_id}|{analysis_id}"
+            if "issue_scope_key" in schema.fieldNames() and analysis_id and row.get("opportunity_id"):
+                row["issue_scope_key"] = f"{semantic_model_id}|{analysis_id}|{row['opportunity_id']}"
+            keyed_rows.append(row)
+        spark.createDataFrame(keyed_rows, schema=schema).write.format("delta").mode("append").saveAsTable(name)
 
 
 def reconcile_workspace_current_state(targets):
@@ -1145,18 +1187,18 @@ def set_source(cell: dict, text: str) -> None:
 def main() -> None:
     notebook = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
     cells = notebook["cells"]
-    notebook.setdefault("metadata", {})["scanner_version"] = "2.6.2"
+    notebook.setdefault("metadata", {})["scanner_version"] = "2.6.3"
 
     for cell in cells:
         text = source_text(cell)
         text = re.sub(
             r'SCANNER_VERSION = "\d+\.\d+\.\d+"',
-            'SCANNER_VERSION = "2.6.2"',
+            'SCANNER_VERSION = "2.6.3"',
             text,
         )
         text = re.sub(
             r"Semantic Model Optimization Scanner — V(?:1\.2|2\.\d+(?:\.\d+)*)",
-            "Semantic Model Optimization Scanner — V2.6.2",
+            "Semantic Model Optimization Scanner — V2.6.3",
             text,
         )
         if "bpa_extended = False" in text and "run_model_metadata_checks" not in text:
