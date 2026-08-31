@@ -32,7 +32,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "Select one root-cause row. Actions and Evidence update together; object locators apply to all three sections.",
+                    "value": "Select one root cause. Max severity is the issue maximum; Evidence severity is per finding.",
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "11px",

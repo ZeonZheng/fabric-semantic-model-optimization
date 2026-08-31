@@ -420,12 +420,12 @@ def write_model() -> None:
 
     refs = [f"ref table {name}" for name in TABLE_DEFINITIONS] + ["ref table Metrics"]
     relationships = [
-        ("models_overview", "semantic_model_optimization_overview", "semantic_model_id", "semantic_models", "semantic_model_id"),
+        ("models_overview", "semantic_model_optimization_overview", "analysis_id", "semantic_models", "latest_analysis_id"),
         ("models_analysis_runs", "semantic_model_analysis_runs", "semantic_model_id", "semantic_models", "semantic_model_id"),
-        ("models_opportunities", "semantic_model_optimization_opportunities", "semantic_model_id", "semantic_models", "semantic_model_id"),
-        ("models_bpa_findings", "semantic_model_best_practice_rule_findings", "semantic_model_id", "semantic_models", "semantic_model_id"),
-        ("models_column_storage", "semantic_model_column_storage", "semantic_model_id", "semantic_models", "semantic_model_id"),
-        ("models_table_storage", "semantic_model_table_storage", "semantic_model_id", "semantic_models", "semantic_model_id"),
+        ("models_opportunities", "semantic_model_optimization_opportunities", "analysis_id", "semantic_models", "latest_analysis_id"),
+        ("models_bpa_findings", "semantic_model_best_practice_rule_findings", "analysis_id", "semantic_models", "latest_analysis_id"),
+        ("models_column_storage", "semantic_model_column_storage", "analysis_id", "semantic_models", "latest_analysis_id"),
+        ("models_table_storage", "semantic_model_table_storage", "analysis_id", "semantic_models", "latest_analysis_id"),
         ("opportunity_recommendations", "semantic_model_optimization_recommendations", "opportunity_id", "semantic_model_optimization_opportunities", "opportunity_id"),
         ("opportunity_findings", "semantic_model_optimization_findings", "opportunity_id", "semantic_model_optimization_opportunities", "opportunity_id"),
     ]
@@ -913,7 +913,10 @@ def compact_slicer(
                   sync_group=sync_group, selected_values=selected_values, show_title=False)
 
 
-def drillthrough_config(fields: list[tuple[str, str]], *, hidden: bool = False) -> dict:
+def drillthrough_config(
+    fields: list[tuple[str, str]], *, hidden: bool = False,
+    accepts_filter_context: str = "Default",
+) -> dict:
     filters = []
     parameters = []
     for index, (entity, prop) in enumerate(fields):
@@ -932,7 +935,7 @@ def drillthrough_config(fields: list[tuple[str, str]], *, hidden: bool = False) 
         "filterConfig": {"filters": filters},
         "pageBinding": {
             "name": "Pod", "type": "Drillthrough", "parameters": parameters,
-            "acceptsFilterContext": "Default",
+            "acceptsFilterContext": accepts_filter_context,
         },
     }
 
@@ -980,8 +983,8 @@ def write_report() -> None:
             field_column(opportunities, "priority_band", "Priority"),
             field_column(opportunities, "actionability_status", "Decision"),
             field_measure("Total opportunities", "Root causes"),
-            field_measure("Visible evidence", "Evidence"),
             field_measure("Visible actions", "Actions"),
+            field_measure("Visible evidence", "Evidence"),
         ]}, "Priority summary — right-click a row for the filtered review workbench", 3000,
                conditional_colors=[
                    (f"{opportunities}.priority_band", "priority"),
@@ -994,10 +997,14 @@ def write_report() -> None:
                measure_filter_gt_zero=("Metrics", "Visible evidence")),
     ])
 
-    review_visuals = report_header(
+    review_header = report_header(
         "Which issue should I fix, and what proves it?",
-        "Select one root-cause row. Actions and Evidence update together; object locators apply to all three sections.",
-    ) + [
+        "Select one root cause. Max severity is the issue maximum; Evidence severity is per finding.",
+    )
+    review_header[0]["position"].update({"x": 280, "width": 976})
+    review_visuals = review_header + [
+        action_button("back_button", "Back", "Back", 24, 16, 88, 40, 450),
+        action_button("reset_slicers_button", "Reset slicers", "ClearAllSlicers", 120, 16, 144, 40, 451),
         compact_slicer("object_scope_slicer", findings, "object_scope", "Object category", 216, 2000,
                        x=24, width=192),
         compact_slicer("object_type_slicer", findings, "affected_object_type", "Object type", 216, 2001,
@@ -1008,17 +1015,17 @@ def write_report() -> None:
                        x=648, width=192),
         compact_slicer("domain_slicer", findings, "optimization_domain", "Area / domain", 216, 2004,
                        x=856, width=192),
-        compact_slicer("severity_slicer", findings, "severity", "Severity", 216, 2005,
+        compact_slicer("severity_slicer", findings, "severity", "Evidence severity", 216, 2005,
                        x=1064, width=192),
         visual("issues_table", "tableEx", 24, 308, 1232, 216, {"Values": [
             field_column(opportunities, "priority_band", "Priority"),
             field_column(opportunities, "actionability_status", "Decision"),
             field_column(opportunities, "opportunity_title", "Root cause"),
             field_column(opportunities, "optimization_domain", "Area / domain"),
-            field_column(opportunities, "highest_severity", "Severity"),
+            field_column(opportunities, "highest_severity", "Max severity"),
             field_column(opportunities, "change_risk", "Risk"),
-            field_measure("Visible evidence", "Visible evidence"),
             field_measure("Visible actions", "Visible actions"),
+            field_measure("Visible evidence", "Visible evidence"),
             field_column(opportunities, "opportunity_id", "Key · control"),
         ]},
                "1 · Issues — select one root cause; counts reflect the current object filters", 3000,
@@ -1029,8 +1036,8 @@ def write_report() -> None:
                    (f"{opportunities}.change_risk", "risk"),
                ],
                data_bars=[
-                   ("Metrics.Visible evidence", "#6C8EBF"),
                    ("Metrics.Visible actions", "#76A5AF"),
+                   ("Metrics.Visible evidence", "#6C8EBF"),
                ],
                sort_by=(opportunities, "priority_score"),
                measure_filter_gt_zero=("Metrics", "Visible evidence")),
@@ -1053,7 +1060,7 @@ def write_report() -> None:
                sort_by=(recommendations, "recommendation_priority_score"),
                measure_filter_gt_zero=("Metrics", "Visible action evidence")),
         visual("evidence_table", "tableEx", 24, 804, 1232, 252, {"Values": [
-            field_column(findings, "severity", "Severity"),
+            field_column(findings, "severity", "Evidence severity"),
             field_column(findings, "object_scope", "Object category"),
             field_column(findings, "affected_object_type", "Object type"),
             field_column(findings, "display_table_name", "Affected table"),
@@ -1078,9 +1085,10 @@ def write_report() -> None:
         "opportunities", "Review issues", review_visuals, height=1080,
         visual_interactions=review_interactions,
         **drillthrough_config([
+            ("semantic_models", "semantic_model_name"),
             (opportunities, "priority_band"),
             (opportunities, "actionability_status"),
-        ]),
+        ], accepts_filter_context="None"),
     )
 
     write_page("storage", "Storage", report_header(

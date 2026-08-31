@@ -68,12 +68,12 @@
                       "Entity": "Metrics"
                     }
                   },
-                  "Property": "Visible evidence"
+                  "Property": "Visible actions"
                 }
               },
-              "queryRef": "Metrics.Visible evidence",
-              "nativeQueryRef": "Evidence",
-              "displayName": "Evidence"
+              "queryRef": "Metrics.Visible actions",
+              "nativeQueryRef": "Actions",
+              "displayName": "Actions"
             },
             {
               "field": {
@@ -83,12 +83,12 @@
                       "Entity": "Metrics"
                     }
                   },
-                  "Property": "Visible actions"
+                  "Property": "Visible evidence"
                 }
               },
-              "queryRef": "Metrics.Visible actions",
-              "nativeQueryRef": "Actions",
-              "displayName": "Actions"
+              "queryRef": "Metrics.Visible evidence",
+              "nativeQueryRef": "Evidence",
+              "displayName": "Evidence"
             }
           ]
         }

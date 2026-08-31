@@ -87,8 +87,8 @@
                 }
               },
               "queryRef": "semantic_model_optimization_opportunities.highest_severity",
-              "nativeQueryRef": "Severity",
-              "displayName": "Severity"
+              "nativeQueryRef": "Max severity",
+              "displayName": "Max severity"
             },
             {
               "field": {
@@ -113,12 +113,12 @@
                       "Entity": "Metrics"
                     }
                   },
-                  "Property": "Visible evidence"
+                  "Property": "Visible actions"
                 }
               },
-              "queryRef": "Metrics.Visible evidence",
-              "nativeQueryRef": "Visible evidence",
-              "displayName": "Visible evidence"
+              "queryRef": "Metrics.Visible actions",
+              "nativeQueryRef": "Visible actions",
+              "displayName": "Visible actions"
             },
             {
               "field": {
@@ -128,12 +128,12 @@
                       "Entity": "Metrics"
                     }
                   },
-                  "Property": "Visible actions"
+                  "Property": "Visible evidence"
                 }
               },
-              "queryRef": "Metrics.Visible actions",
-              "nativeQueryRef": "Visible actions",
-              "displayName": "Visible actions"
+              "queryRef": "Metrics.Visible evidence",
+              "nativeQueryRef": "Visible evidence",
+              "displayName": "Visible evidence"
             },
             {
               "field": {
@@ -979,69 +979,6 @@
                   "color": {
                     "expr": {
                       "Literal": {
-                        "Value": "'#6C8EBF'"
-                      }
-                    }
-                  }
-                }
-              },
-              "negativeColor": {
-                "solid": {
-                  "color": {
-                    "expr": {
-                      "Literal": {
-                        "Value": "'#F4CCCC'"
-                      }
-                    }
-                  }
-                }
-              },
-              "axisColor": {
-                "solid": {
-                  "color": {
-                    "expr": {
-                      "Literal": {
-                        "Value": "'#9FB3C8'"
-                      }
-                    }
-                  }
-                }
-              },
-              "reverseDirection": {
-                "expr": {
-                  "Literal": {
-                    "Value": "false"
-                  }
-                }
-              },
-              "hideText": {
-                "expr": {
-                  "Literal": {
-                    "Value": "false"
-                  }
-                }
-              },
-              "totalMatchingOption": {
-                "expr": {
-                  "Literal": {
-                    "Value": "1L"
-                  }
-                }
-              }
-            }
-          },
-          "selector": {
-            "metadata": "Metrics.Visible evidence"
-          }
-        },
-        {
-          "properties": {
-            "dataBars": {
-              "positiveColor": {
-                "solid": {
-                  "color": {
-                    "expr": {
-                      "Literal": {
                         "Value": "'#76A5AF'"
                       }
                     }
@@ -1095,6 +1032,69 @@
           },
           "selector": {
             "metadata": "Metrics.Visible actions"
+          }
+        },
+        {
+          "properties": {
+            "dataBars": {
+              "positiveColor": {
+                "solid": {
+                  "color": {
+                    "expr": {
+                      "Literal": {
+                        "Value": "'#6C8EBF'"
+                      }
+                    }
+                  }
+                }
+              },
+              "negativeColor": {
+                "solid": {
+                  "color": {
+                    "expr": {
+                      "Literal": {
+                        "Value": "'#F4CCCC'"
+                      }
+                    }
+                  }
+                }
+              },
+              "axisColor": {
+                "solid": {
+                  "color": {
+                    "expr": {
+                      "Literal": {
+                        "Value": "'#9FB3C8'"
+                      }
+                    }
+                  }
+                }
+              },
+              "reverseDirection": {
+                "expr": {
+                  "Literal": {
+                    "Value": "false"
+                  }
+                }
+              },
+              "hideText": {
+                "expr": {
+                  "Literal": {
+                    "Value": "false"
+                  }
+                }
+              },
+              "totalMatchingOption": {
+                "expr": {
+                  "Literal": {
+                    "Value": "1L"
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Metrics.Visible evidence"
           }
         }
       ]

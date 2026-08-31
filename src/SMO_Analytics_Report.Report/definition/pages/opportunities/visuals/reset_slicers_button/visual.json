@@ -1,68 +1,105 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
-  "name": "page_navigator",
+  "name": "reset_slicers_button",
   "position": {
-    "x": 280,
+    "x": 120,
     "y": 16,
-    "z": 500,
+    "z": 451,
     "height": 40,
-    "width": 976,
-    "tabOrder": 500
+    "width": 144,
+    "tabOrder": 451
   },
   "visual": {
-    "visualType": "pageNavigator",
+    "visualType": "actionButton",
     "objects": {
-      "pages": [
+      "text": [
         {
           "properties": {
-            "showHiddenPages": {
-              "expr": {
-                "Literal": {
-                  "Value": "false"
-                }
-              }
-            },
-            "showTooltipPages": {
-              "expr": {
-                "Literal": {
-                  "Value": "false"
-                }
-              }
-            },
-            "showByDefault": {
+            "show": {
               "expr": {
                 "Literal": {
                   "Value": "true"
                 }
               }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Reset slicers'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11D"
+                }
+              }
+            },
+            "bold": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#102A43'"
+                    }
+                  }
+                }
+              }
             }
           }
-        }
-      ],
-      "layout": [
+        },
         {
           "properties": {
-            "orientation": {
+            "show": {
               "expr": {
                 "Literal": {
-                  "Value": "0D"
+                  "Value": "true"
                 }
               }
             },
-            "rowCount": {
+            "text": {
               "expr": {
                 "Literal": {
-                  "Value": "1L"
+                  "Value": "'Reset slicers'"
                 }
               }
             },
-            "cellPadding": {
+            "fontSize": {
               "expr": {
                 "Literal": {
-                  "Value": "4L"
+                  "Value": "11D"
+                }
+              }
+            },
+            "bold": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#102A43'"
+                    }
+                  }
                 }
               }
             }
+          },
+          "selector": {
+            "id": "default"
           }
         }
       ]
@@ -74,7 +111,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Navigate report pages'"
+                  "Value": "'Reset slicers'"
                 }
               }
             }
@@ -94,60 +131,27 @@
           }
         }
       ],
-      "background": [
+      "visualLink": [
         {
           "properties": {
             "show": {
               "expr": {
                 "Literal": {
-                  "Value": "false"
-                }
-              }
-            }
-          }
-        }
-      ],
-      "border": [
-        {
-          "properties": {
-            "show": {
-              "expr": {
-                "Literal": {
-                  "Value": "false"
-                }
-              }
-            }
-          }
-        }
-      ],
-      "padding": [
-        {
-          "properties": {
-            "top": {
-              "expr": {
-                "Literal": {
-                  "Value": "0D"
+                  "Value": "true"
                 }
               }
             },
-            "bottom": {
+            "type": {
               "expr": {
                 "Literal": {
-                  "Value": "0D"
+                  "Value": "'ClearAllSlicers'"
                 }
               }
             },
-            "left": {
+            "enabledTooltip": {
               "expr": {
                 "Literal": {
-                  "Value": "0D"
-                }
-              }
-            },
-            "right": {
-              "expr": {
-                "Literal": {
-                  "Value": "0D"
+                  "Value": "'Reset slicers'"
                 }
               }
             }

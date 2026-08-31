@@ -237,19 +237,21 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
                 f"columns={len(columns)}; relationships=0; measures=0", risk="HIGH",
             ))
 
-    if technical_names:
+    for table_name in sorted(technical_names):
         findings.append(_issue(
-            "MQ004", "Technical or temporary table names", "Naming", "WARNING", "Model", None, None,
-            "Technical/staging names reduce business readability and AI discoverability.",
-            "Rename published semantic objects with clear business terms and keep staging objects outside the model.",
-            "tables=" + ", ".join(sorted(technical_names)), risk="LOW",
+            "MQ004", "Technical or temporary table names", "Naming", "WARNING", "Table",
+            table_name, table_name,
+            "A published table exposes a technical, staging, temporary, or non-business name.",
+            "Rename the semantic object with a clear business term and keep staging objects outside the published model.",
+            f"table={table_name}; matched_pattern=STG_/STAGE_/TEMP_/TMP_/VW_/Dim_*<number>", risk="LOW",
         ))
-    if prefix_names:
+    for table_name in sorted(prefix_names):
         findings.append(_issue(
-            "MQ026", "Fact/Dim table prefixes exposed to users", "Naming", "INFO", "Model", None, None,
-            "Technical Fact/Dim prefixes are exposed in the business layer.",
-            "Use concise business-facing table names while retaining technical lineage in descriptions.",
-            "tables=" + ", ".join(sorted(prefix_names)), risk="MEDIUM",
+            "MQ026", "Fact/Dim table prefixes exposed to users", "Naming", "INFO", "Table",
+            table_name, table_name,
+            "A business-facing table exposes a technical Fact/Dim prefix.",
+            "Use a concise business-facing table name while retaining technical lineage in its description.",
+            f"table={table_name}; matched_prefix=Fact/Dim", risk="MEDIUM",
         ))
 
     # Duplicate table definitions: exact column signatures or a bare calculated-table reference.
@@ -384,13 +386,18 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
                 invalid_summarize.append(f"{object_ref}={summarize}")
 
     for column_name, refs in duplicate_columns.items():
-        if len({ref.split("[")[0] for ref in refs}) > 1:
-            findings.append(_issue(
-                "MQ009", "Ambiguous column name across tables", "Naming", "WARNING", "Model", None, column_name,
-                "The same non-key column name is exposed by multiple tables.",
-                "Use specific business names and descriptions so users and AI can distinguish the fields.",
-                "objects=" + ", ".join(sorted(refs)), risk="LOW",
-            ))
+        distinct_tables = {ref.split("[")[0] for ref in refs}
+        if len(distinct_tables) > 1:
+            evidence = "objects=" + ", ".join(sorted(refs))
+            for object_ref in sorted(refs):
+                table_name, object_name = object_ref.split("[", 1)
+                findings.append(_issue(
+                    "MQ009", "Ambiguous column name across tables", "Naming", "WARNING", "Column",
+                    table_name, object_name.rstrip("]"),
+                    "The same non-key column name is exposed by multiple tables.",
+                    "Use specific business names and descriptions so users and AI can distinguish the fields.",
+                    evidence, risk="LOW",
+                ))
     if double_columns:
         findings.append(_issue(
             "MQ023", "Floating-point columns", "Data types", "WARNING", "Model", None, None,

@@ -739,6 +739,16 @@ def normalize_display_identifier(value):
     return normalized
 
 
+def split_display_object(value):
+    normalized = str(value or "").strip()
+    if "[" not in normalized:
+        return "", normalize_display_identifier(normalized)
+    raw_table, raw_leaf = normalized.split("[", 1)
+    if raw_leaf.endswith("]"):
+        raw_leaf = raw_leaf[:-1]
+    return normalize_display_identifier(raw_table), normalize_display_identifier(raw_leaf)
+
+
 def finding_locator_fields(finding):
     raw_table = (finding.get("table_name") or "").strip()
     raw_object = (finding.get("object_name") or "").strip()
@@ -753,17 +763,21 @@ def finding_locator_fields(finding):
         else "Model-level" if object_type in {"", "MODEL", "SEMANTIC MODEL"}
         else "Authored / imported object"
     )
-    object_table = ""
-    if "[" in raw_object:
-        object_table = normalize_display_identifier(raw_object.split("[", 1)[0])
+    object_table, object_leaf = split_display_object(raw_object)
     display_table = normalize_display_identifier(raw_table) or object_table
     if not display_table and object_type in {"TABLE", "CALCULATED TABLE"}:
         display_table = normalize_display_identifier(raw_object)
     display_table = display_table or "Not applicable"
+    if object_type in {"COLUMN", "MEASURE"} and display_table != "Not applicable" and object_leaf:
+        display_object = f"{display_table}[{object_leaf}]"
+    elif object_type in {"TABLE", "CALCULATED TABLE"} and display_table != "Not applicable":
+        display_object = display_table
+    else:
+        display_object = normalize_display_identifier(raw_object) or "Not applicable"
     return {
         "object_scope": object_scope,
         "display_table_name": display_table,
-        "display_object_name": raw_object or "Not applicable",
+        "display_object_name": display_object,
     }
 
 
@@ -1131,18 +1145,18 @@ def set_source(cell: dict, text: str) -> None:
 def main() -> None:
     notebook = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
     cells = notebook["cells"]
-    notebook.setdefault("metadata", {})["scanner_version"] = "2.6.1"
+    notebook.setdefault("metadata", {})["scanner_version"] = "2.6.2"
 
     for cell in cells:
         text = source_text(cell)
         text = re.sub(
             r'SCANNER_VERSION = "\d+\.\d+\.\d+"',
-            'SCANNER_VERSION = "2.6.1"',
+            'SCANNER_VERSION = "2.6.2"',
             text,
         )
         text = re.sub(
             r"Semantic Model Optimization Scanner — V(?:1\.2|2\.\d+(?:\.\d+)*)",
-            "Semantic Model Optimization Scanner — V2.6.1",
+            "Semantic Model Optimization Scanner — V2.6.2",
             text,
         )
         if "bpa_extended = False" in text and "run_model_metadata_checks" not in text:

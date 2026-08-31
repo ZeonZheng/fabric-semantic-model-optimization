@@ -30,7 +30,22 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter47e1eea5ee0a53c29317db40",
+        "name": "Filter75380c865c9a50f5b45eb066",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "semantic_models"
+              }
+            },
+            "Property": "semantic_model_name"
+          }
+        },
+        "type": "Categorical",
+        "howCreated": "Drillthrough"
+      },
+      {
+        "name": "Filterd739ee8d30ce5bc59be9ce32",
         "field": {
           "Column": {
             "Expression": {
@@ -45,7 +60,7 @@
         "howCreated": "Drillthrough"
       },
       {
-        "name": "Filter40d413eb23fe500e83655fd5",
+        "name": "Filterdc37eaf8d65a5f0994653c5a",
         "field": {
           "Column": {
             "Expression": {
@@ -66,8 +81,22 @@
     "type": "Drillthrough",
     "parameters": [
       {
-        "name": "Param_Filter47e1eea5ee0a53c29317db40",
-        "boundFilter": "Filter47e1eea5ee0a53c29317db40",
+        "name": "Param_Filter75380c865c9a50f5b45eb066",
+        "boundFilter": "Filter75380c865c9a50f5b45eb066",
+        "fieldExpr": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "semantic_models"
+              }
+            },
+            "Property": "semantic_model_name"
+          }
+        }
+      },
+      {
+        "name": "Param_Filterd739ee8d30ce5bc59be9ce32",
+        "boundFilter": "Filterd739ee8d30ce5bc59be9ce32",
         "fieldExpr": {
           "Column": {
             "Expression": {
@@ -80,8 +109,8 @@
         }
       },
       {
-        "name": "Param_Filter40d413eb23fe500e83655fd5",
-        "boundFilter": "Filter40d413eb23fe500e83655fd5",
+        "name": "Param_Filterdc37eaf8d65a5f0994653c5a",
+        "boundFilter": "Filterdc37eaf8d65a5f0994653c5a",
         "fieldExpr": {
           "Column": {
             "Expression": {
@@ -94,6 +123,6 @@
         }
       }
     ],
-    "acceptsFilterContext": "Default"
+    "acceptsFilterContext": "None"
   }
 }

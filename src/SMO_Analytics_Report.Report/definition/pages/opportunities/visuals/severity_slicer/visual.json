@@ -27,8 +27,8 @@
                 }
               },
               "queryRef": "semantic_model_optimization_findings.severity",
-              "nativeQueryRef": "Severity",
-              "displayName": "Severity"
+              "nativeQueryRef": "Evidence severity",
+              "displayName": "Evidence severity"
             }
           ]
         }
@@ -48,7 +48,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Severity'"
+                  "Value": "'Evidence severity'"
                 }
               }
             },
@@ -79,7 +79,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Severity'"
+                  "Value": "'Evidence severity'"
                 }
               }
             }

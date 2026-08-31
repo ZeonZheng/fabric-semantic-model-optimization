@@ -127,7 +127,7 @@ def validate_scanner() -> None:
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
-        'SCANNER_VERSION = "2.6.1"',
+        'SCANNER_VERSION = "2.6.2"',
         "run_model_metadata_checks = True",
         "semantic-model metadata inspection",
         "def analyze_model_bim(",
@@ -148,12 +148,13 @@ def validate_scanner() -> None:
         "def ensure_curated_tables()",
         "def finding_locator_fields(finding)",
         "def normalize_display_identifier(value)",
+        "def split_display_object(value)",
         'replace("\\u200b", "").replace("\\ufeff", "").replace("\\u00a0", " ")',
         '"object_scope": object_scope',
         '"display_table_name": display_table',
         "UPDATE {findings_name}",
         "substring_index(affected_object_name, '[', 1)",
-        "raw_object.split(\"[\", 1)[0]",
+        "object_table, object_leaf = split_display_object(raw_object)",
         "def curate_latest_model_analysis(result)",
         "auto_date_present = any(is_auto_date_root_cause_finding(row) for row in findings)",
         "consolidation = root_cause_grouping(finding, auto_date_present)",
@@ -192,7 +193,7 @@ def validate_scanner() -> None:
         "workspaceId": "00000000-0000-0000-0000-000000000000",
     }:
         fail("Scanner Environment dependency does not match the deployment manifest.")
-    if notebook["metadata"].get("scanner_version") != "2.6.1":
+    if notebook["metadata"].get("scanner_version") != "2.6.2":
         fail("Scanner metadata version must match the executable scanner version.")
     if "%pip" in source or "_inlineInstallationEnabled" in source:
         fail("Pipeline scanner must not use session-scoped package installation.")
@@ -223,7 +224,9 @@ def validate_scanner() -> None:
 
     normalizer_nodes = [
         node for node in scanner_tree.body
-        if isinstance(node, ast.FunctionDef) and node.name == "normalize_display_identifier"
+        if isinstance(node, ast.FunctionDef) and node.name in {
+            "normalize_display_identifier", "split_display_object", "finding_locator_fields",
+        }
     ]
     normalizer_namespace = {"re": re}
     exec(
@@ -235,6 +238,16 @@ def validate_scanner() -> None:
     normalized = [normalize_identifier(value) for value in variants]
     if normalized[:5] != ["DimDate"] * 5 or normalized[5] != "Dim Date":
         fail(f"Display-only table-name normalization is not canonical: {normalized}.")
+    finding_locator = normalizer_namespace["finding_locator_fields"]
+    locator_variants = [
+        {"table_name": "FactInternetSales", "object_name": "OrderDateText", "object_type": "Column"},
+        {"table_name": "'FactInternetSales'", "object_name": "'FactInternetSales'[OrderDateText]", "object_type": "Column"},
+    ]
+    locators = [finding_locator(value) for value in locator_variants]
+    if any(locator["display_table_name"] != "FactInternetSales" for locator in locators):
+        fail(f"Column table locators are not canonical: {locators}.")
+    if any(locator["display_object_name"] != "FactInternetSales[OrderDateText]" for locator in locators):
+        fail(f"BPA and MQ column locators must share one qualified display name: {locators}.")
     ensure_curated_source = ast.get_source_segment(code_source, next(
         node for node in scanner_tree.body
         if isinstance(node, ast.FunctionDef) and node.name == "ensure_curated_tables"
@@ -420,14 +433,14 @@ def validate_report() -> None:
         parameter.get("fieldExpr", {}).get("Column", {}).get("Property")
         for parameter in review_page.get("pageBinding", {}).get("parameters", [])
     ]
-    if drill_properties != ["priority_band", "actionability_status"]:
-        fail(f"Start here drillthrough must bind Priority and Decision, found {drill_properties}.")
-    if review_page.get("pageBinding", {}).get("acceptsFilterContext") != "Default":
-        fail("Review issues must retain the Start here filter context.")
+    if drill_properties != ["semantic_model_name", "priority_band", "actionability_status"]:
+        fail(f"Start here drillthrough must bind Model, Priority, and Decision, found {drill_properties}.")
+    if review_page.get("pageBinding", {}).get("acceptsFilterContext") != "None":
+        fail("Review issues must not inherit stale target-page object slicer context.")
     if workspace_sync_count != 3 or model_sync_count != 3 or analysis_sync_count != 3:
         fail("Global scope slicers must stay synchronized across all three visible pages.")
-    if visual_count != 33:
-        fail(f"The M6.6.3 consolidated report contract requires 33 visuals, found {visual_count}.")
+    if visual_count != 35:
+        fail(f"The consolidated report contract requires 35 visuals, found {visual_count}.")
     for retired_page in ("recommendations", "findings", "opportunity_detail"):
         if (report_root / "definition/pages" / retired_page).exists():
             fail(f"Retired overlapping page still exists: {retired_page}.")
@@ -436,6 +449,13 @@ def validate_report() -> None:
         relation_block = model_text.split(f"relationship {relation_name}", 1)[-1].split("\n\n", 1)[0]
         if "crossFilteringBehavior: bothDirections" not in relation_block:
             fail(f"{relation_name} must bidirectionally filter the grouped root-cause bridge.")
+    for relation_name in (
+        "models_overview", "models_opportunities", "models_bpa_findings",
+        "models_column_storage", "models_table_storage",
+    ):
+        relation_block = model_text.split(f"relationship {relation_name}", 1)[-1].split("\n\n", 1)[0]
+        if "toColumn: semantic_models.latest_analysis_id" not in relation_block:
+            fail(f"{relation_name} must filter facts to the selected model's latest analysis.")
     metrics_text = (model_tables / "Metrics.tmdl").read_text(encoding="utf-8")
     for context_field in (
         "measure 'Selected analysis context'", "latest_analysis_id", "latest_analysis_status",
@@ -494,8 +514,8 @@ def validate_report() -> None:
                 "highest_severity", "change_risk",
             )
         ] + [
-            "Metrics.Visible evidence",
             "Metrics.Visible actions",
+            "Metrics.Visible evidence",
             "semantic_model_optimization_opportunities.opportunity_id",
         ],
         ("opportunities", "actions_table"): [
@@ -537,6 +557,10 @@ def validate_report() -> None:
             fail(f"Actions and Evidence must not repeat Issues control field {repeated}.")
     if "opportunity_id" not in issues_text:
         fail("Issues must retain the unique technical issue key as its final row-grain control.")
+    if '"displayName": "Max severity"' not in issues_text:
+        fail("Issues must label grouped severity as Max severity.")
+    if '"displayName": "Evidence severity"' not in evidence_text:
+        fail("Evidence must label row-grain severity as Evidence severity.")
     report_json_text = "\n".join(
         path.read_text(encoding="utf-8")
         for path in (report_root / "definition/pages").rglob("*.json")
@@ -566,6 +590,15 @@ def validate_report() -> None:
         fail(f"Review workbench interactions differ from the approved contract: {actual_interactions}.")
 
     review_visual_root = report_root / "definition/pages/opportunities/visuals"
+    for button_name, expected_type in {
+        "back_button": "Back",
+        "reset_slicers_button": "ClearAllSlicers",
+    }.items():
+        button = json.loads((review_visual_root / button_name / "visual.json").read_text())
+        action = button.get("visual", {}).get("visualContainerObjects", {}).get("visualLink", [])
+        if expected_type not in json.dumps(action):
+            fail(f"Review issues {button_name} must use the {expected_type} action.")
+
     slicer_fields = {}
     for slicer_name in (
         "object_scope_slicer", "object_type_slicer", "table_slicer",
@@ -903,9 +936,13 @@ def validate_model_quality_rules() -> None:
     if sum(row["rule_code"] == "MQ020" for row in findings) != 1:
         fail("Auto Date/Time tables must be consolidated into one model-level root-cause finding.")
     mq009 = [row for row in findings if row["rule_code"] == "MQ009"]
-    if len(mq009) != 1 or mq009[0]["object_name"] != "name":
-        fail("Ambiguous-name analysis must keep the visible injected Name conflict without hidden/generated noise.")
-    if "DimCustomerCopy" in mq009[0]["technical_evidence"] or "LocalDateTable" in mq009[0]["technical_evidence"]:
+    mq009_objects = {(row["table_name"], row["object_name"]) for row in mq009}
+    if mq009_objects != {("DimCustomer", "Name"), ("DimProduct", "Name")}:
+        fail(f"MQ009 must locate both visible conflicting columns, found {mq009_objects}.")
+    if any(
+        "DimCustomerCopy" in row["technical_evidence"] or "LocalDateTable" in row["technical_evidence"]
+        for row in mq009
+    ):
         fail("MQ009 must not repeat copy-table or generated-date-table root causes.")
     mq011 = [row for row in findings if row["rule_code"] == "MQ011"]
     if len(mq011) != 1 or mq011[0]["object_name"] != "YearlyIncomeText":
@@ -921,6 +958,29 @@ def validate_model_quality_rules() -> None:
         fail("MQ030 must group unresolved inactive relationships by table pair.")
     if "FactResellerSales" in mq030[0]["technical_evidence"]:
         fail("MQ030 must exclude the specific relationship invoked by USERELATIONSHIP.")
+
+    expected_ap_objects = {
+        "MQ004": {
+            ("STG_TestLoad", "STG_TestLoad"),
+            ("TEMP_Calc", "TEMP_Calc"),
+            ("Dim_Calendar2", "Dim_Calendar2"),
+        },
+        "MQ005": {("FactInternetSales", "OrderDateText")},
+        "MQ008": {("DimProduct", "RandomRank")},
+        "MQ009": {("DimCustomer", "Name"), ("DimProduct", "Name")},
+        "MQ010": {("DimProduct", "ProductAttributes")},
+        "MQ011": {("DimCustomer", "YearlyIncomeText")},
+    }
+    for rule_code, expected_objects in expected_ap_objects.items():
+        actual_objects = {
+            (row.get("table_name"), row.get("object_name"))
+            for row in findings if row["rule_code"] == rule_code
+        }
+        if not expected_objects.issubset(actual_objects):
+            fail(
+                f"{rule_code} missed required adverse-model objects: "
+                f"{sorted(expected_objects - actual_objects)}"
+            )
 
 
 def validate_no_secrets() -> None:

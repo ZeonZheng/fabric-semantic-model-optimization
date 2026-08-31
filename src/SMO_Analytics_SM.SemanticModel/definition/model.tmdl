@@ -26,28 +26,28 @@ ref table semantic_model_optimization_opportunity_finding_links
 ref table Metrics
 
 relationship models_overview
-	fromColumn: semantic_model_optimization_overview.semantic_model_id
-	toColumn: semantic_models.semantic_model_id
+	fromColumn: semantic_model_optimization_overview.analysis_id
+	toColumn: semantic_models.latest_analysis_id
 
 relationship models_analysis_runs
 	fromColumn: semantic_model_analysis_runs.semantic_model_id
 	toColumn: semantic_models.semantic_model_id
 
 relationship models_opportunities
-	fromColumn: semantic_model_optimization_opportunities.semantic_model_id
-	toColumn: semantic_models.semantic_model_id
+	fromColumn: semantic_model_optimization_opportunities.analysis_id
+	toColumn: semantic_models.latest_analysis_id
 
 relationship models_bpa_findings
-	fromColumn: semantic_model_best_practice_rule_findings.semantic_model_id
-	toColumn: semantic_models.semantic_model_id
+	fromColumn: semantic_model_best_practice_rule_findings.analysis_id
+	toColumn: semantic_models.latest_analysis_id
 
 relationship models_column_storage
-	fromColumn: semantic_model_column_storage.semantic_model_id
-	toColumn: semantic_models.semantic_model_id
+	fromColumn: semantic_model_column_storage.analysis_id
+	toColumn: semantic_models.latest_analysis_id
 
 relationship models_table_storage
-	fromColumn: semantic_model_table_storage.semantic_model_id
-	toColumn: semantic_models.semantic_model_id
+	fromColumn: semantic_model_table_storage.analysis_id
+	toColumn: semantic_models.latest_analysis_id
 
 relationship opportunity_recommendations
 	fromColumn: semantic_model_optimization_recommendations.opportunity_id
