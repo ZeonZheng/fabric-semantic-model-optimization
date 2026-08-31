@@ -268,11 +268,55 @@ METRICS = """table Metrics
 \t\tformatString: #,0
 \t\tdisplayFolder: Overview
 
-\tmeasure 'Total opportunities' = COALESCE(COUNTROWS(semantic_model_optimization_opportunities), 0)
+\tmeasure 'Issue is complete' =
+\t\t\tIF(
+\t\t\t\tNOT ISBLANK(SELECTEDVALUE(semantic_model_optimization_opportunities[priority_band])) &&
+\t\t\t\tNOT ISBLANK(SELECTEDVALUE(semantic_model_optimization_opportunities[actionability_status])),
+\t\t\t\t1,
+\t\t\t\t0
+\t\t\t)
+\t\tformatString: #,0
+\t\tdisplayFolder: Report experience
+
+\tmeasure 'Total opportunities' =
+\t\t\tCOALESCE(
+\t\t\t\tCOUNTROWS(
+\t\t\t\t\tFILTER(
+\t\t\t\t\t\tsemantic_model_optimization_opportunities,
+\t\t\t\t\t\tNOT ISBLANK(semantic_model_optimization_opportunities[priority_band]) &&
+\t\t\t\t\t\tNOT ISBLANK(semantic_model_optimization_opportunities[actionability_status])
+\t\t\t\t\t)
+\t\t\t\t),
+\t\t\t\t0
+\t\t\t)
 \t\tformatString: #,0
 \t\tdisplayFolder: Opportunities
 
-\tmeasure 'Total recommendations' = COALESCE(COUNTROWS(semantic_model_optimization_recommendations), 0)
+\tmeasure 'Recommendation is complete' =
+\t\t\tIF(
+\t\t\t\tNOT ISBLANK(SELECTEDVALUE(semantic_model_optimization_recommendations[why_it_matters])) &&
+\t\t\t\tNOT ISBLANK(SELECTEDVALUE(semantic_model_optimization_recommendations[recommended_action])) &&
+\t\t\t\tNOT ISBLANK(SELECTEDVALUE(semantic_model_optimization_recommendations[validation_method])) &&
+\t\t\t\tNOT ISBLANK(SELECTEDVALUE(semantic_model_optimization_recommendations[rollback_guidance])),
+\t\t\t\t1,
+\t\t\t\t0
+\t\t\t)
+\t\tformatString: #,0
+\t\tdisplayFolder: Report experience
+
+\tmeasure 'Total recommendations' =
+\t\t\tCOALESCE(
+\t\t\t\tCOUNTROWS(
+\t\t\t\t\tFILTER(
+\t\t\t\t\t\tsemantic_model_optimization_recommendations,
+\t\t\t\t\t\tNOT ISBLANK(semantic_model_optimization_recommendations[why_it_matters]) &&
+\t\t\t\t\t\tNOT ISBLANK(semantic_model_optimization_recommendations[recommended_action]) &&
+\t\t\t\t\t\tNOT ISBLANK(semantic_model_optimization_recommendations[validation_method]) &&
+\t\t\t\t\t\tNOT ISBLANK(semantic_model_optimization_recommendations[rollback_guidance])
+\t\t\t\t\t)
+\t\t\t\t),
+\t\t\t\t0
+\t\t\t)
 \t\tformatString: #,0
 \t\tdisplayFolder: Recommendations
 
@@ -598,6 +642,7 @@ def visual(
     sort_by: tuple[str, str] | None = None,
     selected_values: tuple[str, str, list[str]] | None = None,
     measure_filter_gt_zero: tuple[str, str] | None = None,
+    measure_filters_gt_zero: list[tuple[str, str]] | None = None,
     show_title: bool = True,
 ) -> dict:
     title_objects = {
@@ -626,9 +671,12 @@ def visual(
             "drillFilterOtherVisuals": True,
         },
     }
+    positive_filters = list(measure_filters_gt_zero or [])
     if measure_filter_gt_zero:
+        positive_filters.append(measure_filter_gt_zero)
+    if positive_filters:
         result["filterConfig"] = {
-            "filters": [positive_measure_filter(*measure_filter_gt_zero, scope=name)]
+            "filters": [positive_measure_filter(*measure_filter, scope=name) for measure_filter in positive_filters]
         }
     if sort_by:
         entity, prop = sort_by
@@ -1002,7 +1050,10 @@ def write_report() -> None:
                    ("Metrics.Visible evidence", "#6C8EBF"),
                    ("Metrics.Visible actions", "#76A5AF"),
                ],
-               measure_filter_gt_zero=("Metrics", "Visible evidence")),
+               measure_filters_gt_zero=[
+                   ("Metrics", "Issue is complete"),
+                   ("Metrics", "Visible evidence"),
+               ]),
     ])
 
     review_header = report_header(
@@ -1048,7 +1099,10 @@ def write_report() -> None:
                    ("Metrics.Visible evidence", "#6C8EBF"),
                ],
                sort_by=(opportunities, "priority_score"),
-               measure_filter_gt_zero=("Metrics", "Visible evidence")),
+               measure_filters_gt_zero=[
+                   ("Metrics", "Issue is complete"),
+                   ("Metrics", "Visible evidence"),
+               ]),
         visual("actions_table", "tableEx", 24, 540, 1232, 248, {"Values": [
             field_column(recommendations, "recommendation_title", "Action"),
             field_column(recommendations, "why_it_matters", "Why it matters"),
@@ -1066,7 +1120,10 @@ def write_report() -> None:
                ],
                data_bars=[("Metrics.Visible action evidence", "#6C8EBF")],
                sort_by=(recommendations, "recommendation_priority_score"),
-               measure_filter_gt_zero=("Metrics", "Visible action evidence")),
+               measure_filters_gt_zero=[
+                   ("Metrics", "Recommendation is complete"),
+                   ("Metrics", "Visible action evidence"),
+               ]),
         visual("evidence_table", "tableEx", 24, 804, 1232, 252, {"Values": [
             field_column(findings, "severity", "Evidence severity"),
             field_column(findings, "object_scope", "Object category"),

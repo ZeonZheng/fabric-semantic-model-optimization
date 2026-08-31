@@ -5,11 +5,55 @@ table Metrics
 		formatString: #,0
 		displayFolder: Overview
 
-	measure 'Total opportunities' = COALESCE(COUNTROWS(semantic_model_optimization_opportunities), 0)
+	measure 'Issue is complete' =
+			IF(
+				NOT ISBLANK(SELECTEDVALUE(semantic_model_optimization_opportunities[priority_band])) &&
+				NOT ISBLANK(SELECTEDVALUE(semantic_model_optimization_opportunities[actionability_status])),
+				1,
+				0
+			)
+		formatString: #,0
+		displayFolder: Report experience
+
+	measure 'Total opportunities' =
+			COALESCE(
+				COUNTROWS(
+					FILTER(
+						semantic_model_optimization_opportunities,
+						NOT ISBLANK(semantic_model_optimization_opportunities[priority_band]) &&
+						NOT ISBLANK(semantic_model_optimization_opportunities[actionability_status])
+					)
+				),
+				0
+			)
 		formatString: #,0
 		displayFolder: Opportunities
 
-	measure 'Total recommendations' = COALESCE(COUNTROWS(semantic_model_optimization_recommendations), 0)
+	measure 'Recommendation is complete' =
+			IF(
+				NOT ISBLANK(SELECTEDVALUE(semantic_model_optimization_recommendations[why_it_matters])) &&
+				NOT ISBLANK(SELECTEDVALUE(semantic_model_optimization_recommendations[recommended_action])) &&
+				NOT ISBLANK(SELECTEDVALUE(semantic_model_optimization_recommendations[validation_method])) &&
+				NOT ISBLANK(SELECTEDVALUE(semantic_model_optimization_recommendations[rollback_guidance])),
+				1,
+				0
+			)
+		formatString: #,0
+		displayFolder: Report experience
+
+	measure 'Total recommendations' =
+			COALESCE(
+				COUNTROWS(
+					FILTER(
+						semantic_model_optimization_recommendations,
+						NOT ISBLANK(semantic_model_optimization_recommendations[why_it_matters]) &&
+						NOT ISBLANK(semantic_model_optimization_recommendations[recommended_action]) &&
+						NOT ISBLANK(semantic_model_optimization_recommendations[validation_method]) &&
+						NOT ISBLANK(semantic_model_optimization_recommendations[rollback_guidance])
+					)
+				),
+				0
+			)
 		formatString: #,0
 		displayFolder: Recommendations
 
