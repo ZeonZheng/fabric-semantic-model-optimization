@@ -186,7 +186,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'3 \u00b7 Evidence \u2014 preserved raw descriptions and technical evidence'"
+                  "Value": "'3 \u00b7 Evidence \u2014 Evidence severity is per finding; raw descriptions and technical evidence'"
                 }
               }
             },
@@ -217,7 +217,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'3 \u00b7 Evidence \u2014 preserved raw descriptions and technical evidence'"
+                  "Value": "'3 \u00b7 Evidence \u2014 Evidence severity is per finding; raw descriptions and technical evidence'"
                 }
               }
             }

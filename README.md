@@ -113,18 +113,20 @@ The M6.6.2 insight-correctness remediation is documented in
 [`docs/m6-6-2-insight-correctness.md`](docs/m6-6-2-insight-correctness.md).
 The M6.6.3 consolidated review workbench is documented in
 [`docs/m6-6-3-report-review-workbench.md`](docs/m6-6-3-report-review-workbench.md).
+The M6.6.4 report and adverse-model revalidation is documented in
+[`docs/m6-6-4-report-and-antipattern-revalidation.md`](docs/m6-6-4-report-and-antipattern-revalidation.md).
 
 ## Current stage
 
-Version `0.6.17` is deployed to TEST and accepted for the reopened M6.6.3
-report-review gate. It consolidates Issues, Actions, Evidence, and Issue detail into
-one Review issues workbench, restores a Start here drillthrough path, canonicalizes
-display-only affected-table names, removes the mixed-grain stored summary, and makes
-semantic conditional formatting consistent. Fabric Viewer acceptance confirmed the
-three-page navigation, filtered drillthrough, issue-to-action/evidence interactions,
-canonical affected-table slicer values, and the 6/13 action/evidence example that
-previously exposed the mixed-grain summary defect. Scanner `2.6.1` is unchanged and
-retains the M6.4
+Version `0.6.19` and Scanner `2.6.3` are deployed to TEST for the reopened M6.6.4
+report and adverse-model gate. The report scopes every row by a unique model-analysis
+key, excludes incomplete historical issues/actions, distinguishes issue maximum
+severity from per-finding severity, and preserves qualified `Table[Object]` locators
+through deployment backfill. The adverse-model analysis is 30/30 for MQ001-MQ030;
+the named AP-04/05/08/09/10/11 objects were also verified in the published Viewer.
+Back and one-click prior-filter clearing are available on Review issues because the
+Power BI Service preserves target-page slicer state independently of drillthrough
+source context. Scanner `2.6.3` retains the M6.4
 production-stabilization contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
 current identity and workspace-scoped APIs only. It does not enumerate tenant
@@ -237,10 +239,21 @@ model refresh, and live Fabric Viewer acceptance. The accepted adverse-model bas
 remains 1,021 findings, 19 root causes, and 54 actions; no data-collection pipeline or
 new model scan was run for this report-only milestone.
 
+M6.6.4 corrects the later Viewer and scanner-coverage regressions without returning
+to separate Issues, Actions, Evidence, or detail pages. The latest adverse-model scan
+contains 1,087 evidence rows, 19 root causes, 54 actions, and all MQ001-MQ030 rules.
+Deployment no longer strips table prefixes from column/measure locators. Start
+drillthrough passes only Model/Priority/Decision; if the Service restores a prior
+target-page object slicer, **Clear prior filters** removes it while retaining the
+drillthrough scope. The report labels **Max severity** and **Evidence severity** at
+their actual grains. AP-04/05/08/09/10/11 were verified against their named injected
+objects in Viewer, not inferred from aggregate counts.
+
 ```mermaid
 flowchart LR
     A["M6.5.6 Scan quality ✓"] --> B["M6.6.1 Viewer UX ✓"]
     B --> C["M6.6.2 Insight correctness ✓"]
     C --> D["M6.6.3 Review workbench ✓"]
-    D --> E["Next: M6.7 remediation workflow"]
+    D --> E["M6.6.4 Report and AP revalidation ✓"]
+    E --> F["Next: M6.7 remediation workflow"]
 ```

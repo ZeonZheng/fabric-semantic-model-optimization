@@ -1058,12 +1058,12 @@ def write_report() -> None:
 
     review_header = report_header(
         "Which issue should I fix, and what proves it?",
-        "Select one root cause. Max severity is the issue maximum; Evidence severity is per finding.",
+        "Drillthrough keeps Model/Priority/Decision. Clear prior filters removes saved object slicers.",
     )
     review_header[0]["position"].update({"x": 280, "width": 976})
     review_visuals = review_header + [
         action_button("back_button", "Back", "Back", 24, 16, 88, 40, 450),
-        action_button("reset_slicers_button", "Reset slicers", "ClearAllSlicers", 120, 16, 144, 40, 451),
+        action_button("reset_slicers_button", "Clear prior filters", "ClearAllSlicers", 120, 16, 144, 40, 451),
         compact_slicer("object_scope_slicer", findings, "object_scope", "Object category", 216, 2000,
                        x=24, width=192),
         compact_slicer("object_type_slicer", findings, "affected_object_type", "Object type", 216, 2001,
@@ -1087,7 +1087,7 @@ def write_report() -> None:
             field_measure("Visible evidence", "Visible evidence"),
             field_column(opportunities, "opportunity_id", "Key · control"),
         ]},
-               "1 · Issues — select one root cause; counts reflect the current object filters", 3000,
+               "1 · Issues — Max severity is the highest supporting finding; select one root cause", 3000,
                conditional_colors=[
                    (f"{opportunities}.priority_band", "priority"),
                    (f"{opportunities}.actionability_status", "actionability"),
@@ -1135,7 +1135,7 @@ def write_report() -> None:
             field_column(findings, "finding_description", "Finding"),
             field_column(findings, "technical_evidence", "Technical evidence"),
         ]},
-               "3 · Evidence — preserved raw descriptions and technical evidence", 5000,
+               "3 · Evidence — Evidence severity is per finding; raw descriptions and technical evidence", 5000,
                conditional_colors=[(f"{findings}.severity", "severity")],
                sort_by=(findings, "finding_priority_score")),
     ]

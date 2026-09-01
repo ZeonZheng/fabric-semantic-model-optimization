@@ -12,6 +12,11 @@ M6.6.2 proved that the report could locate findings by object and preserve the r
 
 M6.6.3 therefore reopens the report acceptance gate. Scanner findings and technical evidence remain immutable; only display normalization, report information architecture, and interaction semantics change.
 
+> Follow-up: Viewer validation later reopened the gate as M6.6.4 after target-page
+> slicer persistence, historical-row scoping, severity-grain labelling, and qualified
+> object-locator regressions were found. See
+> [M6.6.4 report and anti-pattern revalidation](m6-6-4-report-and-antipattern-revalidation.md).
+
 ## Design decisions
 
 - Keep three visible pages: **Start here**, **Review issues**, and **Storage**.

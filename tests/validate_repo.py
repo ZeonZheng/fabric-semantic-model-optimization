@@ -444,11 +444,25 @@ def validate_report() -> None:
     if drill_properties != ["semantic_model_name", "priority_band", "actionability_status"]:
         fail(f"Start here drillthrough must bind Model, Priority, and Decision, found {drill_properties}.")
     if review_page.get("pageBinding", {}).get("acceptsFilterContext") != "None":
-        fail("Review issues must not inherit stale target-page object slicer context.")
+        fail("Review issues drillthrough must accept only its explicit Model/Priority/Decision fields.")
     if workspace_sync_count != 3 or model_sync_count != 3 or analysis_sync_count != 3:
         fail("Global scope slicers must stay synchronized across all three visible pages.")
     if visual_count != 35:
         fail(f"The consolidated report contract requires 35 visuals, found {visual_count}.")
+    reset_button = json.loads(
+        (report_root / "definition/pages/opportunities/visuals/reset_slicers_button/visual.json").read_text()
+    )
+    reset_action = (
+        reset_button.get("visual", {}).get("visualContainerObjects", {})
+        .get("visualLink", [{}])[0].get("properties", {}).get("type", {}).get("expr", {})
+        .get("Literal", {}).get("Value")
+    )
+    reset_text = json.dumps(reset_button, ensure_ascii=False)
+    if reset_action != "'ClearAllSlicers'" or "Clear prior filters" not in reset_text:
+        fail(
+            "Review issues must expose a clearly labelled one-click reset because Power BI "
+            "retains target-page slicer state independently of drillthrough source context."
+        )
     for retired_page in ("recommendations", "findings", "opportunity_detail"):
         if (report_root / "definition/pages" / retired_page).exists():
             fail(f"Retired overlapping page still exists: {retired_page}.")

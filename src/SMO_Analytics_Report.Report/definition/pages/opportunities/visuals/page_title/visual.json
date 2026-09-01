@@ -32,7 +32,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "Select one root cause. Max severity is the issue maximum; Evidence severity is per finding.",
+                    "value": "Drillthrough keeps Model/Priority/Decision. Clear prior filters removes saved object slicers.",
                     "textStyle": {
                       "fontFamily": "Segoe UI",
                       "fontSize": "11px",

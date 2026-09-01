@@ -25,7 +25,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Reset slicers'"
+                  "Value": "'Clear prior filters'"
                 }
               }
             },
@@ -68,7 +68,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Reset slicers'"
+                  "Value": "'Clear prior filters'"
                 }
               }
             },
@@ -111,7 +111,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'Reset slicers'"
+                  "Value": "'Clear prior filters'"
                 }
               }
             }
@@ -151,7 +151,7 @@
             "enabledTooltip": {
               "expr": {
                 "Literal": {
-                  "Value": "'Reset slicers'"
+                  "Value": "'Clear prior filters'"
                 }
               }
             }

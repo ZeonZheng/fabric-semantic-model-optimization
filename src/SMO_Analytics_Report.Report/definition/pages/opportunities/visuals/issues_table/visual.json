@@ -186,7 +186,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'1 \u00b7 Issues \u2014 select one root cause; counts reflect the current object filters'"
+                  "Value": "'1 \u00b7 Issues \u2014 Max severity is the highest supporting finding; select one root cause'"
                 }
               }
             },
@@ -217,7 +217,7 @@
             "altText": {
               "expr": {
                 "Literal": {
-                  "Value": "'1 \u00b7 Issues \u2014 select one root cause; counts reflect the current object filters'"
+                  "Value": "'1 \u00b7 Issues \u2014 Max severity is the highest supporting finding; select one root cause'"
                 }
               }
             }
