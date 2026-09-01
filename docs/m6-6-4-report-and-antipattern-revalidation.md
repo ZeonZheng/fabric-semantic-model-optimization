@@ -90,7 +90,7 @@ review.
 | --- | --- |
 | Workspace | `SMO Analytics - Dev` |
 | Solution / scanner | `0.6.19` / `2.6.3` |
-| Deployment | `SUCCEEDED`; initialization job `3a1e8fd9-bdbc-4d3f-a36f-6bf8715af617` |
+| Deployment | `SUCCEEDED`; final initialization job `b64b9a28-8fcf-4ff3-82b5-49e95cb2b055` |
 | SQL source readiness | 11/11 tables; 8 refreshed, 3 already current |
 | Semantic model refresh | `Completed` |
 | Adverse analysis | `edf26ba7-29dc-4dde-a200-c2b15c77caa2`, `SUCCEEDED` |
@@ -114,5 +114,5 @@ flowchart TD
     D --> E["Viewer drillthrough checks"]
 ```
 
-M6.6.4 closes only after the final report-label change is deployed and the same
-Viewer checks pass against the published report.
+The final report-label change was deployed and the same Viewer checks passed
+against the published TEST report. M6.6.4 is accepted.
