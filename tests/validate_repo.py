@@ -258,6 +258,10 @@ def validate_scanner() -> None:
     )) or ""
     if 'spark.sql(fr"""' not in ensure_curated_source:
         fail("Curated display-name normalization must use a raw f-string so Spark receives regex escapes unchanged.")
+    if "concat(\n                    display_table_name,\n                    '['," not in ensure_curated_source:
+        fail("Deployment-time display-object backfill must preserve qualified Table[Column] locators.")
+    if "ELSE trim(affected_object_name)" in ensure_curated_source:
+        fail("Deployment-time display-object backfill must not collapse qualified locators to raw leaf names.")
     classify = status_namespace["classify_model_status"]
     base = {
         "bpa": "SUCCEEDED",

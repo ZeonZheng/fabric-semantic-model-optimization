@@ -389,11 +389,61 @@ def ensure_curated_tables():
                         '^`+|`+$', ''
                     )
                 ELSE 'Not applicable'
-            END,
-            display_object_name = CASE
-                WHEN trim(coalesce(affected_object_name, '')) = '' THEN 'Not applicable'
-                ELSE trim(affected_object_name)
             END
+    """)
+
+    # Keep the physical locator at the same grain as finding_locator_fields().
+    # The deployment-time backfill runs for historical rows as well as new scans;
+    # it must not overwrite qualified Table[Column] / Table[Measure] locators with
+    # the raw leaf name stored in affected_object_name.
+    spark.sql(fr"""
+        UPDATE {findings_name}
+        SET display_object_name = CASE
+            WHEN trim(coalesce(affected_object_name, '')) = '' THEN 'Not applicable'
+            WHEN upper(trim(coalesce(affected_object_type, ''))) IN ('COLUMN', 'MEASURE')
+              AND display_table_name <> 'Not applicable'
+                THEN concat(
+                    display_table_name,
+                    '[',
+                    regexp_replace(
+                        regexp_replace(
+                            regexp_replace(
+                                trim(regexp_replace(
+                                    replace(replace(replace(
+                                        CASE
+                                            WHEN instr(affected_object_name, '[') > 0
+                                                THEN regexp_replace(substring_index(affected_object_name, '[', -1), ']$', '')
+                                            ELSE affected_object_name
+                                        END,
+                                        chr(8203), ''), chr(65279), ''), chr(160), ' '
+                                    ),
+                                    '\\s+', ' '
+                                )),
+                                '^\\x27+|\\x27+$', ''
+                            ),
+                            '^"+|"+$', ''
+                        ),
+                        '^`+|`+$', ''
+                    ),
+                    ']'
+                )
+            WHEN upper(trim(coalesce(affected_object_type, ''))) IN ('TABLE', 'CALCULATED TABLE')
+              AND display_table_name <> 'Not applicable'
+                THEN display_table_name
+            ELSE regexp_replace(
+                regexp_replace(
+                    regexp_replace(
+                        trim(regexp_replace(
+                            replace(replace(replace(affected_object_name, chr(8203), ''), chr(65279), ''), chr(160), ' '),
+                            '\\s+', ' '
+                        )),
+                        '^\\x27+|\\x27+$', ''
+                    ),
+                    '^"+|"+$', ''
+                ),
+                '^`+|`+$', ''
+            )
+        END
     """)
 
     semantic_models_name = curated_table_name("semantic_models")
