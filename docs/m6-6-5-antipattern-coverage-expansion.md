@@ -66,4 +66,16 @@ Local implementation status:
   `0.6.22` / scanner `2.6.6` accepts both representations and tests the native
   runtime key.
 
-Live TEST deployment, rescan, and Lakehouse item-by-item comparison remain pending and are required before M6.6.5 can be marked accepted.
+Final TEST acceptance:
+
+- Deployed solution `0.6.22` / scanner `2.6.6` from `codex/m6-4`.
+- Pipeline run `865347a8-2f59-42b8-89f5-9e24ca8be598` completed successfully for only the two approved models.
+- Lakehouse scan `996a3ed5-79f7-4a3b-a5ee-43e1f53f686b` recorded `SUCCEEDED` analysis, BPA, and storage status for both models.
+- Bank Customer Churn produced 211 findings; Video Game Sales produced 215 findings.
+- MQ013 now pinpoints `Bank_Churn[AgeCopy]` and `vgchartz-2024[total_sales_copy]`.
+- MQ027 now pinpoints `vgchartz-2024[last_update]` with cardinality 1,545, 123,656 bytes, 1.2132% model share, and `MEDIUM` confidence.
+- MQ045 reports only the intended Video Game Sales measures (`Adjusted Score` and `Total Sales NoVar`); digits in the quoted table name are ignored.
+- Acceptance result: 51/51 valid designed items have an expected-rule hit; 49 are full object-level matches, AP-E04 and AP-E05 are group-level/partial-evidence matches, and 0 items are missed.
+- Per user direction, no acceptance or false-positive requirement is asserted for `AgeGroup` or `AgeGroupOrder`.
+
+M6.6.5 is accepted for designed-item detection. The two group-level Bank findings should remain visibly qualified when reporting object-level precision.

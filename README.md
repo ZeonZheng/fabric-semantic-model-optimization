@@ -122,8 +122,10 @@ The M6.6.5 anti-pattern coverage expansion is documented in
 
 Version `0.6.22` and Scanner `2.6.6` include the M6.6.5 live-validation fixes for
 qualified calculated-column aliases, quoted-identifier numeric literals, and
-the runtime `model_size_pct` evidence used by storage-significant visible DateTime columns. The adverse-model
-coverage gate; TEST deployment and live Lakehouse acceptance are pending. The previous
+the runtime `model_size_pct` evidence used by storage-significant visible DateTime columns. TEST deployment
+and live Lakehouse acceptance completed on scan `996a3ed5-79f7-4a3b-a5ee-43e1f53f686b`:
+all 51 valid designed anti-pattern items have an expected-rule hit, 49 are pinpointed at full
+object granularity, two broad Bank-model items remain group-level findings, and there are no silent misses. The previous
 `0.6.19` / `2.6.3` deployment completed M6.6.4. The report scopes every row by a unique model-analysis
 key, excludes incomplete historical issues/actions, distinguishes issue maximum
 severity from per-finding severity, and preserves qualified `Table[Object]` locators
