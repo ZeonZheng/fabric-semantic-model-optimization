@@ -1065,6 +1065,67 @@ def validate_model_quality_rules() -> None:
     if len(ratio_findings) != 1 or ratio_findings[0]["severity"] != "ERROR":
         fail("A DIVIDE ratio with a non-percent format string must produce one MQ039 ERROR finding.")
 
+    structure_bim = {
+        "model": {
+            "discourageImplicitMeasures": True,
+            "roles": [{"name": "Reader"}],
+            "perspectives": [{"name": "Default"}],
+            "tables": [
+                {
+                    "name": "vgchartz-2024",
+                    "description": "Game sales fact grain",
+                    "columns": [
+                        *(column(f"metric_{number}", "decimal", description="Metric") for number in range(10)),
+                        column("genre", description="Genre"),
+                        column("publisher", description="Publisher"),
+                        column("console", description="Console"),
+                        column("developer", description="Developer"),
+                        column("title", description="Game title"),
+                    ],
+                },
+                {
+                    "name": "LocalDateTable_release",
+                    "isHidden": True,
+                    "columns": [column("Date", "dateTime")],
+                },
+                {
+                    "name": "LocalDateTable_update",
+                    "isHidden": True,
+                    "columns": [column("Date", "dateTime")],
+                },
+                {
+                    "name": "PublisherList",
+                    "description": "Calculated publisher list",
+                    "columns": [column("publisher", description="Publisher")],
+                    "partitions": [{"source": {"expression": "DISTINCT('vgchartz-2024'[publisher])"}}],
+                },
+            ],
+            "relationships": [
+                {
+                    "fromTable": "vgchartz-2024", "fromColumn": "release_date",
+                    "toTable": "LocalDateTable_release", "toColumn": "Date",
+                    "isActive": True, "crossFilteringBehavior": "bothDirections",
+                },
+                {
+                    "fromTable": "vgchartz-2024", "fromColumn": "last_update",
+                    "toTable": "LocalDateTable_update", "toColumn": "Date",
+                    "isActive": True,
+                },
+            ],
+        }
+    }
+    structure_findings = analyze_model_bim(structure_bim, [], [])
+    structure_codes = {row["rule_code"] for row in structure_findings}
+    required_structure_codes = {"MQ001", "MQ031", "MQ032", "MQ052"}
+    if not required_structure_codes.issubset(structure_codes):
+        fail(f"Relationship/flat-model fixture missed: {sorted(required_structure_codes - structure_codes)}")
+    if any(
+        "unused" in row["finding_text"].lower()
+        for row in structure_findings
+        if row.get("object_name") == "PublisherList"
+    ):
+        fail("Metadata-only disconnected-table findings must not assert that PublisherList is unused.")
+
 
 def validate_m665_acceptance_corpus() -> None:
     path = ROOT / "tests/fixtures/m6_6_5_antipattern_acceptance.json"

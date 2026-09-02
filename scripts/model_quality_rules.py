@@ -94,6 +94,16 @@ def _is_generated_table_name(table_name):
     return _text(table_name).lower().startswith(("localdatetable_", "datetabletemplate_"))
 
 
+def _is_date_like_table(table):
+    table_name = _name(table).lower()
+    if "date" in table_name or "calendar" in table_name:
+        return True
+    return any(
+        "date" in _text(_key(column, "dataType")).lower()
+        for column in _list(table, "columns")
+    )
+
+
 def _is_numeric_data_type(data_type):
     normalized = re.sub(r"[^a-z0-9]", "", _text(data_type).lower())
     return normalized in {
@@ -181,11 +191,58 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
 
     table_by_name = {_name(table): table for table in tables if _name(table)}
     relationship_tables = defaultdict(int)
+    business_relationship_tables = defaultdict(int)
+    active_date_relationships = defaultdict(list)
     for rel in relationships:
+        from_table = _text(_key(rel, "fromTable"))
+        to_table = _text(_key(rel, "toTable"))
         for field in ("fromTable", "toTable"):
             table_name = _text(_key(rel, field))
             if table_name:
                 relationship_tables[table_name] += 1
+        if from_table and to_table:
+            if not _is_generated_table_name(to_table):
+                business_relationship_tables[from_table] += 1
+            if not _is_generated_table_name(from_table):
+                business_relationship_tables[to_table] += 1
+        if (
+            _bool(rel, "isActive", True)
+            and from_table
+            and to_table in table_by_name
+            and _is_date_like_table(table_by_name[to_table])
+        ):
+            active_date_relationships[from_table].append(
+                f"{from_table}[{_text(_key(rel, 'fromColumn'))}] -> "
+                f"{to_table}[{_text(_key(rel, 'toColumn'))}]"
+            )
+
+        cross_filtering = re.sub(
+            r"[^a-z]", "", _text(_key(rel, "crossFilteringBehavior")).lower()
+        )
+        if cross_filtering in {"both", "bothdirections", "bidirectional"}:
+            findings.append(_issue(
+                "MQ031", "Bidirectional relationship filtering", "Relationships", "ERROR", "Relationship",
+                from_table, f"{from_table} -> {to_table}",
+                "An active model relationship permits filters to propagate in both directions.",
+                "Use single-direction dimension-to-fact filtering unless a reviewed many-to-many design requires both directions.",
+                (
+                    f"relationship={from_table}[{_text(_key(rel, 'fromColumn'))}] -> "
+                    f"{to_table}[{_text(_key(rel, 'toColumn'))}]; "
+                    f"cross_filtering_behavior={_text(_key(rel, 'crossFilteringBehavior'))}"
+                ),
+                risk="HIGH", impact="PERFORMANCE",
+            ))
+
+    for table_name, relationship_refs in sorted(active_date_relationships.items()):
+        if len(relationship_refs) >= 2:
+            findings.append(_issue(
+                "MQ032", "Multiple active date-role relationships", "Relationships", "WARNING", "Relationship group",
+                table_name, table_name,
+                "A table uses multiple active relationships for separate date roles, which can fragment time intelligence.",
+                "Use one conformed date dimension and make secondary date roles inactive with explicit USERELATIONSHIP measures.",
+                f"count={len(relationship_refs)}; relationships=" + "; ".join(sorted(relationship_refs)),
+                risk="HIGH",
+            ))
 
     all_measure_expressions = []
     measure_records = []
@@ -217,15 +274,30 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
             column for column in columns
             if "string" in _text(_key(column, "dataType")).lower() and not _bool(column, "isHidden")
         ]
-        if len(columns) >= 25 and len(visible_string_columns) >= 5 and relationship_tables[table_name] == 0:
+        strong_wide_signal = (
+            len(columns) >= 25
+            and len(visible_string_columns) >= 5
+            and relationship_tables[table_name] == 0
+        )
+        flat_model_signal = (
+            len(columns) >= 12
+            and len(visible_string_columns) >= 4
+            and business_relationship_tables[table_name] <= 1
+        )
+        if strong_wide_signal or flat_model_signal:
             wide_root_cause_tables.add(table_name)
             findings.append(_issue(
-                "MQ001", "Wide denormalized fact-grain table", "Model structure", "ERROR", "Table",
+                "MQ001", "Wide denormalized fact-grain table", "Model structure",
+                "ERROR" if strong_wide_signal else "WARNING", "Table",
                 table_name, table_name,
-                "A wide disconnected table mixes many descriptive text attributes with fact-grain data.",
+                "A wide or weakly related table mixes descriptive text attributes with fact-grain data.",
                 "Restore a star schema: keep additive events in facts and descriptive attributes in related dimensions.",
-                f"columns={len(columns)}; visible_string_columns={len(visible_string_columns)}; relationships=0",
-                risk="HIGH", impact="PERFORMANCE",
+                (
+                    f"columns={len(columns)}; visible_string_columns={len(visible_string_columns)}; "
+                    f"relationships={relationship_tables[table_name]}; "
+                    f"business_relationships={business_relationship_tables[table_name]}"
+                ),
+                confidence="HIGH" if strong_wide_signal else "MEDIUM", risk="HIGH", impact="PERFORMANCE",
             ))
 
         if relationship_tables[table_name] == 0 and not measures and 0 < len(columns) <= 5 and not _bool(table, "isHidden"):
@@ -235,6 +307,21 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
                 "The table has no model relationships and contains no measures.",
                 "Confirm the table has an intentional disconnected-table use case; otherwise relate or remove it.",
                 f"columns={len(columns)}; relationships=0; measures=0", risk="HIGH",
+            ))
+        table_expression = _expression(table)
+        if (
+            relationship_tables[table_name] == 0
+            and not measures
+            and table_expression
+            and re.search(r"\b(DISTINCT|VALUES|SUMMARIZE|SELECTCOLUMNS|FILTER)\s*\(", table_expression, re.I)
+        ):
+            findings.append(_issue(
+                "MQ052", "Disconnected calculated projection table", "Model structure", "WARNING", "Table",
+                table_name, table_name,
+                "A calculated table projects values from model data but has no relationships or measures.",
+                "Confirm the disconnected-table interaction design; otherwise relate it or remove the redundant projection after dependency review.",
+                f"relationships=0; measures=0; expression={table_expression}",
+                confidence="MEDIUM", risk="HIGH", impact="MODEL_SIZE",
             ))
 
     for table_name in sorted(technical_names):
