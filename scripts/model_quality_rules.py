@@ -158,6 +158,99 @@ def _relationship_is_invoked(relationship, measure_expressions):
     return False
 
 
+def _function_calls(expression, function_name):
+    """Return balanced DAX function calls as full text plus their argument text."""
+    source = _text(expression)
+    calls = []
+    pattern = re.compile(rf"\b{re.escape(function_name)}\s*\(", re.I)
+    for match in pattern.finditer(source):
+        opening = source.find("(", match.start())
+        depth = 0
+        quote = None
+        index = opening
+        while index < len(source):
+            char = source[index]
+            if quote:
+                if char == quote:
+                    if index + 1 < len(source) and source[index + 1] == quote:
+                        index += 1
+                    else:
+                        quote = None
+            elif char in {'"', "'"}:
+                quote = char
+            elif char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    calls.append((source[match.start():index + 1], source[opening + 1:index]))
+                    break
+            index += 1
+    return calls
+
+
+def _split_dax_arguments(arguments):
+    """Split a balanced DAX argument list on top-level commas."""
+    parts = []
+    start = 0
+    depth = 0
+    quote = None
+    for index, char in enumerate(arguments):
+        if quote:
+            if char == quote:
+                quote = None
+        elif char in {'"', "'"}:
+            quote = char
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth = max(0, depth - 1)
+        elif char == "," and depth == 0:
+            parts.append(arguments[start:index].strip())
+            start = index + 1
+    parts.append(arguments[start:].strip())
+    return parts
+
+
+def _max_function_depth(expression, function_name):
+    """Return the maximum nested depth of one DAX function."""
+    source = _text(expression)
+    token = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\s*\(")
+    stack = []
+    wanted = function_name.upper()
+    maximum = 0
+    index = 0
+    quote = None
+    while index < len(source):
+        char = source[index]
+        if quote:
+            if char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in {'"', "'"}:
+            quote = char
+            index += 1
+            continue
+        match = token.match(source, index)
+        if match:
+            stack.append(match.group(1).upper())
+            maximum = max(maximum, sum(name == wanted for name in stack))
+            index = match.end()
+            continue
+        if char == ")" and stack:
+            stack.pop()
+        index += 1
+    return maximum
+
+
+def _magic_numbers(expression):
+    """Return non-trivial numeric literals from executable DAX text."""
+    without_strings = re.sub(r'"(?:""|[^"])*"', "", _text(expression))
+    values = re.findall(r"(?<![A-Za-z0-9_.])(?:\d+\.\d+|\d{2,})(?![A-Za-z0-9_.])", without_strings)
+    return sorted(set(values), key=lambda value: (float(value), value))
+
+
 def _issue(code, rule_name, category, severity, object_type, table_name, object_name,
            description, action, evidence, confidence="HIGH", risk="MEDIUM",
            impact="MODEL_QUALITY"):
@@ -252,6 +345,16 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
             expression = _expression(measure)
             all_measure_expressions.append(expression)
             measure_records.append((table_name, measure, expression))
+
+    vpa_cardinality = {}
+    for row in vpa_columns or []:
+        key = (_text(row.get("table_name")).lower(), _text(row.get("column_name")).lower())
+        vpa_cardinality[key] = int(row.get("cardinality") or 0)
+    vpa_row_counts = {
+        _text(row.get("table_name")).lower(): int(row.get("row_count") or 0)
+        for row in vpa_tables or []
+    }
+    known_table_names = {name.lower() for name in table_by_name}
 
     # Star-schema structure and table naming.
     technical_names = []
@@ -538,6 +641,131 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
                 table_name, measure_name, "FILTER(ALL(...)) can force unnecessary full-table iteration.",
                 "Rewrite with a direct Boolean filter or narrower filter-removal semantics where equivalent.",
                 f"expression={expression}", risk="HIGH", impact="PERFORMANCE",
+            ))
+        if re.search(r"\b(TODAY|NOW|UTCNOW|RAND|RANDBETWEEN)\s*\(", expression, re.I):
+            volatile_functions = sorted(set(
+                match.upper()
+                for match in re.findall(
+                    r"\b(TODAY|NOW|UTCNOW|RAND|RANDBETWEEN)\s*\(", expression, re.I
+                )
+            ))
+            findings.append(_issue(
+                "MQ035", "Volatile function in a measure", "DAX", "WARNING", "Measure",
+                table_name, measure_name,
+                "The measure uses a volatile or non-deterministic function that can reduce cache reuse.",
+                "Replace query-time volatility with a controlled refresh-time value or explicit as-of parameter where possible.",
+                f"functions={','.join(volatile_functions)}; expression={expression}", risk="MEDIUM",
+                impact="PERFORMANCE",
+            ))
+        nested_if_depth = _max_function_depth(expression, "IF")
+        if nested_if_depth >= 3:
+            findings.append(_issue(
+                "MQ036", "Deeply nested IF expression", "DAX", "INFO", "Measure",
+                table_name, measure_name,
+                "The measure contains at least three nested IF levels and is difficult to review and maintain.",
+                "Use SWITCH or variables to express mutually exclusive branches and avoid repeated evaluation.",
+                f"nested_if_depth={nested_if_depth}; expression={expression}", confidence="HIGH", risk="MEDIUM",
+            ))
+        for iterator_name in ("SUMX", "AVERAGEX"):
+            trivial_calls = []
+            for full_call, arguments in _function_calls(expression, iterator_name):
+                parts = _split_dax_arguments(arguments)
+                if len(parts) != 2:
+                    continue
+                iterator_table = parts[0].strip().strip("'").lower()
+                row_expression = _canon_expression(parts[1])
+                simple_column = re.fullmatch(
+                    r"(?:'?[a-z0-9_\- ]+'?)?\[[^\]]+\](?:\*1)?", row_expression
+                )
+                if iterator_table in known_table_names and simple_column:
+                    trivial_calls.append(full_call)
+            if trivial_calls:
+                findings.append(_issue(
+                    "MQ037", "Trivial whole-table iterator", "DAX performance", "WARNING", "Measure",
+                    table_name, measure_name,
+                    "A whole-table iterator performs a simple column aggregation that the storage engine can evaluate directly.",
+                    f"Replace {iterator_name} with the equivalent direct aggregation and compare query results and duration.",
+                    "calls=" + " | ".join(trivial_calls), risk="MEDIUM", impact="PERFORMANCE",
+                ))
+        variable_names = re.findall(r"\bVAR\s+([A-Za-z_][A-Za-z0-9_]*)\s*=", expression, re.I)
+        unused_variables = sorted({
+            name for name in variable_names
+            if len(re.findall(rf"\b{re.escape(name)}\b", expression, re.I)) == 1
+        })
+        if unused_variables:
+            findings.append(_issue(
+                "MQ038", "Unused DAX variables", "DAX", "INFO", "Measure",
+                table_name, measure_name,
+                "The measure declares variables that are never referenced after their declaration.",
+                "Remove dead variables or use them in the intended expression, then regression-test the result.",
+                f"variables={','.join(unused_variables)}; expression={expression}", risk="LOW",
+            ))
+        expensive_distinct_counts = []
+        for full_call, arguments in _function_calls(expression, "DISTINCTCOUNT"):
+            ref_match = re.fullmatch(
+                r"\s*(?:'([^']+)'|([^\[\]]+))?\s*\[\s*([^\]]+)\s*\]\s*", arguments
+            )
+            if not ref_match:
+                continue
+            ref_table = _text(ref_match.group(1) or ref_match.group(2) or table_name)
+            ref_column = _text(ref_match.group(3))
+            cardinality = vpa_cardinality.get((ref_table.lower(), ref_column.lower()), 0)
+            row_count = vpa_row_counts.get(ref_table.lower(), 0)
+            if cardinality >= 5000 or (row_count and cardinality / row_count >= 0.5):
+                expensive_distinct_counts.append(
+                    f"{full_call}:cardinality={cardinality}:row_count={row_count}"
+                )
+        if expensive_distinct_counts:
+            findings.append(_issue(
+                "MQ040", "DISTINCTCOUNT over a high-cardinality column", "DAX performance", "WARNING", "Measure",
+                table_name, measure_name,
+                "The measure performs DISTINCTCOUNT over a column with high observed cardinality.",
+                "Confirm the business grain and query frequency; consider a pre-aggregated count or lower-cardinality key where equivalent.",
+                "calls=" + " | ".join(expensive_distinct_counts), confidence="HIGH", risk="HIGH",
+                impact="PERFORMANCE",
+            ))
+        magic_numbers = _magic_numbers(expression)
+        if magic_numbers:
+            findings.append(_issue(
+                "MQ045", "Undocumented numeric constants in a measure", "DAX", "INFO", "Measure",
+                table_name, measure_name,
+                "The measure embeds non-trivial numeric constants whose business meaning is not represented in model metadata.",
+                "Replace business constants with documented parameters or named variables and validate the calculation intent.",
+                f"numeric_literals={','.join(magic_numbers)}; expression={expression}",
+                confidence="MEDIUM", risk="HIGH",
+            ))
+        repeated_calls = defaultdict(list)
+        for aggregate_name in ("SUM", "AVERAGE", "COUNT", "COUNTROWS", "MIN", "MAX"):
+            for full_call, _ in _function_calls(expression, aggregate_name):
+                repeated_calls[_canon_expression(full_call)].append(full_call)
+        repeated_evidence = [
+            f"count={len(calls)}:{calls[0]}"
+            for calls in repeated_calls.values() if len(calls) >= 2
+        ]
+        if repeated_evidence and not variable_names:
+            findings.append(_issue(
+                "MQ046", "Repeated DAX subexpression without variables", "DAX", "WARNING", "Measure",
+                table_name, measure_name,
+                "The measure repeats the same aggregate expression without assigning it to a variable.",
+                "Evaluate the aggregate once in a named VAR and reuse it in RETURN; verify identical results and query plans.",
+                "repeated_calls=" + " | ".join(repeated_evidence) + f"; expression={expression}",
+                risk="LOW", impact="PERFORMANCE",
+            ))
+        whole_table_filters = []
+        for full_call, arguments in _function_calls(expression, "FILTER"):
+            parts = _split_dax_arguments(arguments)
+            if len(parts) < 2:
+                continue
+            filter_source = parts[0].strip().strip("'").lower()
+            if filter_source in known_table_names:
+                whole_table_filters.append(full_call)
+        if whole_table_filters:
+            findings.append(_issue(
+                "MQ047", "FILTER iterates a whole model table", "DAX performance", "ERROR", "Measure",
+                table_name, measure_name,
+                "FILTER iterates an entire model table instead of applying a narrow Boolean or column filter.",
+                "Use a direct CALCULATE Boolean filter or KEEPFILTERS over the required column when semantics are equivalent.",
+                "calls=" + " | ".join(whole_table_filters), risk="HIGH", impact="PERFORMANCE",
             ))
         if (
             not _bool(measure, "isHidden")

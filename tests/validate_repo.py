@@ -7,6 +7,7 @@ import ast
 import json
 import re
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 import yaml
@@ -1125,6 +1126,97 @@ def validate_model_quality_rules() -> None:
         if row.get("object_name") == "PublisherList"
     ):
         fail("Metadata-only disconnected-table findings must not assert that PublisherList is unused.")
+
+    def test_measure(name, expression):
+        return {
+            "name": name,
+            "description": f"Test measure for {name}",
+            "expression": expression,
+            "formatString": "#,0.00",
+        }
+
+    dax_bim = {
+        "model": {
+            "discourageImplicitMeasures": True,
+            "roles": [{"name": "Reader"}],
+            "perspectives": [{"name": "Default"}],
+            "tables": [{
+                "name": "Sales",
+                "description": "Sales fact",
+                "columns": [
+                    column("Amount", "decimal", description="Sales amount"),
+                    column("Quantity", "int64", description="Quantity"),
+                    column("Price", "decimal", description="Price"),
+                    column("Developer", description="Developer"),
+                    column("Order Date", "dateTime", description="Order date"),
+                ],
+                "measures": [
+                    test_measure("Volatile Today", "DAY(TODAY())"),
+                    test_measure(
+                        "Nested Segment",
+                        'IF([Amount] > 100, IF([Amount] > 50, IF([Amount] > 10, "A", "B"), "C"), "D")',
+                    ),
+                    test_measure("Trivial Iterator", "SUMX(Sales, Sales[Amount] * 1)"),
+                    test_measure(
+                        "Unused Variables",
+                        'VAR _unusedAnswer = 42 VAR _unusedText = "legacy" '
+                        "VAR _total = SUM(Sales[Amount]) RETURN _total",
+                    ),
+                    test_measure("Distinct Developers", "DISTINCTCOUNT(Sales[Developer])"),
+                    test_measure("Adjusted Score", "SUM(Sales[Amount]) * 1.05 + 0.5"),
+                    test_measure(
+                        "Repeated Total",
+                        "SUM(Sales[Amount]) + SUM(Sales[Amount]) * 0.1 + SUM(Sales[Amount]) * 0.05",
+                    ),
+                    test_measure(
+                        "Whole Table Filter",
+                        "CALCULATE(SUM(Sales[Amount]), FILTER(Sales, Sales[Amount] > 100))",
+                    ),
+                    test_measure("Date Part Only", "DAY(Sales[Order Date])"),
+                    test_measure("Used Variable", "VAR _total = SUM(Sales[Amount]) RETURN _total"),
+                    test_measure(
+                        "Required Iterator",
+                        "SUMX(Sales, Sales[Quantity] * Sales[Price])",
+                    ),
+                    test_measure(
+                        "All Filter Existing Rule",
+                        "CALCULATE(SUM(Sales[Amount]), FILTER(ALL(Sales), Sales[Amount] > 100))",
+                    ),
+                ],
+            }],
+        }
+    }
+    dax_findings = analyze_model_bim(dax_bim, [{
+        "table_name": "Sales", "column_name": "Developer", "data_type": "String",
+        "cardinality": 8800, "total_size_bytes": 2000000,
+    }], [{"table_name": "Sales", "row_count": 10000}])
+    dax_rule_objects = defaultdict(set)
+    for row in dax_findings:
+        dax_rule_objects[row["rule_code"]].add(row.get("object_name"))
+    required_dax_objects = {
+        "MQ035": {"Volatile Today"},
+        "MQ036": {"Nested Segment"},
+        "MQ037": {"Trivial Iterator"},
+        "MQ038": {"Unused Variables"},
+        "MQ040": {"Distinct Developers"},
+        "MQ045": {"Adjusted Score", "Repeated Total"},
+        "MQ046": {"Repeated Total"},
+        "MQ047": {"Whole Table Filter"},
+    }
+    for rule_code, expected_objects in required_dax_objects.items():
+        missing_objects = expected_objects - dax_rule_objects[rule_code]
+        if missing_objects:
+            fail(f"{rule_code} missed DAX fixture objects: {sorted(missing_objects)}")
+    prohibited_dax_objects = {
+        "MQ035": {"Date Part Only"},
+        "MQ037": {"Required Iterator"},
+        "MQ038": {"Used Variable"},
+        "MQ047": {"All Filter Existing Rule"},
+    }
+    for rule_code, prohibited_objects in prohibited_dax_objects.items():
+        false_positives = prohibited_objects & dax_rule_objects[rule_code]
+        if false_positives:
+            fail(f"{rule_code} produced DAX fixture false positives: {sorted(false_positives)}")
 
 
 def validate_m665_acceptance_corpus() -> None:
