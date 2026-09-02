@@ -60,5 +60,10 @@ Local implementation status:
   classified by MQ045, and a storage-significant DateTime column below MQ027's
   original absolute threshold. Solution `0.6.21` / scanner `2.6.5` contains the
   regression-tested corrections.
+- The first `2.6.5` rescan confirmed MQ013 and MQ045, but exposed a production
+  evidence-key mismatch: runtime VPA rows provide `model_size_pct`, while the
+  analyzer read the curated `percentage_of_semantic_model_size` name. Solution
+  `0.6.22` / scanner `2.6.6` accepts both representations and tests the native
+  runtime key.
 
 Live TEST deployment, rescan, and Lakehouse item-by-item comparison remain pending and are required before M6.6.5 can be marked accepted.

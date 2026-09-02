@@ -120,9 +120,9 @@ The M6.6.5 anti-pattern coverage expansion is documented in
 
 ## Current stage
 
-Version `0.6.21` and Scanner `2.6.5` include the M6.6.5 live-validation fixes for
+Version `0.6.22` and Scanner `2.6.6` include the M6.6.5 live-validation fixes for
 qualified calculated-column aliases, quoted-identifier numeric literals, and
-storage-significant visible DateTime columns. The adverse-model
+the runtime `model_size_pct` evidence used by storage-significant visible DateTime columns. The adverse-model
 coverage gate; TEST deployment and live Lakehouse acceptance are pending. The previous
 `0.6.19` / `2.6.3` deployment completed M6.6.4. The report scopes every row by a unique model-analysis
 key, excludes incomplete historical issues/actions, distinguishes issue maximum
@@ -131,7 +131,7 @@ through deployment backfill. The adverse-model analysis is 30/30 for MQ001-MQ030
 the named AP-04/05/08/09/10/11 objects were also verified in the published Viewer.
 Back and one-click prior-filter clearing are available on Review issues because the
 Power BI Service preserves target-page slicer state independently of drillthrough
-source context. Scanner `2.6.5` retains the M6.4
+source context. Scanner `2.6.6` retains the M6.4
 production-stabilization contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
 current identity and workspace-scoped APIs only. It does not enumerate tenant

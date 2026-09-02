@@ -1025,7 +1025,11 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
         column_name = _text(row.get("column_name"))
         data_type = _text(row.get("data_type")).lower()
         cardinality = int(row.get("cardinality") or 0)
-        size_percentage = float(row.get("percentage_of_semantic_model_size") or 0)
+        size_percentage = float(
+            row.get("percentage_of_semantic_model_size")
+            if row.get("percentage_of_semantic_model_size") is not None
+            else row.get("model_size_pct") or 0
+        )
         is_visible = (table_name.lower(), column_name.lower()) in visible_column_refs
         high_cardinality_type = any(x in data_type for x in ("string", "text", "date", "time"))
         high_absolute_cardinality = cardinality >= 10000
