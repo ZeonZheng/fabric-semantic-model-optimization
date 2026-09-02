@@ -338,7 +338,8 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
                     "Replace it with deterministic source data or a controlled refresh-time value.",
                     f"expression={expression}", risk="MEDIUM",
                 ))
-            if "concatenate(" in canon_expr or canon_expr.count("&") >= 2:
+            dax_without_logical_and = canon_expr.replace("&&", "")
+            if "concatenate(" in canon_expr or "&" in dax_without_logical_and:
                 findings.append(_issue(
                     "MQ010", "Multi-attribute concatenated column", "Model structure", "WARNING", "Column",
                     table_name, column_name, "The column combines multiple independent attributes into one text value.",
@@ -461,6 +462,20 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
                 table_name, measure_name, "A visible measure has no explicit format string.",
                 "Apply a business-appropriate numeric, currency, percentage, or date format.",
                 f"measure={object_ref}", risk="LOW",
+            ))
+        format_string = _text(_key(measure, "formatString"))
+        if (
+            re.search(r"\bDIVIDE\s*\(", expression, re.I)
+            and re.search(r"(?:ratio|rate|share|percent|percentage|pct|margin)", measure_name, re.I)
+            and format_string
+            and "%" not in format_string
+        ):
+            findings.append(_issue(
+                "MQ039", "Ratio measure without percentage format", "Formatting", "ERROR", "Measure",
+                table_name, measure_name,
+                "A ratio-like DIVIDE measure uses a numeric format that displays the fractional value without a percentage sign.",
+                "Apply a percentage format string with the business-required decimal precision and validate report labels.",
+                f"format_string={format_string}; expression={expression}", risk="LOW",
             ))
     for expression, refs in expression_groups.items():
         if len(refs) > 1:

@@ -1015,6 +1015,56 @@ def validate_model_quality_rules() -> None:
                 f"{sorted(expected_objects - actual_objects)}"
             )
 
+    classification_bim = {
+        "model": {
+            "discourageImplicitMeasures": True,
+            "roles": [{"name": "Reader"}],
+            "perspectives": [{"name": "Default"}],
+            "tables": [{
+                "name": "Bank_Churn",
+                "columns": [
+                    column("Age", "int64", description="Customer age"),
+                    column("Geography", description="Customer geography"),
+                    column("CustomerId", "int64", description="Customer identifier"),
+                    column("Surname", description="Customer surname"),
+                    column(
+                        "GeoRankLegacy",
+                        "int64",
+                        description="Legacy rank",
+                        expression=(
+                            "COUNTROWS(FILTER(Bank_Churn, "
+                            "Bank_Churn[Geography] = EARLIER(Bank_Churn[Geography]) && "
+                            "Bank_Churn[Age] > EARLIER(Bank_Churn[Age])))"
+                        ),
+                    ),
+                    column(
+                        "CustomerKeyText",
+                        description="Display key",
+                        expression='FORMAT([CustomerId], "0") & "-" & [Surname]',
+                    ),
+                ],
+                "measures": [{
+                    "name": "Exited Ratio Raw",
+                    "description": "Exited customers divided by customers",
+                    "expression": "DIVIDE([Exited Customers], [Customers])",
+                    "formatString": "0.00",
+                }],
+            }],
+        }
+    }
+    classification_findings = analyze_model_bim(classification_bim, [], [])
+    mq010_objects = {
+        row["object_name"] for row in classification_findings if row["rule_code"] == "MQ010"
+    }
+    if mq010_objects != {"CustomerKeyText"}:
+        fail(f"MQ010 must distinguish DAX && from text concatenation: {sorted(mq010_objects)}")
+    ratio_findings = [
+        row for row in classification_findings
+        if row["rule_code"] == "MQ039" and row["object_name"] == "Exited Ratio Raw"
+    ]
+    if len(ratio_findings) != 1 or ratio_findings[0]["severity"] != "ERROR":
+        fail("A DIVIDE ratio with a non-percent format string must produce one MQ039 ERROR finding.")
+
 
 def validate_m665_acceptance_corpus() -> None:
     path = ROOT / "tests/fixtures/m6_6_5_antipattern_acceptance.json"
