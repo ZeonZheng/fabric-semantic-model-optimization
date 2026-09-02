@@ -1218,6 +1218,105 @@ def validate_model_quality_rules() -> None:
         if false_positives:
             fail(f"{rule_code} produced DAX fixture false positives: {sorted(false_positives)}")
 
+    metadata_bim = {
+        "model": {
+            "discourageImplicitMeasures": False,
+            "roles": [{"name": "Reader"}],
+            "perspectives": [{"name": "Default"}],
+            "tables": [
+                {
+                    "name": "Bank_Churn",
+                    "description": "Customer churn fact grain",
+                    "columns": [
+                        column("CustomerId", "int64", description="Customer identifier", summarizeBy="count"),
+                        column("Surname", description="Customer surname"),
+                        column("CreditScore", "int64", description="Credit score", summarizeBy="sum"),
+                        column("Age", "int64", description="Age", summarizeBy="sum"),
+                        column("Tenure", "int64", description="Tenure", summarizeBy="sum"),
+                        column("Balance", "decimal", description="Balance", summarizeBy="sum"),
+                        column("Geography", description="Geography"),
+                        column("Gender", description="Gender"),
+                        column("NumOfProducts", "int64", description="Products", summarizeBy="sum"),
+                        column("HasCrCard", "int64", description="Credit card flag", summarizeBy="sum"),
+                        column("IsActiveMember", "int64", description="Active flag", summarizeBy="sum"),
+                        column("EstimatedSalary", "decimal", description="Salary", summarizeBy="sum"),
+                        column("Exited", "int64", description="Exit flag", summarizeBy="sum"),
+                        column(
+                            "ExitedText", description="Exit display flag",
+                            expression='IF([Exited] = 1, "Y", "N")',
+                        ),
+                        column(
+                            "TenureBand", description="Ordered tenure band",
+                            expression='SWITCH(TRUE(), [Tenure] < 3, "Low", [Tenure] < 7, "Mid", "High")',
+                        ),
+                        column(
+                            "AvgBalanceByGeo", "decimal", description="Average balance by geography",
+                            expression="CALCULATE(AVERAGE(Bank_Churn[Balance]), ALLEXCEPT(Bank_Churn, Bank_Churn[Geography]))",
+                        ),
+                        column(
+                            "GeoRankLegacy", "int64", description="Legacy geography rank",
+                            expression=(
+                                "COUNTROWS(FILTER(Bank_Churn, "
+                                "Bank_Churn[Geography] = EARLIER(Bank_Churn[Geography]) && "
+                                "Bank_Churn[Age] > EARLIER(Bank_Churn[Age])))"
+                            ),
+                        ),
+                    ],
+                    "measures": [{
+                        "name": "calc_final_v2", "description": "Temporary balance calculation",
+                        "expression": "SUM(Bank_Churn[Balance])", "formatString": "$#,0.00",
+                    }],
+                },
+                {
+                    "name": "vgchartz-2024",
+                    "description": "Video game sales fact grain",
+                    "columns": [
+                        column("img", description="Image URL"),
+                        column("total_sales", "decimal", description="Total sales", summarizeBy="sum"),
+                        *(column(f"metric_{number}", "decimal", description="Metric") for number in range(10)),
+                    ],
+                },
+            ],
+        }
+    }
+    metadata_findings = analyze_model_bim(metadata_bim, [{
+        "table_name": "vgchartz-2024", "column_name": "img", "data_type": "String",
+        "cardinality": 64000, "total_size_bytes": 5000000,
+    }], [
+        {"table_name": "Bank_Churn", "row_count": 10000},
+        {"table_name": "vgchartz-2024", "row_count": 64000},
+    ])
+    metadata_rule_objects = defaultdict(set)
+    for row in metadata_findings:
+        metadata_rule_objects[row["rule_code"]].add((row.get("table_name"), row.get("object_name")))
+    required_metadata_objects = {
+        "MQ027": {("vgchartz-2024", "img")},
+        "MQ033": {("Bank_Churn", "calc_final_v2"), ("vgchartz-2024", "total_sales")},
+        "MQ034": {(None, None)},
+        "MQ041": {("Bank_Churn", "ExitedText")},
+        "MQ042": {("Bank_Churn", "TenureBand")},
+        "MQ043": {("Bank_Churn", "AvgBalanceByGeo")},
+        "MQ044": {("Bank_Churn", "GeoRankLegacy")},
+        "MQ048": {("Bank_Churn", "Surname")},
+        "MQ049": {("Bank_Churn", "Bank_Churn")},
+        "MQ050": {("Bank_Churn", "Bank_Churn")},
+        "MQ051": {("Bank_Churn", "CustomerId")},
+    }
+    for rule_code, expected_objects in required_metadata_objects.items():
+        missing_objects = expected_objects - metadata_rule_objects[rule_code]
+        if missing_objects:
+            fail(f"{rule_code} missed metadata fixture objects: {sorted(missing_objects, key=str)}")
+    mq024_evidence = " ".join(
+        row["technical_evidence"] for row in metadata_findings if row["rule_code"] == "MQ024"
+    )
+    if "Bank_Churn[CreditScore]" not in mq024_evidence:
+        fail("MQ024 must include non-additive score columns in its evidence.")
+    if any(
+        "unused" in (row.get("finding_text") or "").lower()
+        for row in metadata_findings if row["rule_code"] == "MQ027"
+    ):
+        fail("MQ027 must report observed storage/visibility evidence without claiming the column is unused.")
+
 
 def validate_m665_acceptance_corpus() -> None:
     path = ROOT / "tests/fixtures/m6_6_5_antipattern_acceptance.json"

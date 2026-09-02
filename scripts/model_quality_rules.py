@@ -475,6 +475,8 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
     missing_descriptions = defaultdict(list)
     double_columns = []
     invalid_summarize = []
+    implicit_measure_candidates = []
+    visible_column_refs = set()
     for table in tables:
         table_name = _name(table)
         columns = _list(table, "columns")
@@ -489,6 +491,8 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
             canon_expr = _canon_expression(expression)
             object_ref = f"{table_name}[{column_name}]"
             column_is_exposed = table_is_exposed and not _bool(column, "isHidden")
+            if column_is_exposed:
+                visible_column_refs.add((table_name.lower(), column_name.lower()))
             if column_is_exposed and not _text(_key(column, "description")):
                 missing_descriptions["columns"].append(object_ref)
             if (
@@ -538,6 +542,98 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
                 ))
             if (
                 column_is_exposed
+                and (
+                    re.fullmatch(r"[a-z0-9]+(?:_[a-z0-9]+)+", column_name)
+                    or re.search(r"(?:Id$|^NumOf|^Has[A-Z]|^Is[A-Z])", column_name)
+                )
+            ):
+                findings.append(_issue(
+                    "MQ033", "Machine-oriented object name", "Naming", "INFO", "Column",
+                    table_name, column_name,
+                    "A visible column exposes a source-system or code-oriented name instead of a business-facing label.",
+                    "Apply a concise business-facing name and preserve the source name in lineage or description metadata.",
+                    f"column={object_ref}", confidence="MEDIUM", risk="LOW",
+                ))
+            if (
+                "string" in data_type
+                and re.search(
+                    r"\bIF\s*\([^\)]*,\s*\"(?:Y|YES|TRUE|N|NO|FALSE)\"\s*,\s*\"(?:Y|YES|TRUE|N|NO|FALSE)\"",
+                    expression, re.I,
+                )
+            ):
+                findings.append(_issue(
+                    "MQ041", "Boolean flag materialized as text", "Data types", "INFO", "Column",
+                    table_name, column_name,
+                    "A calculated column converts a binary condition into repeated text flag values.",
+                    "Keep the source as Boolean or 0/1 and apply user-facing labels in formatting or report presentation.",
+                    f"data_type={data_type}; expression={expression}", risk="MEDIUM", impact="MODEL_SIZE",
+                ))
+            ordered_category_name = re.search(
+                r"(?:band|tier|level|range|bucket|group|category)$", column_name, re.I
+            )
+            if (
+                column_is_exposed
+                and "string" in data_type
+                and ordered_category_name
+                and not _text(_key(column, "sortByColumn"))
+            ):
+                findings.append(_issue(
+                    "MQ042", "Ordered text category without Sort By Column", "Usability", "WARNING", "Column",
+                    table_name, column_name,
+                    "An ordered category-like text column has no explicit Sort By Column metadata.",
+                    "Create or select a numeric order column and configure Sort By Column after validating the business sequence.",
+                    f"sortByColumn={_key(column, 'sortByColumn')}; expression={expression}",
+                    confidence="MEDIUM", risk="LOW",
+                ))
+            if expression and re.search(
+                r"\b(CALCULATE|SUM|SUMX|AVERAGE|AVERAGEX|COUNT|COUNTROWS|DISTINCTCOUNT|MIN|MAX)\s*\(",
+                expression, re.I,
+            ):
+                findings.append(_issue(
+                    "MQ043", "Aggregation materialized in a calculated column", "DAX", "ERROR", "Column",
+                    table_name, column_name,
+                    "A calculated column contains an aggregation or context-transition function and persists the result at refresh time.",
+                    "Move filter-responsive aggregation logic to a measure unless a reviewed row-level persisted result is required.",
+                    f"expression={expression}", confidence="HIGH", risk="HIGH", impact="MODEL_SIZE",
+                ))
+            if re.search(r"\bEARLIER\s*\(", expression, re.I):
+                findings.append(_issue(
+                    "MQ044", "EARLIER used in a calculated column", "DAX performance", "WARNING", "Column",
+                    table_name, column_name,
+                    "The calculated column uses EARLIER with nested row contexts and can cause expensive refresh-time scans.",
+                    "Replace the legacy row-context pattern with a reviewed ranking/window design or calculate upstream.",
+                    f"expression={expression}", risk="HIGH", impact="REFRESH",
+                ))
+            if (
+                column_is_exposed
+                and re.search(
+                    r"(?:surname|first.?name|last.?name|e.?mail|phone|mobile|address|ssn|passport|national.?id)",
+                    column_name, re.I,
+                )
+            ):
+                findings.append(_issue(
+                    "MQ048", "Potential PII column is visible", "Governance", "WARNING", "Column",
+                    table_name, column_name,
+                    "A visible column name indicates potential personally identifiable information.",
+                    "Confirm classification and reporting need, then hide, mask, remove, or govern access according to policy.",
+                    f"column={object_ref}; isHidden={_bool(column, 'isHidden')}",
+                    confidence="MEDIUM", risk="HIGH",
+                ))
+            if (
+                column_is_exposed
+                and re.search(r"(?:key|id)$", column_name, re.I)
+                and not _bool(column, "isKey")
+            ):
+                findings.append(_issue(
+                    "MQ051", "Visible identifier is not marked as a key", "Model semantics", "WARNING", "Column",
+                    table_name, column_name,
+                    "A visible identifier-like column is not marked as a model key.",
+                    "Validate uniqueness and relationships, mark the key where appropriate, and hide technical identifiers from report authors.",
+                    f"column={object_ref}; isKey={_bool(column, 'isKey')}; isHidden={_bool(column, 'isHidden')}",
+                    confidence="MEDIUM", risk="HIGH",
+                ))
+            if (
+                column_is_exposed
                 and "format(" in canon_expr
                 and "string" in data_type
                 and "date" not in column_name.lower()
@@ -556,7 +652,11 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
                     "Confirm usage, then rename with business meaning or remove it after dependency validation.",
                     f"column={object_ref}", risk="HIGH",
                 ))
-            if re.search(r"month.*name|name.*month", column_name, re.I) and "string" in data_type and not _text(_key(column, "sortByColumn")):
+            if (
+                re.search(r"(?:month.*name|name.*month|weekday.*name|name.*weekday|day.*name|name.*day)", column_name, re.I)
+                and "string" in data_type
+                and not _text(_key(column, "sortByColumn"))
+            ):
                 findings.append(_issue(
                     "MQ025", "Month-name column without chronological sort", "Date handling", "INFO", "Column",
                     table_name, column_name, "A text month attribute has no sort-by column and can sort alphabetically.",
@@ -573,7 +673,11 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
             if data_type in {"double", "real"}:
                 double_columns.append(object_ref)
             summarize = _text(_key(column, "summarizeBy")).lower()
-            if summarize not in {"", "none", "donotsummarize"} and re.search(r"key|id|numberof|linenumber|year", column_name, re.I):
+            if summarize not in {"", "none", "donotsummarize"} and _is_numeric_data_type(data_type):
+                implicit_measure_candidates.append(object_ref)
+            if summarize not in {"", "none", "donotsummarize"} and re.search(
+                r"key|id|numberof|linenumber|year|score|age|tenure|rating|flag|^is|^has", column_name, re.I
+            ):
                 invalid_summarize.append(f"{object_ref}={summarize}")
 
     for column_name, refs in duplicate_columns.items():
@@ -614,6 +718,20 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
             expression_groups[canon_expr].append(object_ref)
         if not _bool(measure, "isHidden") and not _text(_key(measure, "description")):
             missing_descriptions["measures"].append(object_ref)
+        if (
+            not _bool(measure, "isHidden")
+            and (
+                re.fullmatch(r"[a-z0-9]+(?:_[a-z0-9]+)+", measure_name)
+                or re.search(r"(?:^|_)(?:calc|final|temp|test|v\d+)(?:_|$)", measure_name, re.I)
+            )
+        ):
+            findings.append(_issue(
+                "MQ033", "Machine-oriented object name", "Naming", "INFO", "Measure",
+                table_name, measure_name,
+                "A visible measure exposes a code-oriented, temporary, or versioned name instead of stable business semantics.",
+                "Rename the measure with a durable business term and retain implementation/version details in its description.",
+                f"measure={object_ref}", confidence="MEDIUM", risk="LOW",
+            ))
         if table_name.lower().startswith("dim") and re.search(r"\b(SUM|SUMX|COUNT|COUNTROWS|AVERAGE)\s*\(\s*Fact", expression, re.I):
             findings.append(_issue(
                 "MQ014", "Fact aggregation measure stored in a dimension", "Measure organization", "ERROR", "Measure",
@@ -801,6 +919,54 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
                 "measures=" + ", ".join(sorted(refs)), risk="HIGH",
             ))
 
+    if implicit_measure_candidates and not _bool(
+        {"value": _key(model, "discourageImplicitMeasures", False)}, "value"
+    ):
+        findings.append(_issue(
+            "MQ034", "Model relies on implicit numeric aggregation", "Measure design", "WARNING", "Model",
+            None, None,
+            "The model permits implicit measures while visible numeric columns have default aggregation behavior.",
+            "Create explicit base measures for supported business aggregations and discourage implicit measures after report-impact review.",
+            "columns=" + ", ".join(sorted(implicit_measure_candidates)),
+            confidence="MEDIUM", risk="HIGH",
+        ))
+
+    for table in tables:
+        table_name = _name(table)
+        measures = [measure for measure in _list(table, "measures") if not _bool(measure, "isHidden")]
+        if not measures:
+            continue
+        columns = _list(table, "columns")
+        fact_grain_signal = (
+            table_name.lower().startswith("fact")
+            or len(columns) >= 10
+            or vpa_row_counts.get(table_name.lower(), 0) >= 10000
+        )
+        if fact_grain_signal:
+            findings.append(_issue(
+                "MQ049", "Measures stored on a fact-grain table", "Measure organization", "INFO", "Table",
+                table_name, table_name,
+                "Visible measures are stored on a table whose name, width, or row count indicates fact grain.",
+                "Move measures to a dedicated calculation table or curated subject-area table without changing their DAX definitions.",
+                (
+                    f"measures={','.join(sorted(_name(measure) for measure in measures))}; "
+                    f"columns={len(columns)}; row_count={vpa_row_counts.get(table_name.lower(), 0)}"
+                ),
+                confidence="MEDIUM", risk="MEDIUM",
+            ))
+        missing_folders = sorted(
+            _name(measure) for measure in measures if not _text(_key(measure, "displayFolder"))
+        )
+        if missing_folders:
+            findings.append(_issue(
+                "MQ050", "Visible measures lack display folders", "Measure organization", "INFO", "Table",
+                table_name, table_name,
+                "Visible measures on the table are not organized with display-folder metadata.",
+                "Group measures into stable business-facing display folders and validate field-list discoverability.",
+                f"count={len(missing_folders)}; measures=" + ", ".join(missing_folders),
+                confidence="HIGH", risk="LOW",
+            ))
+
     if auto_date_names:
         findings.append(_issue(
             "MQ020", "Auto Date/Time tables present", "Date handling", "ERROR", "Model", None, None,
@@ -835,18 +1001,26 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
             "date_candidates=" + ", ".join(sorted(_name(t) for t in date_candidates)), risk="HIGH",
         ))
 
-    # Storage-aware high-cardinality text rule.
+    # Storage-aware high-cardinality visible-column rule. Usage is intentionally
+    # not asserted because object-usage collection is a separate evidence source.
     for row in vpa_columns or []:
         table_name = _text(row.get("table_name"))
         column_name = _text(row.get("column_name"))
         data_type = _text(row.get("data_type")).lower()
         cardinality = int(row.get("cardinality") or 0)
-        if table_name.lower().startswith("fact") and any(x in data_type for x in ("string", "text")) and cardinality >= 10000:
+        is_visible = (table_name.lower(), column_name.lower()) in visible_column_refs
+        high_cardinality_type = any(x in data_type for x in ("string", "text", "date", "time"))
+        if is_visible and high_cardinality_type and cardinality >= 10000:
             findings.append(_issue(
-                "MQ027", "High-cardinality text in a fact table", "Storage", "WARNING", "Column",
-                table_name, column_name, "A fact-grain text column has high cardinality and can create a large dictionary.",
-                "Validate report/export usage, then remove, normalize, or move it to an appropriate degenerate dimension.",
-                f"cardinality={cardinality}; total_size_bytes={row.get('total_size_bytes')}", risk="HIGH", impact="MODEL_SIZE",
+                "MQ027", "High-cardinality visible text or time column", "Storage", "WARNING", "Column",
+                table_name, column_name,
+                "A visible text/date-time column has high observed cardinality and can create a large dictionary or segment footprint.",
+                "Review lineage and report dependencies, then hide, normalize, reduce precision, or remove it only after usage evidence is available.",
+                (
+                    f"data_type={data_type}; cardinality={cardinality}; "
+                    f"total_size_bytes={row.get('total_size_bytes')}; is_visible={is_visible}"
+                ),
+                risk="HIGH", impact="MODEL_SIZE",
             ))
 
     description_counts = {kind: len(values) for kind, values in missing_descriptions.items() if values}
