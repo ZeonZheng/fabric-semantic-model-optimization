@@ -49,4 +49,12 @@ Bank `AP-E02` is excluded. Its claim that the final model has no date column or 
 
 ## Live acceptance record
 
-Pending deployment and rescan after the local scanner implementation passes all repository checks.
+Local implementation status:
+
+- Acceptance corpus: 51 valid items plus one documented conflicting exclusion.
+- Existing MQ001-MQ030 regression fixture: passing.
+- New/enhanced rule fixture: passing for relationship, DAX, calculated-column, storage, naming, governance, and measure-organization behaviors.
+- Notebook source parity: the deployable scanner embeds the exact tested analyzer source.
+- Prepared release: solution `0.6.20`, scanner `2.6.4`.
+
+Live TEST deployment, rescan, and Lakehouse item-by-item comparison remain pending and are required before M6.6.5 can be marked accepted.

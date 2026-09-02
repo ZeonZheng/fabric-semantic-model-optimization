@@ -48,6 +48,8 @@ def validate_json() -> int:
 
 def validate_manifest() -> None:
     config = yaml.safe_load((ROOT / "config/deployment_config.yaml").read_text())
+    if config["solution"]["version"] != "0.6.20":
+        fail("M6.6.5 deployment manifest must publish solution version 0.6.20.")
     order = json.loads((ROOT / "config/deployment_order.json").read_text())
     ordered_names = [item["name"] for item in order]
     expected = list(config["items"].values())
@@ -128,7 +130,7 @@ def validate_scanner() -> None:
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
-        'SCANNER_VERSION = "2.6.3"',
+        'SCANNER_VERSION = "2.6.4"',
         "run_model_metadata_checks = True",
         "semantic-model metadata inspection",
         "def analyze_model_bim(",
@@ -198,8 +200,13 @@ def validate_scanner() -> None:
         "workspaceId": "00000000-0000-0000-0000-000000000000",
     }:
         fail("Scanner Environment dependency does not match the deployment manifest.")
-    if notebook["metadata"].get("scanner_version") != "2.6.3":
+    if notebook["metadata"].get("scanner_version") != "2.6.4":
         fail("Scanner metadata version must match the executable scanner version.")
+    model_quality_source = (ROOT / "scripts/model_quality_rules.py").read_text(encoding="utf-8").replace(
+        "from __future__ import annotations\n", ""
+    )
+    if model_quality_source not in code_source:
+        fail("The scanner notebook must embed the exact tested model-quality analyzer source.")
     if "%pip" in source or "_inlineInstallationEnabled" in source:
         fail("Pipeline scanner must not use session-scoped package installation.")
     for forbidden in (

@@ -115,18 +115,21 @@ The M6.6.3 consolidated review workbench is documented in
 [`docs/m6-6-3-report-review-workbench.md`](docs/m6-6-3-report-review-workbench.md).
 The M6.6.4 report and adverse-model revalidation is documented in
 [`docs/m6-6-4-report-and-antipattern-revalidation.md`](docs/m6-6-4-report-and-antipattern-revalidation.md).
+The M6.6.5 anti-pattern coverage expansion is documented in
+[`docs/m6-6-5-antipattern-coverage-expansion.md`](docs/m6-6-5-antipattern-coverage-expansion.md).
 
 ## Current stage
 
-Version `0.6.19` and Scanner `2.6.3` are deployed to TEST for the reopened M6.6.4
-report and adverse-model gate. The report scopes every row by a unique model-analysis
+Version `0.6.20` and Scanner `2.6.4` are prepared for the M6.6.5 adverse-model
+coverage gate; TEST deployment and live Lakehouse acceptance are pending. The previous
+`0.6.19` / `2.6.3` deployment completed M6.6.4. The report scopes every row by a unique model-analysis
 key, excludes incomplete historical issues/actions, distinguishes issue maximum
 severity from per-finding severity, and preserves qualified `Table[Object]` locators
 through deployment backfill. The adverse-model analysis is 30/30 for MQ001-MQ030;
 the named AP-04/05/08/09/10/11 objects were also verified in the published Viewer.
 Back and one-click prior-filter clearing are available on Review issues because the
 Power BI Service preserves target-page slicer state independently of drillthrough
-source context. Scanner `2.6.3` retains the M6.4
+source context. Scanner `2.6.4` retains the M6.4
 production-stabilization contract: Lakehouse → SQL analytics endpoint → Direct Lake semantic-model lineage,
 an unpinned Semantic Link environment, and a `workspace_user` profile that uses the
 current identity and workspace-scoped APIs only. It does not enumerate tenant
