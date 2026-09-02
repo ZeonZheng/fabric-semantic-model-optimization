@@ -48,8 +48,8 @@ def validate_json() -> int:
 
 def validate_manifest() -> None:
     config = yaml.safe_load((ROOT / "config/deployment_config.yaml").read_text())
-    if config["solution"]["version"] != "0.6.20":
-        fail("M6.6.5 deployment manifest must publish solution version 0.6.20.")
+    if config["solution"]["version"] != "0.6.21":
+        fail("M6.6.5 live-fix deployment manifest must publish solution version 0.6.21.")
     order = json.loads((ROOT / "config/deployment_order.json").read_text())
     ordered_names = [item["name"] for item in order]
     expected = list(config["items"].values())
@@ -130,7 +130,7 @@ def validate_scanner() -> None:
         "model_ids_optional = \"\"",
         "initialize_only = False",
         "def ensure_tables()",
-        'SCANNER_VERSION = "2.6.4"',
+        'SCANNER_VERSION = "2.6.5"',
         "run_model_metadata_checks = True",
         "semantic-model metadata inspection",
         "def analyze_model_bim(",
@@ -200,7 +200,7 @@ def validate_scanner() -> None:
         "workspaceId": "00000000-0000-0000-0000-000000000000",
     }:
         fail("Scanner Environment dependency does not match the deployment manifest.")
-    if notebook["metadata"].get("scanner_version") != "2.6.4":
+    if notebook["metadata"].get("scanner_version") != "2.6.5":
         fail("Scanner metadata version must match the executable scanner version.")
     model_quality_source = (ROOT / "scripts/model_quality_rules.py").read_text(encoding="utf-8").replace(
         "from __future__ import annotations\n", ""
@@ -1190,6 +1190,17 @@ def validate_model_quality_rules() -> None:
                         "CALCULATE(SUM(Sales[Amount]), FILTER(ALL(Sales), Sales[Amount] > 100))",
                     ),
                 ],
+            }, {
+                "name": "vgchartz-2024",
+                "description": "Fixture table whose name contains a year",
+                "columns": [column("developer", description="Developer")],
+                "measures": [
+                    test_measure(
+                        "Table Year Reference",
+                        "DISTINCTCOUNT('vgchartz-2024'[developer])",
+                    ),
+                    test_measure("Literal Year Weight", "SUM(Sales[Amount]) * 2024"),
+                ],
             }],
         }
     }
@@ -1224,6 +1235,10 @@ def validate_model_quality_rules() -> None:
         false_positives = prohibited_objects & dax_rule_objects[rule_code]
         if false_positives:
             fail(f"{rule_code} produced DAX fixture false positives: {sorted(false_positives)}")
+    if "Table Year Reference" in dax_rule_objects["MQ045"]:
+        fail("MQ045 must ignore digits inside quoted DAX table identifiers.")
+    if "Literal Year Weight" not in dax_rule_objects["MQ045"]:
+        fail("MQ045 must retain executable numeric literals outside identifiers.")
 
     metadata_bim = {
         "model": {
@@ -1248,6 +1263,10 @@ def validate_model_quality_rules() -> None:
                         column("IsActiveMember", "int64", description="Active flag", summarizeBy="sum"),
                         column("EstimatedSalary", "decimal", description="Salary", summarizeBy="sum"),
                         column("Exited", "int64", description="Exit flag", summarizeBy="sum"),
+                        column(
+                            "AgeCopy", "int64", description="Duplicate age",
+                            expression="'Bank_Churn'[Age]",
+                        ),
                         column(
                             "ExitedText", description="Exit display flag",
                             expression='IF([Exited] = 1, "Y", "N")',
@@ -1279,7 +1298,13 @@ def validate_model_quality_rules() -> None:
                     "description": "Video game sales fact grain",
                     "columns": [
                         column("img", description="Image URL"),
+                        column("last_update", "dateTime", description="Last update timestamp"),
+                        column("release_date", "dateTime", description="Release date"),
                         column("total_sales", "decimal", description="Total sales", summarizeBy="sum"),
+                        column(
+                            "total_sales_copy", "decimal", description="Duplicate total sales",
+                            expression="'vgchartz-2024'[total_sales]",
+                        ),
                         *(column(f"metric_{number}", "decimal", description="Metric") for number in range(10)),
                     ],
                 },
@@ -1289,6 +1314,14 @@ def validate_model_quality_rules() -> None:
     metadata_findings = analyze_model_bim(metadata_bim, [{
         "table_name": "vgchartz-2024", "column_name": "img", "data_type": "String",
         "cardinality": 64000, "total_size_bytes": 5000000,
+    }, {
+        "table_name": "vgchartz-2024", "column_name": "last_update", "data_type": "DateTime",
+        "cardinality": 1545, "total_size_bytes": 123656,
+        "percentage_of_semantic_model_size": 1.213,
+    }, {
+        "table_name": "vgchartz-2024", "column_name": "release_date", "data_type": "DateTime",
+        "cardinality": 365, "total_size_bytes": 20000,
+        "percentage_of_semantic_model_size": 0.2,
     }], [
         {"table_name": "Bank_Churn", "row_count": 10000},
         {"table_name": "vgchartz-2024", "row_count": 64000},
@@ -1297,7 +1330,8 @@ def validate_model_quality_rules() -> None:
     for row in metadata_findings:
         metadata_rule_objects[row["rule_code"]].add((row.get("table_name"), row.get("object_name")))
     required_metadata_objects = {
-        "MQ027": {("vgchartz-2024", "img")},
+        "MQ013": {("Bank_Churn", "AgeCopy"), ("vgchartz-2024", "total_sales_copy")},
+        "MQ027": {("vgchartz-2024", "img"), ("vgchartz-2024", "last_update")},
         "MQ033": {("Bank_Churn", "calc_final_v2"), ("vgchartz-2024", "total_sales")},
         "MQ034": {(None, None)},
         "MQ041": {("Bank_Churn", "ExitedText")},
@@ -1313,6 +1347,8 @@ def validate_model_quality_rules() -> None:
         missing_objects = expected_objects - metadata_rule_objects[rule_code]
         if missing_objects:
             fail(f"{rule_code} missed metadata fixture objects: {sorted(missing_objects, key=str)}")
+    if ("vgchartz-2024", "release_date") in metadata_rule_objects["MQ027"]:
+        fail("MQ027 must not flag low-cardinality, low-impact date columns.")
     mq024_evidence = " ".join(
         row["technical_evidence"] for row in metadata_findings if row["rule_code"] == "MQ024"
     )

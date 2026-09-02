@@ -131,6 +131,20 @@ def _format_references_numeric_column(expression, columns):
     return False
 
 
+def _direct_column_reference_name(expression):
+    """Return the source column name when DAX is only one column reference."""
+    source = _text(expression)
+    qualified = re.fullmatch(
+        r"\s*(?:(?:'(?:''|[^'])+'|[A-Za-z_][A-Za-z0-9_\- ]*)\s*)?"
+        r"\[\s*([^\]]+)\s*\]\s*",
+        source,
+    )
+    if qualified:
+        return _text(qualified.group(1))
+    bare = re.fullmatch(r"[A-Za-z_][A-Za-z0-9_ ]*", source)
+    return _text(bare.group(0)) if bare else ""
+
+
 def _measure_is_text_like(measure, expression):
     """Identify measures whose result is intentionally text and needs no format string."""
     if "string" in _text(_key(measure, "dataType")).lower():
@@ -246,8 +260,10 @@ def _max_function_depth(expression, function_name):
 
 def _magic_numbers(expression):
     """Return non-trivial numeric literals from executable DAX text."""
-    without_strings = re.sub(r'"(?:""|[^"])*"', "", _text(expression))
-    values = re.findall(r"(?<![A-Za-z0-9_.])(?:\d+\.\d+|\d{2,})(?![A-Za-z0-9_.])", without_strings)
+    executable = re.sub(r'"(?:""|[^"])*"', "", _text(expression))
+    executable = re.sub(r"'(?:''|[^'])*'", "", executable)
+    executable = re.sub(r"\[[^\]]*\]", "", executable)
+    values = re.findall(r"(?<![A-Za-z0-9_.])(?:\d+\.\d+|\d{2,})(?![A-Za-z0-9_.])", executable)
     return sorted(set(values), key=lambda value: (float(value), value))
 
 
@@ -663,7 +679,8 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
                     "Set Sort by column to the numeric month sequence.",
                     f"sortByColumn={_key(column, 'sortByColumn')}", risk="LOW",
                 ))
-            if re.fullmatch(r"\[?[^\[\]]+\]?", _text(expression)) and expression and column_name.lower() not in expression.lower():
+            alias_source = _direct_column_reference_name(expression)
+            if alias_source and alias_source.lower() != column_name.lower():
                 findings.append(_issue(
                     "MQ013", "Redundant calculated column alias", "Maintainability", "INFO", "Column",
                     table_name, column_name, "The calculated column directly aliases another column.",
@@ -1008,9 +1025,20 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
         column_name = _text(row.get("column_name"))
         data_type = _text(row.get("data_type")).lower()
         cardinality = int(row.get("cardinality") or 0)
+        size_percentage = float(row.get("percentage_of_semantic_model_size") or 0)
         is_visible = (table_name.lower(), column_name.lower()) in visible_column_refs
         high_cardinality_type = any(x in data_type for x in ("string", "text", "date", "time"))
-        if is_visible and high_cardinality_type and cardinality >= 10000:
+        high_absolute_cardinality = cardinality >= 10000
+        significant_temporal_column = (
+            any(x in data_type for x in ("date", "time"))
+            and cardinality >= 1000
+            and size_percentage >= 1.0
+        )
+        if (
+            is_visible
+            and high_cardinality_type
+            and (high_absolute_cardinality or significant_temporal_column)
+        ):
             findings.append(_issue(
                 "MQ027", "High-cardinality visible text or time column", "Storage", "WARNING", "Column",
                 table_name, column_name,
@@ -1018,8 +1046,10 @@ def analyze_model_bim(bim, vpa_columns=None, vpa_tables=None):
                 "Review lineage and report dependencies, then hide, normalize, reduce precision, or remove it only after usage evidence is available.",
                 (
                     f"data_type={data_type}; cardinality={cardinality}; "
-                    f"total_size_bytes={row.get('total_size_bytes')}; is_visible={is_visible}"
+                    f"total_size_bytes={row.get('total_size_bytes')}; "
+                    f"percentage_of_semantic_model_size={size_percentage}; is_visible={is_visible}"
                 ),
+                confidence="HIGH" if high_absolute_cardinality else "MEDIUM",
                 risk="HIGH", impact="MODEL_SIZE",
             ))
 

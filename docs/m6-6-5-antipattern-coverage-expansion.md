@@ -55,6 +55,10 @@ Local implementation status:
 - Existing MQ001-MQ030 regression fixture: passing.
 - New/enhanced rule fixture: passing for relationship, DAX, calculated-column, storage, naming, governance, and measure-organization behaviors.
 - Notebook source parity: the deployable scanner embeds the exact tested analyzer source.
-- Prepared release: solution `0.6.20`, scanner `2.6.4`.
+- Initial live release: solution `0.6.20`, scanner `2.6.4`.
+- Live validation found two MQ013 misses, quoted table-name digits incorrectly
+  classified by MQ045, and a storage-significant DateTime column below MQ027's
+  original absolute threshold. Solution `0.6.21` / scanner `2.6.5` contains the
+  regression-tested corrections.
 
 Live TEST deployment, rescan, and Lakehouse item-by-item comparison remain pending and are required before M6.6.5 can be marked accepted.
