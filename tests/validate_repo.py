@@ -1016,6 +1016,42 @@ def validate_model_quality_rules() -> None:
             )
 
 
+def validate_m665_acceptance_corpus() -> None:
+    path = ROOT / "tests/fixtures/m6_6_5_antipattern_acceptance.json"
+    fixture = json.loads(path.read_text(encoding="utf-8"))
+    items = fixture["items"]
+    item_keys = {(row["model"], row["id"]) for row in items}
+    expected_bank_ids = {
+        *(f"AP-M{number:02d}" for number in range(1, 10)),
+        *(f"AP-C{number:02d}" for number in range(1, 7)),
+        *(f"AP-T{number:02d}" for number in range(1, 3)),
+        *(f"AP-R{number:02d}" for number in range(1, 3)),
+        "AP-E01", "AP-E03", "AP-E04", "AP-E05", "AP-E06", "AP-E07", "AP-E08", "AP-E09",
+    }
+    expected_video_ids = {f"AP-{number:02d}" for number in range(1, 25)}
+    actual_bank_ids = {item_id for model, item_id in item_keys if model == "Bank Customer Churn"}
+    actual_video_ids = {item_id for model, item_id in item_keys if model == "Video Game Sales"}
+
+    if fixture["valid_item_count"] != 51 or len(items) != 51 or len(item_keys) != 51:
+        fail("M6.6.5 acceptance corpus must contain exactly 51 unique valid items.")
+    if actual_bank_ids != expected_bank_ids:
+        fail(f"M6.6.5 Bank acceptance IDs differ: {sorted(actual_bank_ids ^ expected_bank_ids)}")
+    if actual_video_ids != expected_video_ids:
+        fail(f"M6.6.5 Video acceptance IDs differ: {sorted(actual_video_ids ^ expected_video_ids)}")
+    if fixture["excluded_items"] != [{
+        "model": "Bank Customer Churn",
+        "id": "AP-E02",
+        "reason": "conflicts with injected Fake_Calendar",
+    }]:
+        fail("Bank AP-E02 must be the single documented conflicting exclusion.")
+    if "AgeGroup" in fixture.get("negative_control_objects", []) or "AgeGroupOrder" in fixture.get(
+        "negative_control_objects", []
+    ):
+        fail("AgeGroup objects must not be hard-coded as M6.6.5 negative controls.")
+    if any(not row.get("expected_rules") for row in items):
+        fail("Every M6.6.5 acceptance item must declare at least one expected rule.")
+
+
 def validate_no_secrets() -> None:
     suspicious = re.compile(r"(?i)(client_secret|github_token)\s*=\s*[\"'][^\"']{8,}[\"']")
     for path in ROOT.rglob("*"):
@@ -1037,6 +1073,7 @@ def main() -> int:
     validate_report()
     validate_quality_rules()
     validate_model_quality_rules()
+    validate_m665_acceptance_corpus()
     validate_no_secrets()
     print(f"Validation passed: {json_count} JSON/notebook/platform files checked.")
     return 0
