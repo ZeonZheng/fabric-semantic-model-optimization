@@ -7,7 +7,7 @@
 **Fabric tool:** `Fabric Optimization Assistant v2`  
 **Knowledge:** none  
 **Memory:** Off  
-**Status:** Preview routing accepted; ready for publish after minor response-wording hardening
+**Status:** Preview routing accepted and Copilot Studio agent published; Teams channel configuration is next
 
 ## Purpose
 
@@ -156,31 +156,33 @@ No evidence was observed of Copilot Studio bypassing the Fabric tool and answeri
 
 ## Publish decision
 
-Copilot Studio Preview is considered **functionally accepted for publication**.
+Copilot Studio Preview was considered **functionally accepted for publication**.
 
-Before or immediately after publishing, retain these two response guardrails in the Copilot Studio instructions:
+The following response guardrails were added before publication:
 
-1. For "what should I fix first?", `ACTIONABLE` means implementable; `REVIEW_REQUIRED` means review/validate first even if its priority score is higher.
-2. Do not invent a model-level optimization/health/quality score or declare a model globally better/healthier unless the user explicitly asks for a judgment and the comparison criteria are named.
+1. For "what should I fix first?", distinguish the highest-priority item requiring review from the highest-priority item that is immediately actionable. `REVIEW_REQUIRED` must be reviewed and validated before implementation even when its priority score is higher than an `ACTIONABLE` recommendation.
+2. When comparing semantic models, do not describe one model as globally better, healthier, or having a stronger optimization posture unless the user explicitly requests a judgment and the comparison criteria are stated. SMO V1 does not provide a model-level optimization, health, quality, or maturity score.
 
-These are wording/interpretation hardening items, not data-routing or Data Agent defects.
+The Copilot Studio agent `Fabric Optimization_Pre_V2` was then successfully **published on 2026-09-11**. The Monitor view became available after publication, confirming that a live version exists. No production Teams traffic has been generated yet.
 
-## Next phase
+## Current handoff point
 
 ```text
-Copilot Studio Preview acceptance   ✅
+Fabric Data Agent                      ✅ Published
+Copilot Studio Preview acceptance     ✅ 5/5 routing tests passed
+Final response guardrails             ✅ Added
+Copilot Studio agent                  ✅ Published
         │
         ▼
-Publish Copilot Studio agent        ← NEXT
+Teams + Microsoft 365 channel         ← NEXT
         │
         ▼
-Enable Microsoft Teams channel
-        │
-        ▼
-Open agent in Teams
+Install agent in Teams
         │
         ▼
 Final Teams E2E acceptance
 ```
 
-Teams acceptance should re-run a small subset of grounded prompts to confirm that the published channel preserves the same behavior as Preview.
+## Next phase
+
+Configure the **Teams + Microsoft 365** channel. For the initial V1 validation, Teams-only availability is preferred unless Microsoft 365 Copilot exposure is explicitly required. After connecting the channel, install the agent for the maker first and run a small Teams E2E regression set before wider sharing or organization catalog submission.
